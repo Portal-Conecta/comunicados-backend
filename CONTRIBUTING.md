@@ -81,9 +81,9 @@ tipo: descrição curta, em português e no imperativo
 ## Como Abrir um Pull Request (PR)
 
 1. Certifique-se que sua branch está atualizada com a `develop` (resolva conflitos localmente).
-2. O Título do PR deve seguir o padrão do commit (Ex: `feat: adiciona mapa de salas`).
+2. O Título do PR deve seguir o padrão do commit (Ex: `feat: adiciona método de criação de comunicados`).
 3. Aplique as **Labels** corretas.
-4. Solicite revisão (Reviewers) do Tech Lead do seu squad e do Squad de comunicados
+4. Solicite revisão (Reviewers) do Tech Lead do Squad de comunicados
 5. Copie e cole o template abaixo na descrição do PR e preencha:
 
 ### Template de Descrição do PR
@@ -102,7 +102,7 @@ Closes #[número]
 
 ## Como testar
 
-[Passos pra revisor validar localmente. Se for visual, anexe screenshot/gif. Se for componente, link do Storybook.]
+[Passos pra revisor validar localmente. Se for visual, anexe screenshot/gif.]
 
 1. ...
 2. ...
@@ -114,16 +114,14 @@ Closes #[número]
 - [ ] Refatoração (sem mudança de comportamento)
 - [ ] Documentação
 - [ ] Infraestrutura / config / build
-- [ ] Outro: ___
+- [ ] Outro: ____________________
 
 ## Checklist do autor
 
 - [ ] Código segue convenções definidas em CONTRIBUTING.md
 - [ ] Validei localmente que a aplicação compila/gera build sem erros (quando aplicável)
 - [ ] Verifiquei que não há erros de análise estática ou alertas relevantes no código (quando aplicável)
-- [ ] Confirmei que não há erros de tipagem/TypeScript no escopo da mudança (quando aplicável)
 - [ ] Testei manualmente os cenários principais
-- [ ] Componentes novos/alterados documentados no Storybook (se aplicável)
 - [ ] Documentação atualizada (se aplicável)
 - [ ] Não introduzi dependências novas sem alinhamento prévio
 
@@ -143,7 +141,7 @@ Closes #[número]
 - [ ] Minha branch está atualizada com a `develop` mais recente.
 - [ ] O código compila localmente sem erros e sem alertas no terminal.
 - [ ] O projeto roda perfeitamente (não quebrei a aplicação).
-- [ ] Não subi arquivos sensíveis ou inúteis (`.env`, `node_modules`, pastas de build).
+- [ ] Não subi arquivos sensíveis ou inúteis (`.env`, pastas de build).
 - [ ] Meus commits seguem o Conventional Commits.
 - [ ] A issue correspondente no board foi movida para "In Review".
 
@@ -167,8 +165,8 @@ Sempre aplique as labels corretas para a Scrum Master organizar o board:
 
 ## Dúvidas?
 
-Tech Lead Comunicados: Jonathan Luis Uber
-Scrum Master 78: Victória
-Scrum Master 77: Melissa
+- Tech Lead Comunicados: Jonathan Luis Uber
+- Scrum Master 78: Victória
+- Scrum Master 77: Melissa
 
 No caso de dúvidas, não arrisquem o histórico do Git. Sintam-se à vontade para perguntar!
