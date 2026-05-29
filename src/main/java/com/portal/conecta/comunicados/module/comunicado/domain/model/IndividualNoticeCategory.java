@@ -1,6 +1,6 @@
 package com.portal.conecta.comunicados.module.comunicado.domain.model;
 
-import java.time.LocalDateTime;
+import java.time.Instant;
 import java.util.UUID;
 
 import org.springframework.data.annotation.Id;
@@ -31,12 +31,12 @@ public class IndividualNoticeCategory {
     private String name;
 
     @Column(name = "created_at", nullable = false)
-    private LocalDateTime createdAt;
+    private Instant createdAt;
 
     @Column(name = "updated_at", nullable = false)
-    private LocalDateTime updatedAt;
+    private Instant updatedAt;
 
     @Column(name = "deleted_at", nullable = true)
-    private LocalDateTime deletedAt;
+    private Instant deletedAt;
 
 }

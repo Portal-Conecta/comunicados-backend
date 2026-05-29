@@ -1,6 +1,6 @@
 package com.portal.conecta.comunicados.module.comunicado.domain.model;
 
-import java.time.LocalDateTime;
+import java.time.Instant;
 import java.util.UUID;
 
 import org.springframework.data.annotation.Id;
@@ -38,6 +38,6 @@ public class AnnouncementIndividualNotice {
     private IndividualNoticeCategory category;
 
     @Column(name = "resolved_at", nullable = true)
-    private LocalDateTime resolvedAt;
+    private Instant resolvedAt;
     
 }

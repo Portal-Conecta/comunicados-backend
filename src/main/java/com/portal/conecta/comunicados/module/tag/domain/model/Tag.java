@@ -1,6 +1,6 @@
 package com.portal.conecta.comunicados.module.tag.domain.model;
 
-import java.time.LocalDateTime;
+import java.time.Instant;
 import java.util.UUID;
 
 import org.springframework.data.annotation.Id;
@@ -37,6 +37,6 @@ public class Tag {
     private boolean active;
 
     @Column(name = "created_at", nullable = false)
-    private LocalDateTime createdAt;
+    private Instant createdAt;
     
 }

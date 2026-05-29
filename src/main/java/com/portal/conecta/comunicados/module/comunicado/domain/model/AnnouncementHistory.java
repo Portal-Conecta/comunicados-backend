@@ -1,6 +1,6 @@
 package com.portal.conecta.comunicados.module.comunicado.domain.model;
 
-import java.time.LocalDateTime;
+import java.time.Instant;
 import java.util.UUID;
 
 import org.springframework.data.annotation.Id;
@@ -45,6 +45,6 @@ public class AnnouncementHistory {
     private String snapshot;
 
     @Column(name = "created_at", nullable = false)
-    private LocalDateTime createdAt;
+    private Instant createdAt;
 
 }
