@@ -1,6 +1,6 @@
 package com.portal.conecta.comunicados.module.comunicado.domain.model;
 
-import java.time.LocalDateTime;
+import java.time.Instant;
 import java.util.List;
 import java.util.UUID;
 
@@ -57,19 +57,19 @@ public class Announcement {
     private UUID publishedByUserId;
 
     @Column(name = "scheduled_for", nullable = true)
-    private LocalDateTime scheduledFor;
+    private Instant scheduledFor;
 
     @Column(name = "published_at", nullable = true)
-    private LocalDateTime publishedAt;
+    private Instant publishedAt;
 
     @Column(name = "removed_at", nullable = true)
-    private LocalDateTime removedAt;
+    private Instant removedAt;
 
     @Column(name = "created_at", nullable = false)
-    private LocalDateTime createdAt;
+    private Instant createdAt;
 
     @Column(name = "updated_at", nullable = false)
-    private LocalDateTime updatedAt;
+    private Instant updatedAt;
 
     @OneToMany(mappedBy = "announcement")
     private List<AnnouncementDestination> destinations;
