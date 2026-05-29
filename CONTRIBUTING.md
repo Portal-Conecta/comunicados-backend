@@ -125,14 +125,16 @@ Closes #[número]
 - [ ] Documentação atualizada (se aplicável)
 - [ ] Não introduzi dependências novas sem alinhamento prévio
 
-## Screenshots / Vídeos
 
-[Cole aqui quando for mudança visual. Apague essa seção se não for aplicável.]
+## Algo a mudar na documentação?
+
+[Se na hora do desenvolvimento você teve que adicionar ou remover algo relacionado a documentação (modelagem de dados, regras de negócio, arquitetura, etc), descreva aqui para o techlead atualizar a documentação]
+
+---
 
 ## Notas pro revisor
 
 [Opcional. Algum trecho que merece atenção especial, decisão que tomou que pode gerar dúvida, ou pendência conhecida.]
-```
 
 ---
 
@@ -144,6 +146,7 @@ Closes #[número]
 - [ ] Não subi arquivos sensíveis ou inúteis (`.env`, pastas de build).
 - [ ] Meus commits seguem o Conventional Commits.
 - [ ] A issue correspondente no board foi movida para "In Review".
+```
 
 ---
 
