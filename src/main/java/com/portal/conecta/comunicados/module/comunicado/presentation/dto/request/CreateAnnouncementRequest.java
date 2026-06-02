@@ -10,25 +10,25 @@ import jakarta.validation.constraints.Size;
 import java.time.Instant;
 
 public record CreateAnnouncementRequest(
-
-        @NotBlank
-        @Size(max = 255)
-        String title,
-
-        @NotBlank
-        String description,
-
-        @NotNull
-        AnnouncementOrigin origin,
-
-        @NotNull
-        AnnouncementStatus status,
-
-        Boolean pinned,
-
-        @Min(0)
-        Short pinnedOrder,
-
-        Instant scheduledFor
+        
+    @NotBlank
+    @Size(max = 255)
+    String title,
+    
+    @NotBlank
+    String description,
+    
+    @NotNull
+    AnnouncementOrigin origin,
+    
+    @NotNull
+    AnnouncementStatus status,
+    
+    Boolean pinned,
+    
+    @Min(0)
+    Short pinnedOrder,
+    
+    Instant scheduledFor
 
 ) {}

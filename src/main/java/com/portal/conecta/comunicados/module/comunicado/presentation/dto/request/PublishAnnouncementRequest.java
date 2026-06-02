@@ -4,6 +4,6 @@ import java.util.UUID;
 
 public record PublishAnnouncementRequest(
 
-        UUID publishedByUserId
+    UUID publishedByUserId
         
 ) {}

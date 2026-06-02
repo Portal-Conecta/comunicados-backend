@@ -8,15 +8,15 @@ import java.util.UUID;
 
 public record AnnouncementSummaryResponse(
 
-        UUID id,
-        String title,
-        String description,
-        AnnouncementOrigin origin,
-        AnnouncementStatus status,
-        Boolean pinned,
-        Short pinnedOrder,
-        Instant scheduledFor,
-        Instant publishedAt,
-        Instant createdAt
+    UUID id,
+    String title,
+    String description,
+    AnnouncementOrigin origin,
+    AnnouncementStatus status,
+    Boolean pinned,
+    Short pinnedOrder,
+    Instant scheduledFor,
+    Instant publishedAt,
+    Instant createdAt
 
 ) {}

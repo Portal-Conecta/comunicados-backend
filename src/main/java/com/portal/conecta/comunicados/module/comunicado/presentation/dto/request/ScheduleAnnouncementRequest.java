@@ -7,8 +7,8 @@ import java.time.Instant;
 
 public record ScheduleAnnouncementRequest(
 
-        @NotNull
-        @Future
-        Instant scheduledFor
+    @NotNull
+    @Future
+    Instant scheduledFor
 
 ) {}

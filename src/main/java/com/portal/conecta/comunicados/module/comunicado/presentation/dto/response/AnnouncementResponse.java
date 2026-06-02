@@ -9,19 +9,19 @@ import java.util.UUID;
 
 public record AnnouncementResponse(
     
-        UUID id,
-        String title,
-        String description,
-        AnnouncementOrigin origin,
-        AnnouncementStatus status,
-        Boolean pinned,
-        Short pinnedOrder,
-        UUID createdByUserId,
-        UUID publishedByUserId,
-        Instant scheduledFor,
-        Instant publishedAt,
-        Instant removedAt,
-        Instant createdAt,
-        Instant updatedAt
+    UUID id,
+    String title,
+    String description,
+    AnnouncementOrigin origin,
+    AnnouncementStatus status,
+    Boolean pinned,
+    Short pinnedOrder,
+    UUID createdByUserId,
+    UUID publishedByUserId,
+    Instant scheduledFor,
+    Instant publishedAt,
+    Instant removedAt,
+    Instant createdAt,
+    Instant updatedAt
 
 ) {}

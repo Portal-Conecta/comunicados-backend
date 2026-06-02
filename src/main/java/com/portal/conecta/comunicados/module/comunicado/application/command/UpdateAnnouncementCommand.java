@@ -6,7 +6,7 @@ import java.util.UUID;
 
 public record UpdateAnnouncementCommand(
 
-        UUID id,
-        UpdateAnnouncementRequest data
+    UUID id,
+    UpdateAnnouncementRequest data
 
 ) {}
