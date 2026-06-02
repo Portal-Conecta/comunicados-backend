@@ -1,12 +1,11 @@
 package com.portal.conecta.comunicados.module.comunicado.presentation.controller;
 
-import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 import jakarta.validation.Valid;
-import org.springframework.web.multipart.MultipartFile;
 
 import java.net.URI;
+import java.util.List;
 import java.util.UUID;
 
 @RestController
@@ -69,7 +68,23 @@ public class AnnouncementController {
     }
 
     @GetMapping("/pinned")
-    public ResponseEntity<Object> listPinned() {
+    public ResponseEntity<List<Object>> listPinned() {
         return ResponseEntity.ok(null);
     }
+
+    @GetMapping("/{postId}/tags")
+    public ResponseEntity<Object> listAnnouncementTag(@PathVariable UUID postId, @Valid @RequestBody Object request) {
+        return  ResponseEntity.ok(null);
+    }
+
+    @PostMapping("/{postId}/tags")
+    public ResponseEntity<Object> linkAnnouncementTag(@PathVariable UUID postId, @Valid @RequestBody Object request) {
+        return  ResponseEntity.created(URI.create("/api/posts/{postId}/tags")).body(null);
+    }
+
+    @DeleteMapping("/{postId}/tags/{tagId}")
+    public ResponseEntity<Void> unlinkAnnouncementTag(@PathVariable UUID postId, @PathVariable UUID tagId) {
+        return  ResponseEntity.noContent().build();
+    }
+
 }
