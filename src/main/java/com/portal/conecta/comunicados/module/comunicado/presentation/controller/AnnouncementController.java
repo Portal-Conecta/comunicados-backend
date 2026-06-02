@@ -73,7 +73,7 @@ public class AnnouncementController {
     }
 
     @GetMapping("/{postId}/tags")
-    public ResponseEntity<Object> listAnnouncementTag(@PathVariable UUID postId, @Valid @RequestBody Object request) {
+    public ResponseEntity<Object> listAnnouncementTag(@PathVariable UUID postId) {
         return  ResponseEntity.ok(null);
     }
 
