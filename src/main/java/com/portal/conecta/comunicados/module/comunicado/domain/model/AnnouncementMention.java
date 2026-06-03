@@ -2,8 +2,12 @@ package com.portal.conecta.comunicados.module.comunicado.domain.model;
 
 import java.util.UUID;
 
+import org.springframework.data.annotation.Id;
+
 import jakarta.persistence.Column;
 import jakarta.persistence.Entity;
+import jakarta.persistence.GeneratedValue;
+import jakarta.persistence.GenerationType;
 import jakarta.persistence.JoinColumn;
 import jakarta.persistence.ManyToOne;
 import jakarta.persistence.Table;
@@ -19,6 +23,11 @@ import lombok.NoArgsConstructor;
 @AllArgsConstructor
 @Builder
 public class AnnouncementMention {
+
+
+    @Id
+    @GeneratedValue(strategy = GenerationType.UUID)
+    private UUID id;
 
     @ManyToOne
     @JoinColumn(name = "announcement_id", nullable = false)
