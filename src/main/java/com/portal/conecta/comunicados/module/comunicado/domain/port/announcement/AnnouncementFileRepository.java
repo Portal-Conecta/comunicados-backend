@@ -1,4 +1,4 @@
-package com.portal.conecta.comunicados.module.comunicado.domain.port;
+package com.portal.conecta.comunicados.module.comunicado.domain.port.announcement;
 
 import com.portal.conecta.comunicados.module.comunicado.domain.enums.AnnouncementFileType;
 import com.portal.conecta.comunicados.module.comunicado.domain.model.AnnouncementFile;

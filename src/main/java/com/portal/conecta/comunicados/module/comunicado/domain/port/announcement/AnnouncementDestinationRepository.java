@@ -1,4 +1,4 @@
-package com.portal.conecta.comunicados.module.comunicado.domain.port;
+package com.portal.conecta.comunicados.module.comunicado.domain.port.announcement;
 
 import com.portal.conecta.comunicados.module.comunicado.domain.model.AnnouncementDestination;
 import org.springframework.data.jpa.repository.JpaRepository;
