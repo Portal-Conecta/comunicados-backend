@@ -1,14 +1,15 @@
 package com.portal.conecta.comunicados.module.comunicado.presentation.dto.request;
 
-import jakarta.validation.constraints.Future;
 import jakarta.validation.constraints.NotNull;
 
-import java.time.Instant;
+import java.util.UUID;
 
-public record ScheduleAnnouncementRequest(
+public record CreateAnnouncementIndividualNoticeRequest(
 
     @NotNull
-    @Future
-    Instant scheduledFor
+    UUID announcementId,
+
+    @NotNull
+    UUID categoryId
 
 ) {}

@@ -6,7 +6,7 @@ import java.util.UUID;
 
 public record ScheduleAnnouncementCommand(
 
-        UUID id,
-        ScheduleAnnouncementRequest data
+    UUID id,
+    ScheduleAnnouncementRequest data
 
 ) {}

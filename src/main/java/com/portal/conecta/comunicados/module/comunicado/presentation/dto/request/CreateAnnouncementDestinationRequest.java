@@ -10,11 +10,13 @@ import jakarta.validation.constraints.NotNull;
 
 public record CreateAnnouncementDestinationRequest(
 
-        @NotNull UUID announcementId,
+    @NotNull
+    UUID announcementId,
 
-        @NotNull AnnouncementDestinationType type,
+    @NotNull
+    AnnouncementDestinationType type,
 
-        UUID referenceId
+    UUID referenceId
 
 ) {
 

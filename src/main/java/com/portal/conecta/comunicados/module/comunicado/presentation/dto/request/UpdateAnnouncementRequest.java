@@ -9,20 +9,20 @@ import java.time.Instant;
 
 public record UpdateAnnouncementRequest(
 
-        @Size(max = 255)
-        String title,
-
-        String description,
-
-        AnnouncementOrigin origin,
-
-        AnnouncementStatus status,
-
-        Boolean pinned,
-
-        @Min(0)
-        Short pinnedOrder,
-
-        Instant scheduledFor
+    @Size(max = 255)
+    String title,
+    
+    String description,
+    
+    AnnouncementOrigin origin,
+    
+    AnnouncementStatus status,
+    
+    Boolean pinned,
+    
+    @Min(0)
+    Short pinnedOrder,
+    
+    Instant scheduledFor
 
 ) {}
