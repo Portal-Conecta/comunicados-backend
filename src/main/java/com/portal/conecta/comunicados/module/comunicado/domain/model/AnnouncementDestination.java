@@ -2,17 +2,9 @@ package com.portal.conecta.comunicados.module.comunicado.domain.model;
 
 import java.util.UUID;
 
-import org.springframework.data.annotation.Id;
-
 import com.portal.conecta.comunicados.module.comunicado.domain.enums.AnnouncementDestinationType;
 
-import jakarta.persistence.Column;
-import jakarta.persistence.Entity;
-import jakarta.persistence.GeneratedValue;
-import jakarta.persistence.GenerationType;
-import jakarta.persistence.JoinColumn;
-import jakarta.persistence.ManyToOne;
-import jakarta.persistence.Table;
+import jakarta.persistence.*;
 import lombok.AllArgsConstructor;
 import lombok.Builder;
 import lombok.Data;
