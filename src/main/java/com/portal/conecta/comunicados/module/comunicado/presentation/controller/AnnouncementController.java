@@ -1,5 +1,9 @@
 package com.portal.conecta.comunicados.module.comunicado.presentation.controller;
 
+import com.portal.conecta.comunicados.module.comunicado.application.usecase.PublishAnnouncementUseCase;
+import com.portal.conecta.comunicados.module.comunicado.presentation.dto.request.PublishAnnouncementRequest;
+import com.portal.conecta.comunicados.module.comunicado.presentation.dto.response.AnnouncementResponse;
+import com.portal.conecta.comunicados.module.comunicado.presentation.mapper.AnnouncementMapper;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.responses.ApiResponse;
 import io.swagger.v3.oas.annotations.responses.ApiResponses;
@@ -16,6 +20,17 @@ import java.util.UUID;
 @RequestMapping("/api/posts")
 @Tag(name = "Postagens", description = "Endpoints de comunicados")
 public class AnnouncementController {
+
+    private final PublishAnnouncementUseCase publishAnnouncementUseCase;
+    private final AnnouncementMapper announcementMapper;
+
+    public AnnouncementController(
+            PublishAnnouncementUseCase publishAnnouncementUseCase,
+            AnnouncementMapper announcementMapper
+    ) {
+        this.publishAnnouncementUseCase = publishAnnouncementUseCase;
+        this.announcementMapper = announcementMapper;
+    }
 
     @Operation(summary = "Criar comunicado")
     @ApiResponses({
@@ -83,15 +98,23 @@ public class AnnouncementController {
         return ResponseEntity.noContent().build();
     }
 
-    @Operation(summary = "Publicar comunicado", description = "RN-C04, C05. Requer destino e título.")
+    @Operation(summary = "Publicar comunicado")
     @ApiResponses({
             @ApiResponse(responseCode = "200", description = "Publicado"),
+            @ApiResponse(responseCode = "400", description = "Dados obrigatórios ausentes"),
             @ApiResponse(responseCode = "403", description = "Sem permissão"),
-            @ApiResponse(responseCode = "422", description = "RN-C05 — destino obrigatório")
+            @ApiResponse(responseCode = "404", description = "Comunicado não encontrado"),
+            @ApiResponse(responseCode = "409", description = "Comunicado não pode ser publicado nesse status")
     })
     @PatchMapping("/{id}/publish")
-    public ResponseEntity<Object> publish(@PathVariable UUID id, @RequestBody(required = false) Object request) {
-        return ResponseEntity.ok(null);
+    public ResponseEntity<AnnouncementResponse> publish(@PathVariable UUID id, @RequestBody(required = false) PublishAnnouncementRequest request) {
+        UUID publishedByUserId = request == null ? null : request.publishedByUserId();
+
+        var command = announcementMapper.toPublishCommand(id, request, publishedByUserId);
+        var announcement = publishAnnouncementUseCase.execute(command);
+        var response = announcementMapper.toResponse(announcement);
+
+        return ResponseEntity.ok(response);
     }
 
     @Operation(summary = "Agendar comunicado")
@@ -174,4 +197,5 @@ public class AnnouncementController {
     public ResponseEntity<Void> unlinkAnnouncementTag(@PathVariable UUID postId, @PathVariable UUID tagId) {
         return ResponseEntity.noContent().build();
     }
+
 }
