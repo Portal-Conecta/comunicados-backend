@@ -4,17 +4,10 @@ import java.time.Instant;
 import java.util.List;
 import java.util.UUID;
 
-import org.springframework.data.annotation.Id;
-
 import com.portal.conecta.comunicados.module.comunicado.domain.enums.AnnouncementOrigin;
 import com.portal.conecta.comunicados.module.comunicado.domain.enums.AnnouncementStatus;
 
-import jakarta.persistence.Column;
-import jakarta.persistence.Entity;
-import jakarta.persistence.GeneratedValue;
-import jakarta.persistence.GenerationType;
-import jakarta.persistence.OneToMany;
-import jakarta.persistence.Table;
+import jakarta.persistence.*;
 import lombok.AllArgsConstructor;
 import lombok.Builder;
 import lombok.Data;
@@ -38,9 +31,11 @@ public class Announcement {
     @Column(name = "description", nullable = false)
     private String description;
 
+    @Enumerated(EnumType.STRING)
     @Column(name = "origin", nullable = false)
     private AnnouncementOrigin origin;
 
+    @Enumerated(EnumType.STRING)
     @Column(name = "status", nullable = false)
     private AnnouncementStatus status;
 
@@ -88,7 +83,4 @@ public class Announcement {
 
     @OneToMany(mappedBy = "announcement")
     private List<AnnouncementIndividualNotice> individualNotices;
-
-    @OneToMany(mappedBy = "announcement")
-    private List<IndividualNoticeCategory> individualNoticeCategories;
 }
