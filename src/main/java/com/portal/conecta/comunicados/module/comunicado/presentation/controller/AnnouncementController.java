@@ -4,18 +4,31 @@ import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.responses.ApiResponse;
 import io.swagger.v3.oas.annotations.responses.ApiResponses;
 import io.swagger.v3.oas.annotations.tags.Tag;
+import jakarta.validation.Valid;
+import lombok.RequiredArgsConstructor;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
-import jakarta.validation.Valid;
 
 import java.net.URI;
 import java.util.List;
 import java.util.UUID;
 
+import com.portal.conecta.comunicados.module.comunicado.application.usecase.CreateAnnouncementUseCase;
+import com.portal.conecta.comunicados.module.comunicado.domain.model.Announcement;
+import com.portal.conecta.comunicados.module.comunicado.presentation.dto.request.CreateAnnouncementRequest;
+import com.portal.conecta.comunicados.module.comunicado.presentation.dto.response.AnnouncementResponse;
+import com.portal.conecta.comunicados.module.comunicado.presentation.mapper.AnnouncementMapper;
+import com.portal.conecta.comunicados.shared.context.RequestContextProvider;
+
 @RestController
 @RequestMapping("/api/posts")
 @Tag(name = "Postagens", description = "Endpoints de comunicados")
+@RequiredArgsConstructor
 public class AnnouncementController {
+
+    private final CreateAnnouncementUseCase createAnnouncementUseCase;
+    private final AnnouncementMapper announcementMapper;
+    private final RequestContextProvider contextProvider;
 
     @Operation(summary = "Criar comunicado")
     @ApiResponses({
@@ -24,8 +37,14 @@ public class AnnouncementController {
             @ApiResponse(responseCode = "403", description = "Sem permissão")
     })
     @PostMapping
-    public ResponseEntity<Object> save(@Valid @RequestBody Object request) {
-        return ResponseEntity.created(URI.create("/api/posts/")).body(null);
+    public ResponseEntity<AnnouncementResponse> save(@Valid @RequestBody CreateAnnouncementRequest request) {
+        UUID userId = contextProvider.getRequestContext().userId();
+        var command = announcementMapper.toCreateCommand(request, userId);
+
+        Announcement created = createAnnouncementUseCase.execute(command);
+        AnnouncementResponse response = announcementMapper.toResponse(created);
+
+        return ResponseEntity.created(URI.create("/api/posts/" + created.getId())).body(response);
     }
 
     @Operation(summary = "Listar comunicados")
