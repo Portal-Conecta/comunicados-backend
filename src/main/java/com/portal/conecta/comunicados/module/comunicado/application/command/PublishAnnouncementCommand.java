@@ -10,4 +10,13 @@ public record PublishAnnouncementCommand(
         PublishAnnouncementRequest data,
         UUID publishedByUserId
 
-) {}
+) {
+
+    public static PublishAnnouncementCommand fromRequest(
+            UUID id,
+            PublishAnnouncementRequest request,
+            UUID publishedByUserId
+    ) {
+        return new PublishAnnouncementCommand(id, request, publishedByUserId);
+    }
+}

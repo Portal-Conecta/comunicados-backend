@@ -9,4 +9,9 @@ public record ScheduleAnnouncementCommand(
     UUID id,
     ScheduleAnnouncementRequest data
 
-) {}
+) {
+
+    public static ScheduleAnnouncementCommand fromRequest(UUID id, ScheduleAnnouncementRequest request) {
+        return new ScheduleAnnouncementCommand(id, request);
+    }
+}

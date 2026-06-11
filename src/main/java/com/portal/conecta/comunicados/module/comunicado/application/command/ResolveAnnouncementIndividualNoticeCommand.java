@@ -10,4 +10,13 @@ public record ResolveAnnouncementIndividualNoticeCommand(
     ResolveAnnouncementIndividualNoticeRequest data,
     UUID actorUserId
 
-) {}
+) {
+
+    public static ResolveAnnouncementIndividualNoticeCommand fromRequest(
+            UUID id,
+            ResolveAnnouncementIndividualNoticeRequest request,
+            UUID actorUserId
+    ) {
+        return new ResolveAnnouncementIndividualNoticeCommand(id, request, actorUserId);
+    }
+}

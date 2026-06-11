@@ -48,26 +48,11 @@ public class AnnouncementController {
     public ResponseEntity<AnnouncementResponse> save(@Valid @RequestBody CreateAnnouncementRequest request) {
         UUID userId = contextProvider.getRequestContext().userId();
 
-        CreateAnnouncementCommand command = new CreateAnnouncementCommand(request, userId);
+        CreateAnnouncementCommand command = CreateAnnouncementCommand.fromRequest(request, userId);
 
         Announcement created = createAnnouncementUseCase.execute(command);
 
-        AnnouncementResponse response = new AnnouncementResponse(
-            created.getId(), 
-            created.getTitle(), 
-            created.getDescription(), 
-            created.getOrigin(), 
-            created.getStatus(), 
-            created.isPinned(), 
-            created.getPinnedOrder(), 
-            created.getCreatedByUserId(), 
-            created.getPublishedByUserId(), 
-            created.getScheduledFor(), 
-            created.getPublishedAt(), 
-            created.getRemovedAt(), 
-            created.getCreatedAt(), 
-            created.getUpdatedAt()
-        );
+        AnnouncementResponse response = AnnouncementResponse.fromEntity(created);
         return ResponseEntity.created(URI.create("/api/posts/" + created.getId())).body(response);
     }
 

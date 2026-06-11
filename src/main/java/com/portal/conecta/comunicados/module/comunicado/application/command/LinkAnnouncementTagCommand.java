@@ -6,4 +6,9 @@ public record LinkAnnouncementTagCommand(
 
     LinkAnnouncementTagRequest data
 
-) {}
+) {
+
+    public static LinkAnnouncementTagCommand fromRequest(LinkAnnouncementTagRequest request) {
+        return new LinkAnnouncementTagCommand(request);
+    }
+}

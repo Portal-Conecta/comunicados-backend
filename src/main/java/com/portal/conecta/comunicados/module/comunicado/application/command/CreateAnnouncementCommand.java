@@ -9,4 +9,9 @@ public record CreateAnnouncementCommand(
         CreateAnnouncementRequest data,
         UUID createdByUserId
 
-) {}
+) {
+
+    public static CreateAnnouncementCommand fromRequest(CreateAnnouncementRequest request, UUID createdByUserId) {
+        return new CreateAnnouncementCommand(request, createdByUserId);
+    }
+}

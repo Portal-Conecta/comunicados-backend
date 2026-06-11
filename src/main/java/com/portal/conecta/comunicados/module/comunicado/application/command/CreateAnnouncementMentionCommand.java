@@ -6,4 +6,9 @@ public record CreateAnnouncementMentionCommand(
 
     CreateAnnouncementMentionRequest data
 
-) {}
+) {
+
+    public static CreateAnnouncementMentionCommand fromRequest(CreateAnnouncementMentionRequest request) {
+        return new CreateAnnouncementMentionCommand(request);
+    }
+}

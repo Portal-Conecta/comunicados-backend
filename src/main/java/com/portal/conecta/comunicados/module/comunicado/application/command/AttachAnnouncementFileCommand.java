@@ -9,4 +9,12 @@ public record AttachAnnouncementFileCommand(
     CreateAnnouncementFileRequest data,
     UUID uploadedByUserId
 
-) {}
+) {
+
+    public static AttachAnnouncementFileCommand fromRequest(
+            CreateAnnouncementFileRequest request,
+            UUID uploadedByUserId
+    ) {
+        return new AttachAnnouncementFileCommand(request, uploadedByUserId);
+    }
+}

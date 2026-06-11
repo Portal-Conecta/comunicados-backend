@@ -3,6 +3,7 @@ package com.portal.conecta.comunicados.module.comunicado.presentation.dto.reques
 import java.util.UUID;
 
 import com.portal.conecta.comunicados.module.comunicado.domain.enums.AnnouncementFileType;
+import com.portal.conecta.comunicados.module.comunicado.domain.model.AnnouncementFile;
 
 import jakarta.validation.constraints.Min;
 import jakarta.validation.constraints.NotBlank;
@@ -34,4 +35,18 @@ public record CreateAnnouncementFileRequest(
 
     Boolean isThumbnail
 
-) {}
+) {
+
+    public static CreateAnnouncementFileRequest fromEntity(AnnouncementFile entity) {
+        return new CreateAnnouncementFileRequest(
+                entity.getAnnouncement() != null ? entity.getAnnouncement().getId() : null,
+                entity.getOriginalName(),
+                entity.getS3Key(),
+                entity.getS3Bucket(),
+                entity.getContentType(),
+                entity.getType(),
+                entity.getSizeBytes(),
+                entity.isThumbnail()
+        );
+    }
+}

@@ -6,4 +6,9 @@ public record CreateTagCommand(
 
     CreateTagRequest data
 
-) {}
+) {
+
+    public static CreateTagCommand fromRequest(CreateTagRequest request) {
+        return new CreateTagCommand(request);
+    }
+}

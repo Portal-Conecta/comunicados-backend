@@ -9,4 +9,12 @@ public record CreateIndividualNoticeCategoryCommand(
     CreateIndividualNoticeCategoryRequest data,
     UUID actorUserId
 
-) {}
+) {
+
+    public static CreateIndividualNoticeCategoryCommand fromRequest(
+            CreateIndividualNoticeCategoryRequest request,
+            UUID actorUserId
+    ) {
+        return new CreateIndividualNoticeCategoryCommand(request, actorUserId);
+    }
+}

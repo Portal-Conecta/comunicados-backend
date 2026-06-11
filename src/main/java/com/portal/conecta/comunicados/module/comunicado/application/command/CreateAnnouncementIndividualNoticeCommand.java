@@ -9,4 +9,12 @@ public record CreateAnnouncementIndividualNoticeCommand(
     CreateAnnouncementIndividualNoticeRequest data,
     UUID actorUserId
 
-) {}
+) {
+
+    public static CreateAnnouncementIndividualNoticeCommand fromRequest(
+            CreateAnnouncementIndividualNoticeRequest request,
+            UUID actorUserId
+    ) {
+        return new CreateAnnouncementIndividualNoticeCommand(request, actorUserId);
+    }
+}

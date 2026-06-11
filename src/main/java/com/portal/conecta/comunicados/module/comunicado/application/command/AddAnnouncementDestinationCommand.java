@@ -5,5 +5,10 @@ import com.portal.conecta.comunicados.module.comunicado.presentation.dto.request
 public record AddAnnouncementDestinationCommand(
 
     CreateAnnouncementDestinationRequest data
-    
-) {}
+
+) {
+
+    public static AddAnnouncementDestinationCommand fromRequest(CreateAnnouncementDestinationRequest request) {
+        return new AddAnnouncementDestinationCommand(request);
+    }
+}

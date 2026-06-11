@@ -2,8 +2,10 @@ package com.portal.conecta.comunicados.module.comunicado.presentation.dto.respon
 
 import com.portal.conecta.comunicados.module.comunicado.domain.enums.AnnouncementOrigin;
 import com.portal.conecta.comunicados.module.comunicado.domain.enums.AnnouncementStatus;
+import com.portal.conecta.comunicados.module.comunicado.domain.model.Announcement;
 
 import java.time.Instant;
+import java.util.List;
 import java.util.UUID;
 
 public record AnnouncementSummaryResponse(
@@ -19,4 +21,27 @@ public record AnnouncementSummaryResponse(
     Instant publishedAt,
     Instant createdAt
 
-) {}
+) {
+
+    public static AnnouncementSummaryResponse fromEntity(Announcement entity) {
+        return new AnnouncementSummaryResponse(
+                entity.getId(),
+                entity.getTitle(),
+                entity.getDescription(),
+                entity.getOrigin(),
+                entity.getStatus(),
+                entity.isPinned(),
+                entity.getPinnedOrder(),
+                entity.getScheduledFor(),
+                entity.getPublishedAt(),
+                entity.getCreatedAt()
+        );
+    }
+
+    public static List<AnnouncementSummaryResponse> fromEntities(List<Announcement> entities) {
+        if (entities == null || entities.isEmpty()) {
+            return List.of();
+        }
+        return entities.stream().map(AnnouncementSummaryResponse::fromEntity).toList();
+    }
+}

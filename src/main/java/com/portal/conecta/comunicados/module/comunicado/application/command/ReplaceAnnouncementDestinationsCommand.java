@@ -11,4 +11,13 @@ public record ReplaceAnnouncementDestinationsCommand(
     List<CreateAnnouncementDestinationRequest> destinations,
     UUID actorUserId
 
-) {}
+) {
+
+    public static ReplaceAnnouncementDestinationsCommand fromRequest(
+            UUID announcementId,
+            List<CreateAnnouncementDestinationRequest> destinations,
+            UUID actorUserId
+    ) {
+        return new ReplaceAnnouncementDestinationsCommand(announcementId, destinations, actorUserId);
+    }
+}
