@@ -2,9 +2,10 @@ package com.portal.conecta.comunicados.module.comunicado.domain.model;
 
 import java.util.UUID;
 
+import jakarta.persistence.*;
+
 import com.portal.conecta.comunicados.module.comunicado.domain.enums.AnnouncementDestinationType;
 
-import jakarta.persistence.*;
 import lombok.AllArgsConstructor;
 import lombok.Builder;
 import lombok.Data;
@@ -26,6 +27,7 @@ public class AnnouncementDestination {
     @JoinColumn(name = "announcement_id", nullable = false)
     private Announcement announcement;
     
+    @Enumerated(EnumType.STRING)
     @Column(name = "type", nullable = false)
     private AnnouncementDestinationType type;
 

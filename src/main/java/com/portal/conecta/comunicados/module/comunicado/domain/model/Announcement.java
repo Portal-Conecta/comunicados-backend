@@ -31,9 +31,11 @@ public class Announcement {
     @Column(name = "description", nullable = false)
     private String description;
 
+    @Enumerated(EnumType.STRING)
     @Column(name = "origin", nullable = false)
     private AnnouncementOrigin origin;
 
+    @Enumerated(EnumType.STRING)
     @Column(name = "status", nullable = false)
     private AnnouncementStatus status;
 
@@ -81,7 +83,4 @@ public class Announcement {
 
     @OneToMany(mappedBy = "announcement")
     private List<AnnouncementIndividualNotice> individualNotices;
-
-    @OneToMany(mappedBy = "announcement")
-    private List<IndividualNoticeCategory> individualNoticeCategories;
 }

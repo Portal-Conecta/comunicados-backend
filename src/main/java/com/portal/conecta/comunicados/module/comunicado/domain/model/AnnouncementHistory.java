@@ -3,9 +3,10 @@ package com.portal.conecta.comunicados.module.comunicado.domain.model;
 import java.time.Instant;
 import java.util.UUID;
 
+import jakarta.persistence.*;
+
 import com.portal.conecta.comunicados.module.comunicado.domain.enums.AnnouncementHistoryAction;
 
-import jakarta.persistence.*;
 import lombok.AllArgsConstructor;
 import lombok.Builder;
 import lombok.Data;
@@ -30,6 +31,7 @@ public class AnnouncementHistory {
     @Column(name = "user_id", nullable = false)
     private UUID userId;
 
+    @Enumerated(EnumType.STRING)
     @Column(name = "action", nullable = false)
     private AnnouncementHistoryAction action;
 
