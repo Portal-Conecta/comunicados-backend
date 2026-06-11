@@ -7,6 +7,9 @@ import java.time.Instant;
 import java.util.List;
 import java.util.UUID;
 
+import com.portal.conecta.comunicados.module.comunicado.domain.enums.AnnouncementFileType;
+import com.portal.conecta.comunicados.module.comunicado.domain.model.AnnouncementFile;
+
 public record AnnouncementFileResponse(
 
     UUID id,
@@ -38,6 +41,7 @@ public record AnnouncementFileResponse(
                 entity.getCreatedAt()
         );
     }
+
 
     public static List<AnnouncementFileResponse> fromEntities(List<AnnouncementFile> entities) {
         if (entities == null || entities.isEmpty()) {

@@ -20,6 +20,14 @@ public class AnnouncementPermissionValidator {
             UserType.WEG
     );
 
+    private static final EnumSet<UserType> VIEW_ALL_TYPES = EnumSet.of(
+            UserType.SENAI,
+            UserType.WEG,
+            UserType.ADMIN,
+            UserType.TEACHER,
+            UserType.REPRESENTATIVE
+     );
+  
     private static final EnumSet<UserType> CREATOR_TEACHER_OR_REPRESENTATIVE = EnumSet.of(
             UserType.TEACHER,
             UserType.REPRESENTATIVE
@@ -39,6 +47,13 @@ public class AnnouncementPermissionValidator {
         return ALLOWED_TYPES.contains(userType);
     }
 
+    public boolean canViewAll(UserType userType) {
+        if(userType == null) {
+            return false;
+        }
+        return VIEW_ALL_TYPES.contains(userType);
+    }
+  
     public boolean canDelete(UserType userType, UUID userId, Announcement announcement, UserType creatorType) {
         if (userType == null || userId == null || announcement == null) {
             return false;

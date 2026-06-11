@@ -4,6 +4,8 @@ import com.portal.conecta.comunicados.module.comunicado.domain.model.Announcemen
 
 import java.util.List;
 
+import com.portal.conecta.comunicados.module.comunicado.domain.model.Announcement;
+
 public record AnnouncementDetailResponse(
 
     AnnouncementResponse announcement,

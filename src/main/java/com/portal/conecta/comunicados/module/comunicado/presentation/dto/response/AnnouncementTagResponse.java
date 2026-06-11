@@ -5,6 +5,8 @@ import com.portal.conecta.comunicados.module.comunicado.domain.model.Announcemen
 import java.util.List;
 import java.util.UUID;
 
+import com.portal.conecta.comunicados.module.comunicado.domain.model.AnnouncementTag;
+
 public record AnnouncementTagResponse(
 
     UUID announcementId,
