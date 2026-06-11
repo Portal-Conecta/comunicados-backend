@@ -84,7 +84,7 @@ class CreateAnnouncementUseCaseTest {
                 )
         );
 
-        command = new CreateAnnouncementCommand(request, userId);
+        command = CreateAnnouncementCommand.fromRequest(request, userId);
     }
 
     @Test

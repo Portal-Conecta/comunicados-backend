@@ -8,4 +8,9 @@ public record UnlinkAnnouncementTagCommand(
     UUID tagId,
     UUID actorUserId
 
-) {}
+) {
+
+    public static UnlinkAnnouncementTagCommand of(UUID announcementId, UUID tagId, UUID actorUserId) {
+        return new UnlinkAnnouncementTagCommand(announcementId, tagId, actorUserId);
+    }
+}

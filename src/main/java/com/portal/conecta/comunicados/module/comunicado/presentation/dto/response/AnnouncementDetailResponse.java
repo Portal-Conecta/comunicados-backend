@@ -1,5 +1,7 @@
 package com.portal.conecta.comunicados.module.comunicado.presentation.dto.response;
 
+import com.portal.conecta.comunicados.module.comunicado.domain.model.Announcement;
+
 import java.util.List;
 
 import com.portal.conecta.comunicados.module.comunicado.domain.model.Announcement;
@@ -14,13 +16,13 @@ public record AnnouncementDetailResponse(
 
 ) {
 
-    public static AnnouncementDetailResponse from(Announcement entity) {
+    public static AnnouncementDetailResponse fromEntity(Announcement entity) {
         return new AnnouncementDetailResponse(
-                AnnouncementResponse.from(entity),
-                entity.getDestinations().stream().map(AnnouncementDestinationResponse::from).toList(),
-                entity.getFiles().stream().map(AnnouncementFileResponse::from).toList(),
-                entity.getTags().stream().map(AnnouncementTagResponse::from).toList(),
-                entity.getMentions().stream().map(AnnouncementMentionResponse::from).toList()
+                AnnouncementResponse.fromEntity(entity),
+                AnnouncementDestinationResponse.fromEntities(entity.getDestinations()),
+                AnnouncementFileResponse.fromEntities(entity.getFiles()),
+                AnnouncementTagResponse.fromEntities(entity.getTags()),
+                AnnouncementMentionResponse.fromEntities(entity.getMentions())
         );
     }
 }

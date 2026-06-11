@@ -5,8 +5,8 @@ import com.portal.conecta.comunicados.module.comunicado.domain.enums.Announcemen
 import com.portal.conecta.comunicados.module.comunicado.domain.model.Announcement;
 
 import java.time.Instant;
+import java.util.List;
 import java.util.UUID;
-
 
 public record AnnouncementResponse(
 
@@ -27,7 +27,7 @@ public record AnnouncementResponse(
 
 ) {
 
-    public static AnnouncementResponse from(Announcement entity) {
+    public static AnnouncementResponse fromEntity(Announcement entity) {
         return new AnnouncementResponse(
                 entity.getId(),
                 entity.getTitle(),
@@ -44,5 +44,12 @@ public record AnnouncementResponse(
                 entity.getCreatedAt(),
                 entity.getUpdatedAt()
         );
+    }
+
+    public static List<AnnouncementResponse> fromEntities(List<Announcement> entities) {
+        if (entities == null || entities.isEmpty()) {
+            return List.of();
+        }
+        return entities.stream().map(AnnouncementResponse::fromEntity).toList();
     }
 }

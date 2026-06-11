@@ -1,6 +1,10 @@
 package com.portal.conecta.comunicados.module.comunicado.presentation.dto.response;
 
+import com.portal.conecta.comunicados.module.comunicado.domain.enums.AnnouncementFileType;
+import com.portal.conecta.comunicados.module.comunicado.domain.model.AnnouncementFile;
+
 import java.time.Instant;
+import java.util.List;
 import java.util.UUID;
 
 import com.portal.conecta.comunicados.module.comunicado.domain.enums.AnnouncementFileType;
@@ -22,10 +26,10 @@ public record AnnouncementFileResponse(
 
 ) {
 
-    public static AnnouncementFileResponse from(AnnouncementFile entity) {
+    public static AnnouncementFileResponse fromEntity(AnnouncementFile entity) {
         return new AnnouncementFileResponse(
                 entity.getId(),
-                entity.getAnnouncement().getId(),
+                entity.getAnnouncement() != null ? entity.getAnnouncement().getId() : null,
                 entity.getOriginalName(),
                 entity.getS3Key(),
                 entity.getS3Bucket(),
@@ -36,5 +40,13 @@ public record AnnouncementFileResponse(
                 entity.getUploadedByUserId(),
                 entity.getCreatedAt()
         );
+    }
+
+
+    public static List<AnnouncementFileResponse> fromEntities(List<AnnouncementFile> entities) {
+        if (entities == null || entities.isEmpty()) {
+            return List.of();
+        }
+        return entities.stream().map(AnnouncementFileResponse::fromEntity).toList();
     }
 }
