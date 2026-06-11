@@ -1,14 +1,12 @@
 package com.portal.conecta.comunicados.module.comunicado.presentation.mapper;
 
 import com.portal.conecta.comunicados.module.comunicado.application.command.CreateAnnouncementCommand;
-import com.portal.conecta.comunicados.module.comunicado.application.command.PublishAnnouncementCommand;
 import com.portal.conecta.comunicados.module.comunicado.application.command.ScheduleAnnouncementCommand;
 import com.portal.conecta.comunicados.module.comunicado.application.command.UpdateAnnouncementCommand;
 import com.portal.conecta.comunicados.module.comunicado.domain.model.Announcement;
 import com.portal.conecta.comunicados.module.comunicado.presentation.dto.response.AnnouncementResponse;
 import com.portal.conecta.comunicados.module.comunicado.presentation.dto.response.AnnouncementSummaryResponse;
 import com.portal.conecta.comunicados.module.comunicado.presentation.dto.request.CreateAnnouncementRequest;
-import com.portal.conecta.comunicados.module.comunicado.presentation.dto.request.PublishAnnouncementRequest;
 import com.portal.conecta.comunicados.module.comunicado.presentation.dto.request.ScheduleAnnouncementRequest;
 import com.portal.conecta.comunicados.module.comunicado.presentation.dto.request.UpdateAnnouncementRequest;
 import org.mapstruct.BeanMapping;
@@ -55,14 +53,6 @@ public interface AnnouncementMapper {
 
     default UpdateAnnouncementCommand toUpdateCommand(UUID id, UpdateAnnouncementRequest request) {
         return new UpdateAnnouncementCommand(id, request);
-    }
-
-    default PublishAnnouncementCommand toPublishCommand(
-            UUID id,
-            PublishAnnouncementRequest request,
-            UUID publishedByUserId
-    ) {
-        return new PublishAnnouncementCommand(id, request, publishedByUserId);
     }
 
     default ScheduleAnnouncementCommand toScheduleCommand(UUID id, ScheduleAnnouncementRequest request) {

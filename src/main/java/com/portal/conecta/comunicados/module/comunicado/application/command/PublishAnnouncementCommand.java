@@ -4,10 +4,10 @@ import com.portal.conecta.comunicados.module.comunicado.presentation.dto.request
 
 import java.util.UUID;
 
-public record PublishAnnouncementCommand(
+public record PublishAnnouncementCommand(UUID id) {
 
-        UUID id,
-        PublishAnnouncementRequest data,
-        UUID publishedByUserId
+    public static  PublishAnnouncementCommand from(UUID id) {
+        return new  PublishAnnouncementCommand(id);
+    }
 
-) {}
+}

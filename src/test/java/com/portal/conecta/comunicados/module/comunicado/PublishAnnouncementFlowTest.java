@@ -11,7 +11,6 @@ import static org.springframework.test.web.servlet.request.MockMvcRequestBuilder
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.jsonPath;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
 
-import com.fasterxml.jackson.databind.ObjectMapper;
 import com.portal.conecta.comunicados.module.comunicado.application.usecase.PublishAnnouncementUseCase;
 import com.portal.conecta.comunicados.module.comunicado.domain.enums.AnnouncementDestinationType;
 import com.portal.conecta.comunicados.module.comunicado.domain.enums.AnnouncementHistoryAction;
@@ -23,7 +22,6 @@ import com.portal.conecta.comunicados.module.comunicado.domain.model.Announcemen
 import com.portal.conecta.comunicados.module.comunicado.domain.port.announcement.AnnouncementHistoryRepository;
 import com.portal.conecta.comunicados.module.comunicado.domain.port.announcement.AnnouncementRepository;
 import com.portal.conecta.comunicados.module.comunicado.presentation.controller.AnnouncementController;
-import com.portal.conecta.comunicados.module.comunicado.presentation.dto.request.PublishAnnouncementRequest;
 import com.portal.conecta.comunicados.module.comunicado.presentation.mapper.AnnouncementMapper;
 import com.portal.conecta.comunicados.shared.context.ClassRole;
 import com.portal.conecta.comunicados.shared.context.ContextClass;
@@ -37,7 +35,6 @@ import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.mapstruct.factory.Mappers;
 import org.mockito.ArgumentCaptor;
-import org.springframework.http.MediaType;
 import org.springframework.test.web.servlet.MockMvc;
 import org.springframework.test.web.servlet.setup.MockMvcBuilders;
 
@@ -47,7 +44,6 @@ class PublishAnnouncementFlowTest {
     private AnnouncementHistoryRepository announcementHistoryRepository;
     private RequestContextProvider requestContextProvider;
     private MockMvc mockMvc;
-    private ObjectMapper objectMapper;
 
     @BeforeEach
     void setUp() {
@@ -69,7 +65,6 @@ class PublishAnnouncementFlowTest {
         );
 
         mockMvc = MockMvcBuilders.standaloneSetup(controller).build();
-        objectMapper = new ObjectMapper().findAndRegisterModules();
     }
 
     @Test
@@ -87,9 +82,7 @@ class PublishAnnouncementFlowTest {
         when(announcementRepository.save(announcement))
                 .thenReturn(announcement);
 
-        mockMvc.perform(patch("/api/posts/{id}/publish", announcementId)
-                        .contentType(MediaType.APPLICATION_JSON)
-                        .content(objectMapper.writeValueAsString(new PublishAnnouncementRequest(null))))
+        mockMvc.perform(patch("/api/posts/{id}/publish", announcementId))
                 .andExpect(status().isOk())
                 .andExpect(jsonPath("$.id").value(announcementId.toString()))
                 .andExpect(jsonPath("$.status").value(AnnouncementStatus.PUBLISHED.name()))
@@ -126,9 +119,7 @@ class PublishAnnouncementFlowTest {
         when(announcementRepository.save(announcement))
                 .thenReturn(announcement);
 
-        mockMvc.perform(patch("/api/posts/{id}/publish", announcementId)
-                        .contentType(MediaType.APPLICATION_JSON)
-                        .content(objectMapper.writeValueAsString(new PublishAnnouncementRequest(null))))
+        mockMvc.perform(patch("/api/posts/{id}/publish", announcementId))
                 .andExpect(status().isOk())
                 .andExpect(jsonPath("$.status").value(AnnouncementStatus.PUBLISHED.name()));
 
@@ -148,9 +139,7 @@ class PublishAnnouncementFlowTest {
         when(announcementRepository.findByIdAndRemovedAtIsNull(announcementId))
                 .thenReturn(Optional.of(announcement));
 
-        mockMvc.perform(patch("/api/posts/{id}/publish", announcementId)
-                        .contentType(MediaType.APPLICATION_JSON)
-                        .content(objectMapper.writeValueAsString(new PublishAnnouncementRequest(null))))
+        mockMvc.perform(patch("/api/posts/{id}/publish", announcementId))
                 .andExpect(status().isForbidden());
 
         verify(announcementRepository, never()).save(any());
@@ -172,9 +161,7 @@ class PublishAnnouncementFlowTest {
         when(announcementRepository.save(announcement))
                 .thenReturn(announcement);
 
-        mockMvc.perform(patch("/api/posts/{id}/publish", announcementId)
-                        .contentType(MediaType.APPLICATION_JSON)
-                        .content(objectMapper.writeValueAsString(new PublishAnnouncementRequest(null))))
+        mockMvc.perform(patch("/api/posts/{id}/publish", announcementId))
                 .andExpect(status().isOk())
                 .andExpect(jsonPath("$.status").value(AnnouncementStatus.PUBLISHED.name()));
 
@@ -197,9 +184,7 @@ class PublishAnnouncementFlowTest {
         when(announcementRepository.findByIdAndRemovedAtIsNull(announcementId))
                 .thenReturn(Optional.of(announcement));
 
-        mockMvc.perform(patch("/api/posts/{id}/publish", announcementId)
-                        .contentType(MediaType.APPLICATION_JSON)
-                        .content(objectMapper.writeValueAsString(new PublishAnnouncementRequest(null))))
+        mockMvc.perform(patch("/api/posts/{id}/publish", announcementId))
                 .andExpect(status().isForbidden());
 
         verify(announcementRepository, never()).save(any());
@@ -216,9 +201,7 @@ class PublishAnnouncementFlowTest {
         when(announcementRepository.findByIdAndRemovedAtIsNull(announcementId))
                 .thenReturn(Optional.empty());
 
-        mockMvc.perform(patch("/api/posts/{id}/publish", announcementId)
-                        .contentType(MediaType.APPLICATION_JSON)
-                        .content(objectMapper.writeValueAsString(new PublishAnnouncementRequest(null))))
+        mockMvc.perform(patch("/api/posts/{id}/publish", announcementId))
                 .andExpect(status().isNotFound());
 
         verify(announcementRepository, never()).save(any());
@@ -238,9 +221,7 @@ class PublishAnnouncementFlowTest {
         when(announcementRepository.findByIdAndRemovedAtIsNull(announcementId))
                 .thenReturn(Optional.of(announcement));
 
-        mockMvc.perform(patch("/api/posts/{id}/publish", announcementId)
-                        .contentType(MediaType.APPLICATION_JSON)
-                        .content(objectMapper.writeValueAsString(new PublishAnnouncementRequest(null))))
+        mockMvc.perform(patch("/api/posts/{id}/publish", announcementId))
                 .andExpect(status().isConflict());
 
         verify(announcementRepository, never()).save(any());
@@ -266,9 +247,7 @@ class PublishAnnouncementFlowTest {
         when(announcementRepository.findByIdAndRemovedAtIsNull(announcementId))
                 .thenReturn(Optional.of(announcement));
 
-        mockMvc.perform(patch("/api/posts/{id}/publish", announcementId)
-                        .contentType(MediaType.APPLICATION_JSON)
-                        .content(objectMapper.writeValueAsString(new PublishAnnouncementRequest(null))))
+        mockMvc.perform(patch("/api/posts/{id}/publish", announcementId))
                 .andExpect(status().isBadRequest());
     }
 
@@ -284,9 +263,7 @@ class PublishAnnouncementFlowTest {
         when(announcementRepository.findByIdAndRemovedAtIsNull(announcementId))
                 .thenReturn(Optional.of(announcement));
 
-        mockMvc.perform(patch("/api/posts/{id}/publish", announcementId)
-                        .contentType(MediaType.APPLICATION_JSON)
-                        .content(objectMapper.writeValueAsString(new PublishAnnouncementRequest(null))))
+        mockMvc.perform(patch("/api/posts/{id}/publish", announcementId))
                 .andExpect(status().isBadRequest());
     }
 
@@ -302,9 +279,7 @@ class PublishAnnouncementFlowTest {
         when(announcementRepository.findByIdAndRemovedAtIsNull(announcementId))
                 .thenReturn(Optional.of(announcement));
 
-        mockMvc.perform(patch("/api/posts/{id}/publish", announcementId)
-                        .contentType(MediaType.APPLICATION_JSON)
-                        .content(objectMapper.writeValueAsString(new PublishAnnouncementRequest(null))))
+        mockMvc.perform(patch("/api/posts/{id}/publish", announcementId))
                 .andExpect(status().isBadRequest());
     }
 
@@ -336,4 +311,5 @@ class PublishAnnouncementFlowTest {
 
         return announcement;
     }
+
 }

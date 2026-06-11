@@ -1,7 +1,7 @@
 package com.portal.conecta.comunicados.module.comunicado.presentation.controller;
 
+import com.portal.conecta.comunicados.module.comunicado.application.command.PublishAnnouncementCommand;
 import com.portal.conecta.comunicados.module.comunicado.application.usecase.PublishAnnouncementUseCase;
-import com.portal.conecta.comunicados.module.comunicado.presentation.dto.request.PublishAnnouncementRequest;
 import com.portal.conecta.comunicados.module.comunicado.presentation.dto.response.AnnouncementResponse;
 import com.portal.conecta.comunicados.module.comunicado.presentation.mapper.AnnouncementMapper;
 import io.swagger.v3.oas.annotations.Operation;
@@ -102,15 +102,14 @@ public class AnnouncementController {
     @ApiResponses({
             @ApiResponse(responseCode = "200", description = "Publicado"),
             @ApiResponse(responseCode = "400", description = "Dados obrigatórios ausentes"),
+            @ApiResponse(responseCode = "401", description = "Token de autenticação ausente ou inválido"),
             @ApiResponse(responseCode = "403", description = "Sem permissão"),
             @ApiResponse(responseCode = "404", description = "Comunicado não encontrado"),
             @ApiResponse(responseCode = "409", description = "Comunicado não pode ser publicado nesse status")
     })
     @PatchMapping("/{id}/publish")
-    public ResponseEntity<AnnouncementResponse> publish(@PathVariable UUID id, @RequestBody(required = false) PublishAnnouncementRequest request) {
-        UUID publishedByUserId = request == null ? null : request.publishedByUserId();
-
-        var command = announcementMapper.toPublishCommand(id, request, publishedByUserId);
+    public ResponseEntity<AnnouncementResponse> publish(@PathVariable UUID id) {
+        var command = PublishAnnouncementCommand.from(id);
         var announcement = publishAnnouncementUseCase.execute(command);
         var response = announcementMapper.toResponse(announcement);
 
