@@ -28,6 +28,9 @@ import com.portal.conecta.comunicados.shared.context.ContextClass;
 import com.portal.conecta.comunicados.shared.context.RequestContext;
 import com.portal.conecta.comunicados.shared.context.RequestContextProvider;
 import com.portal.conecta.comunicados.shared.context.UserType;
+import com.portal.conecta.comunicados.module.comunicado.application.usecase.CreateAnnouncementUseCase;
+import com.portal.conecta.comunicados.shared.security.error.SecurityErrorResponseWriter;
+import com.portal.conecta.comunicados.shared.security.token.JwtExtractToken;
 
 import java.util.List;
 import java.util.Optional;
@@ -51,6 +54,7 @@ class PublishAnnouncementFlowTest {
     private AnnouncementRepository announcementRepository;
     private AnnouncementHistoryRepository announcementHistoryRepository;
     private RequestContextProvider requestContextProvider;
+    private CreateAnnouncementUseCase createAnnouncementUseCase;
     private PublishAnnouncementUseCase publishAnnouncementUseCase;
     private MockMvc mockMvc;
 
@@ -59,6 +63,7 @@ class PublishAnnouncementFlowTest {
         announcementRepository = mock(AnnouncementRepository.class);
         announcementHistoryRepository = mock(AnnouncementHistoryRepository.class);
         requestContextProvider = mock(RequestContextProvider.class);
+        createAnnouncementUseCase = mock(CreateAnnouncementUseCase.class);
 
         publishAnnouncementUseCase = new PublishAnnouncementUseCase(
                 announcementRepository,
@@ -66,7 +71,11 @@ class PublishAnnouncementFlowTest {
                 requestContextProvider
         );
 
-        AnnouncementController controller = new AnnouncementController(publishAnnouncementUseCase);
+        AnnouncementController controller = new AnnouncementController(
+                publishAnnouncementUseCase,
+                createAnnouncementUseCase,
+                requestContextProvider
+        );
 
         mockMvc = MockMvcBuilders.standaloneSetup(controller).build();
     }
@@ -417,6 +426,18 @@ class PublishAnnouncementWebMvcTest {
     @MockitoBean
     private PublishAnnouncementUseCase publishAnnouncementUseCase;
 
+    @MockitoBean
+    private CreateAnnouncementUseCase createAnnouncementUseCase;
+
+    @MockitoBean
+    private RequestContextProvider requestContextProvider;
+
+    @MockitoBean
+    private JwtExtractToken jwtExtractToken;
+
+    @MockitoBean
+    private SecurityErrorResponseWriter securityErrorResponseWriter;
+
     @Test
     void shouldPublishAnnouncementByEndpoint() throws Exception {
         UUID announcementId = UUID.randomUUID();
@@ -497,4 +518,5 @@ class PublishAnnouncementWebMvcTest {
 
         return announcement;
     }
+
 }
