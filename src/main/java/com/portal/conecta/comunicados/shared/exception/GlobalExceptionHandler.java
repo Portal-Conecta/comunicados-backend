@@ -19,6 +19,7 @@ import org.springframework.web.bind.annotation.ExceptionHandler;
 import org.springframework.web.bind.annotation.RestControllerAdvice;
 import org.springframework.web.method.annotation.MethodArgumentTypeMismatchException;
 import org.springframework.web.multipart.MaxUploadSizeExceededException;
+import org.springframework.web.server.ResponseStatusException;
 
 @RestControllerAdvice
 @Slf4j
@@ -153,6 +154,17 @@ public class GlobalExceptionHandler {
         log.warn("Invalid request body.", exception);
 
         return buildResponse(HttpStatus.BAD_REQUEST, "Invalid request body.", request);
+    }
+
+    @ExceptionHandler(ResponseStatusException.class)
+    public ResponseEntity<ApiError> handleResponseStatusException(
+            ResponseStatusException exception,
+            HttpServletRequest request
+    ) {
+        HttpStatus status = HttpStatus.valueOf(exception.getStatusCode().value());
+        String message = Objects.requireNonNullElse(exception.getReason(), exception.getMessage());
+
+        return buildResponse(status, message, request);
     }
 
     @ExceptionHandler(RuntimeException.class)

@@ -7,13 +7,11 @@ import com.portal.conecta.comunicados.module.comunicado.presentation.dto.request
 import java.time.Instant;
 import java.util.UUID;
 
-public record PublishAnnouncementCommand(
+public record PublishAnnouncementCommand(UUID id) {
 
-        UUID id,
-        PublishAnnouncementRequest data,
-        UUID publishedByUserId
-
-) {
+    public static  PublishAnnouncementCommand from(UUID id) {
+        return new  PublishAnnouncementCommand(id);
+    }
 
     public static PublishAnnouncementCommand fromRequest(
             UUID id,
@@ -30,4 +28,5 @@ public record PublishAnnouncementCommand(
         existing.setUpdatedAt(now);
         return existing;
     }
+  
 }

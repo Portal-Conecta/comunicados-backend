@@ -21,6 +21,8 @@ import com.portal.conecta.comunicados.module.comunicado.application.command.Crea
 import com.portal.conecta.comunicados.module.comunicado.application.query.GetAnnouncementByIdQuery;
 import com.portal.conecta.comunicados.module.comunicado.application.query.ListAnnouncementsQuery;
 import com.portal.conecta.comunicados.module.comunicado.application.usecase.CreateAnnouncementUseCase;
+import com.portal.conecta.comunicados.module.comunicado.application.command.PublishAnnouncementCommand;
+import com.portal.conecta.comunicados.module.comunicado.application.usecase.PublishAnnouncementUseCase;
 import com.portal.conecta.comunicados.module.comunicado.application.usecase.GetAnnouncementByIdUseCase;
 import com.portal.conecta.comunicados.module.comunicado.application.usecase.ListAnnouncementsUseCase;
 import com.portal.conecta.comunicados.module.comunicado.application.usecase.DeleteAnnouncementUseCase;
@@ -45,6 +47,7 @@ import lombok.RequiredArgsConstructor;
 @RequiredArgsConstructor
 public class AnnouncementController {
 
+    private final PublishAnnouncementUseCase publishAnnouncementUseCase;
     private final CreateAnnouncementUseCase createAnnouncementUseCase;
     private final ListAnnouncementsUseCase listAnnouncementsUseCase;
     private final GetAnnouncementByIdUseCase getAnnouncementByIdUseCase;
@@ -64,6 +67,22 @@ public class AnnouncementController {
 
         Announcement created = createAnnouncementUseCase.execute(command);
 
+        AnnouncementResponse response = new AnnouncementResponse(
+            created.getId(),
+            created.getTitle(),
+            created.getDescription(),
+            created.getOrigin(),
+            created.getStatus(),
+            created.isPinned(),
+            created.getPinnedOrder(),
+            created.getCreatedByUserId(),
+            created.getPublishedByUserId(),
+            created.getScheduledFor(),
+            created.getPublishedAt(),
+            created.getRemovedAt(),
+            created.getCreatedAt(),
+            created.getUpdatedAt()
+        );
         AnnouncementResponse response = AnnouncementResponse.fromEntity(created);
         return ResponseEntity.created(URI.create("/api/posts/" + created.getId())).body(response);
     }
@@ -140,15 +159,22 @@ public class AnnouncementController {
         return ResponseEntity.noContent().build();
     }
 
-    @Operation(summary = "Publicar comunicado", description = "RN-C04, C05. Requer destino e título.")
+    @Operation(summary = "Publicar comunicado")
     @ApiResponses({
             @ApiResponse(responseCode = "200", description = "Publicado"),
+            @ApiResponse(responseCode = "400", description = "Dados obrigatórios ausentes"),
+            @ApiResponse(responseCode = "401", description = "Token de autenticação ausente ou inválido"),
             @ApiResponse(responseCode = "403", description = "Sem permissão"),
-            @ApiResponse(responseCode = "422", description = "RN-C05 — destino obrigatório")
+            @ApiResponse(responseCode = "404", description = "Comunicado não encontrado"),
+            @ApiResponse(responseCode = "409", description = "Comunicado não pode ser publicado nesse status")
     })
     @PatchMapping("/{id}/publish")
-    public ResponseEntity<Object> publish(@PathVariable UUID id, @RequestBody(required = false) Object request) {
-        return ResponseEntity.ok(null);
+    public ResponseEntity<AnnouncementResponse> publish(@PathVariable UUID id) {
+        var command = PublishAnnouncementCommand.from(id);
+        var announcement = publishAnnouncementUseCase.execute(command);
+        var response = AnnouncementResponse.from(announcement);
+
+        return ResponseEntity.ok(response);
     }
 
     @Operation(summary = "Agendar comunicado")
