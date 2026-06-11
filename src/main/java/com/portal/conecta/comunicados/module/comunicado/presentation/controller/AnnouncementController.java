@@ -17,6 +17,7 @@ import org.springframework.web.bind.annotation.RestController;
 
 import com.portal.conecta.comunicados.module.comunicado.application.command.CreateAnnouncementCommand;
 import com.portal.conecta.comunicados.module.comunicado.application.usecase.CreateAnnouncementUseCase;
+import com.portal.conecta.comunicados.module.comunicado.application.usecase.DeleteAnnouncementUseCase;
 import com.portal.conecta.comunicados.module.comunicado.domain.model.Announcement;
 import com.portal.conecta.comunicados.module.comunicado.presentation.dto.request.CreateAnnouncementRequest;
 import com.portal.conecta.comunicados.module.comunicado.presentation.dto.response.AnnouncementResponse;
@@ -36,6 +37,7 @@ import lombok.RequiredArgsConstructor;
 public class AnnouncementController {
 
     private final CreateAnnouncementUseCase createAnnouncementUseCase;
+    private final DeleteAnnouncementUseCase deleteAnnouncementUseCase;
     private final RequestContextProvider contextProvider;
 
     @Operation(summary = "Criar comunicado")
@@ -47,27 +49,11 @@ public class AnnouncementController {
     @PostMapping
     public ResponseEntity<AnnouncementResponse> save(@Valid @RequestBody CreateAnnouncementRequest request) {
         UUID userId = contextProvider.getRequestContext().userId();
-
-        CreateAnnouncementCommand command = new CreateAnnouncementCommand(request, userId);
+        CreateAnnouncementCommand command = CreateAnnouncementCommand.fromRequest(request, userId);
 
         Announcement created = createAnnouncementUseCase.execute(command);
 
-        AnnouncementResponse response = new AnnouncementResponse(
-            created.getId(), 
-            created.getTitle(), 
-            created.getDescription(), 
-            created.getOrigin(), 
-            created.getStatus(), 
-            created.isPinned(), 
-            created.getPinnedOrder(), 
-            created.getCreatedByUserId(), 
-            created.getPublishedByUserId(), 
-            created.getScheduledFor(), 
-            created.getPublishedAt(), 
-            created.getRemovedAt(), 
-            created.getCreatedAt(), 
-            created.getUpdatedAt()
-        );
+        AnnouncementResponse response = AnnouncementResponse.fromEntity(created);
         return ResponseEntity.created(URI.create("/api/posts/" + created.getId())).body(response);
     }
 
@@ -113,6 +99,7 @@ public class AnnouncementController {
     })
     @DeleteMapping("/{id}")
     public ResponseEntity<Void> delete(@PathVariable UUID id) {
+        deleteAnnouncementUseCase.execute(id);
         return ResponseEntity.noContent().build();
     }
 

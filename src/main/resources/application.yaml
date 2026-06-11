@@ -26,4 +26,14 @@ management:
       enabled: true
 
 hub:
-  base-url: ${HUB_API_URL:http://localhost:8080}
+  api:
+    url: ${HUB_API_URL:http://localhost:8080}
+    mock-enabled: ${HUB_MOCK_ENABLED:true}
+  mock:
+    class-ids: []
+    user-ids: []
+    room-ids: []
+    user-room-links: []
+    students-by-class: {}
+    accessible-class-ids-by-user: {}
+    user-types-by-id: {}
