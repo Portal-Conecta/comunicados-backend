@@ -86,7 +86,7 @@ public class AnnouncementController {
         ListAnnouncementsQuery query = new ListAnnouncementsQuery(filter, userId);
         Page<Announcement> page = listAnnouncementsUseCase.execute(query);
 
-        return ResponseEntity.ok(ListAnnouncementsResponse.from(page));
+        return ResponseEntity.ok(ListAnnouncementsResponse.fromEntities(page));
     }
 
     @Operation(summary = "Buscar comunicado por ID")
@@ -102,7 +102,7 @@ public class AnnouncementController {
         GetAnnouncementByIdQuery query = new GetAnnouncementByIdQuery(id, userId);
         Announcement announcement = getAnnouncementByIdUseCase.execute(query);
 
-        return ResponseEntity.ok(AnnouncementDetailResponse.from(announcement));
+        return ResponseEntity.ok(AnnouncementDetailResponse.fromEntity(announcement));
     }
 
     @Operation(summary = "Atualizar comunicado completo")
