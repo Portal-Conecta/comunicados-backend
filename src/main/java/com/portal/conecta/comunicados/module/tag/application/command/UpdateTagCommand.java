@@ -22,4 +22,14 @@ public record UpdateTagCommand(
                 new UpdateTagRequest(entity.getName(), entity.isActive())
         );
     }
+
+    public Tag toEntity(Tag existing) {
+        if (data.name() != null) {
+            existing.setName(data.name());
+        }
+        if (data.active() != null) {
+            existing.setActive(data.active());
+        }
+        return existing;
+    }
 }
