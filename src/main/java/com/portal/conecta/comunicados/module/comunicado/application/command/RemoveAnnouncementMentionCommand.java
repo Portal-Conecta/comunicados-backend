@@ -8,4 +8,9 @@ public record RemoveAnnouncementMentionCommand(
     UUID userId,
     UUID actorUserId
 
-) {}
+) {
+
+    public static RemoveAnnouncementMentionCommand of(UUID announcementId, UUID userId, UUID actorUserId) {
+        return new RemoveAnnouncementMentionCommand(announcementId, userId, actorUserId);
+    }
+}

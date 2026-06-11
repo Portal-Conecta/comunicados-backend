@@ -6,5 +6,10 @@ public record RemoveAnnouncementDestinationCommand(
 
     UUID destinationId,
     UUID actorUserId
-    
-) {}
+
+) {
+
+    public static RemoveAnnouncementDestinationCommand of(UUID destinationId, UUID actorUserId) {
+        return new RemoveAnnouncementDestinationCommand(destinationId, actorUserId);
+    }
+}
