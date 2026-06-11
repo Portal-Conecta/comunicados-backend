@@ -2,6 +2,8 @@ package com.portal.conecta.comunicados.module.comunicado.presentation.dto.respon
 
 import java.util.List;
 
+import com.portal.conecta.comunicados.module.comunicado.domain.model.Announcement;
+
 public record AnnouncementDetailResponse(
 
     AnnouncementResponse announcement,
@@ -10,4 +12,15 @@ public record AnnouncementDetailResponse(
     List<AnnouncementTagResponse> tags,
     List<AnnouncementMentionResponse> mentions
 
-) {}
+) {
+
+    public static AnnouncementDetailResponse from(Announcement entity) {
+        return new AnnouncementDetailResponse(
+                AnnouncementResponse.from(entity),
+                entity.getDestinations().stream().map(AnnouncementDestinationResponse::from).toList(),
+                entity.getFiles().stream().map(AnnouncementFileResponse::from).toList(),
+                entity.getTags().stream().map(AnnouncementTagResponse::from).toList(),
+                entity.getMentions().stream().map(AnnouncementMentionResponse::from).toList()
+        );
+    }
+}

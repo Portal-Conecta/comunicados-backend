@@ -4,6 +4,7 @@ import java.time.Instant;
 import java.util.UUID;
 
 import com.portal.conecta.comunicados.module.comunicado.domain.enums.AnnouncementFileType;
+import com.portal.conecta.comunicados.module.comunicado.domain.model.AnnouncementFile;
 
 public record AnnouncementFileResponse(
 
@@ -19,4 +20,21 @@ public record AnnouncementFileResponse(
     UUID uploadedByUserId,
     Instant createdAt
 
-) {}
+) {
+
+    public static AnnouncementFileResponse from(AnnouncementFile entity) {
+        return new AnnouncementFileResponse(
+                entity.getId(),
+                entity.getAnnouncement().getId(),
+                entity.getOriginalName(),
+                entity.getS3Key(),
+                entity.getS3Bucket(),
+                entity.getContentType(),
+                entity.getType(),
+                entity.getSizeBytes(),
+                entity.isThumbnail(),
+                entity.getUploadedByUserId(),
+                entity.getCreatedAt()
+        );
+    }
+}

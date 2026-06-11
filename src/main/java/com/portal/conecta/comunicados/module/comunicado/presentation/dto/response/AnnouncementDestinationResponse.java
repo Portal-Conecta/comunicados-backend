@@ -3,6 +3,7 @@ package com.portal.conecta.comunicados.module.comunicado.presentation.dto.respon
 import java.util.UUID;
 
 import com.portal.conecta.comunicados.module.comunicado.domain.enums.AnnouncementDestinationType;
+import com.portal.conecta.comunicados.module.comunicado.domain.model.AnnouncementDestination;
 
 public record AnnouncementDestinationResponse(
 
@@ -11,4 +12,14 @@ public record AnnouncementDestinationResponse(
     AnnouncementDestinationType type,
     UUID referenceId
 
-) {}
+) {
+
+    public static AnnouncementDestinationResponse from(AnnouncementDestination entity) {
+        return new AnnouncementDestinationResponse(
+                entity.getId(),
+                entity.getAnnouncement().getId(),
+                entity.getType(),
+                entity.getReferenceId()
+        );
+    }
+}

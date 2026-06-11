@@ -1,5 +1,6 @@
 package com.portal.conecta.comunicados.shared.exception;
 
+import com.portal.conecta.comunicados.module.comunicado.domain.exception.AnnouncementNotFoundException;
 import com.portal.conecta.comunicados.module.comunicado.domain.exception.AnnouncementPermissionDeniedException;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.validation.ConstraintViolationException;
@@ -37,6 +38,14 @@ public class GlobalExceptionHandler {
             HttpServletRequest request
     ) {
         return buildResponse(HttpStatus.FORBIDDEN, exception, request);
+    }
+
+    @ExceptionHandler(AnnouncementNotFoundException.class)
+    public ResponseEntity<ApiError> handleNotFound(
+            AnnouncementNotFoundException exception,
+            HttpServletRequest request
+    ) {
+        return buildResponse(HttpStatus.NOT_FOUND, exception, request);
     }
 
     @ExceptionHandler(DataIntegrityViolationException.class)
