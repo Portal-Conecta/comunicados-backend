@@ -1,9 +1,10 @@
 package com.portal.conecta.comunicados.module.comunicado.presentation.dto.response;
 
-import com.portal.conecta.comunicados.module.comunicado.domain.model.Announcement;
+import java.util.List;
+
 import org.springframework.data.domain.Page;
 
-import java.util.List;
+import com.portal.conecta.comunicados.module.comunicado.domain.model.Announcement;
 
 public record ListAnnouncementsResponse(
 
@@ -15,11 +16,11 @@ public record ListAnnouncementsResponse(
 
 ) {
 
-    public static ListAnnouncementsResponse from(Page<Announcement> page) {
+    public static ListAnnouncementsResponse fromPage(Page<Announcement> page) {
         return new ListAnnouncementsResponse(
                 page.getContent()
                         .stream()
-                        .map(AnnouncementSummaryResponse::from)
+                        .map(AnnouncementSummaryResponse::fromEntity)
                         .toList(),
                 page.getNumber(),
                 page.getSize(),

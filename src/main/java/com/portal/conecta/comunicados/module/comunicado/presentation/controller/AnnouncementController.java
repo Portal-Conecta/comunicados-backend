@@ -86,7 +86,7 @@ public class AnnouncementController {
         ListAnnouncementsQuery query = new ListAnnouncementsQuery(filter, userId);
         Page<Announcement> page = listAnnouncementsUseCase.execute(query);
 
-        return ResponseEntity.ok(ListAnnouncementsResponse.fromEntities(page));
+        return ResponseEntity.ok(ListAnnouncementsResponse.fromPage(page));
     }
 
     @Operation(summary = "Buscar comunicado por ID")
