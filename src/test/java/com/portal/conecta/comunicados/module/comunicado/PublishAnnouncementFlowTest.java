@@ -22,7 +22,6 @@ import com.portal.conecta.comunicados.module.comunicado.domain.model.Announcemen
 import com.portal.conecta.comunicados.module.comunicado.domain.port.announcement.AnnouncementHistoryRepository;
 import com.portal.conecta.comunicados.module.comunicado.domain.port.announcement.AnnouncementRepository;
 import com.portal.conecta.comunicados.module.comunicado.presentation.controller.AnnouncementController;
-import com.portal.conecta.comunicados.module.comunicado.presentation.mapper.AnnouncementMapper;
 import com.portal.conecta.comunicados.shared.context.ClassRole;
 import com.portal.conecta.comunicados.shared.context.ContextClass;
 import com.portal.conecta.comunicados.shared.context.RequestContext;
@@ -33,7 +32,6 @@ import java.util.Optional;
 import java.util.UUID;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
-import org.mapstruct.factory.Mappers;
 import org.mockito.ArgumentCaptor;
 import org.springframework.test.web.servlet.MockMvc;
 import org.springframework.test.web.servlet.setup.MockMvcBuilders;
@@ -57,11 +55,9 @@ class PublishAnnouncementFlowTest {
                 requestContextProvider
         );
 
-        AnnouncementMapper announcementMapper = Mappers.getMapper(AnnouncementMapper.class);
 
         AnnouncementController controller = new AnnouncementController(
-                publishAnnouncementUseCase,
-                announcementMapper
+                publishAnnouncementUseCase
         );
 
         mockMvc = MockMvcBuilders.standaloneSetup(controller).build();

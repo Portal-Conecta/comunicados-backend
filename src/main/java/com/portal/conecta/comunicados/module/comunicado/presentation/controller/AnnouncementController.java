@@ -3,7 +3,6 @@ package com.portal.conecta.comunicados.module.comunicado.presentation.controller
 import com.portal.conecta.comunicados.module.comunicado.application.command.PublishAnnouncementCommand;
 import com.portal.conecta.comunicados.module.comunicado.application.usecase.PublishAnnouncementUseCase;
 import com.portal.conecta.comunicados.module.comunicado.presentation.dto.response.AnnouncementResponse;
-import com.portal.conecta.comunicados.module.comunicado.presentation.mapper.AnnouncementMapper;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.responses.ApiResponse;
 import io.swagger.v3.oas.annotations.responses.ApiResponses;
@@ -22,14 +21,11 @@ import java.util.UUID;
 public class AnnouncementController {
 
     private final PublishAnnouncementUseCase publishAnnouncementUseCase;
-    private final AnnouncementMapper announcementMapper;
 
     public AnnouncementController(
-            PublishAnnouncementUseCase publishAnnouncementUseCase,
-            AnnouncementMapper announcementMapper
+            PublishAnnouncementUseCase publishAnnouncementUseCase
     ) {
         this.publishAnnouncementUseCase = publishAnnouncementUseCase;
-        this.announcementMapper = announcementMapper;
     }
 
     @Operation(summary = "Criar comunicado")
@@ -111,7 +107,7 @@ public class AnnouncementController {
     public ResponseEntity<AnnouncementResponse> publish(@PathVariable UUID id) {
         var command = PublishAnnouncementCommand.from(id);
         var announcement = publishAnnouncementUseCase.execute(command);
-        var response = announcementMapper.toResponse(announcement);
+        var response = AnnouncementResponse.from(announcement);
 
         return ResponseEntity.ok(response);
     }
