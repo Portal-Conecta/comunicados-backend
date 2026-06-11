@@ -23,7 +23,6 @@ public record AnnouncementDestinationResponse(
                 entity.getReferenceId()
         );
     }
-}
 
     public static List<AnnouncementDestinationResponse> fromEntities(List<AnnouncementDestination> entities) {
         if (entities == null || entities.isEmpty()) {
