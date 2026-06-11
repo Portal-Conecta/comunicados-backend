@@ -45,12 +45,14 @@ public class PublishAnnouncementUseCase {
 
         validateCanPublish(announcement, context);
 
+        Instant now = Instant.now();
+
         announcement.setStatus(AnnouncementStatus.PUBLISHED);
-        announcement.setPublishedAt(Instant.now());
+        announcement.setPublishedAt(now);
         announcement.setPublishedByUserId(context.userId());
 
         Announcement savedAnnouncement = announcementRepository.save(announcement);
-        saveHistory(savedAnnouncement, context.userId());
+        saveHistory(savedAnnouncement, context.userId(), now);
 
         return savedAnnouncement;
     }
@@ -115,7 +117,9 @@ public class PublishAnnouncementUseCase {
     }
 
     private boolean canPublishLinkedClasses(Announcement announcement, RequestContext context, ClassRole requiredRole) {
-        List<UUID> allowedClassIds = context.classes().stream()
+        List<ContextClass> contextClasses = context.classes() == null ? List.of() : context.classes();
+
+        List<UUID> allowedClassIds = contextClasses.stream()
                 .filter(contextClass -> contextClass.role() == requiredRole)
                 .map(ContextClass::classId)
                 .toList();
@@ -141,14 +145,14 @@ public class PublishAnnouncementUseCase {
         return new ResponseStatusException(HttpStatus.FORBIDDEN, "Usuário sem permissão para publicar este comunicado!");
     }
 
-    private void saveHistory(Announcement announcement, UUID publishedByUserId) {
+    private void saveHistory(Announcement announcement, UUID publishedByUserId, Instant now) {
         AnnouncementHistory history = new AnnouncementHistory();
 
         history.setAnnouncement(announcement);
         history.setUserId(publishedByUserId);
         history.setAction(AnnouncementHistoryAction.PUBLICATION);
         history.setSnapshot(createSnapshot(announcement));
-        history.setCreatedAt(Instant.now());
+        history.setCreatedAt(now);
 
         announcementHistoryRepository.save(history);
     }

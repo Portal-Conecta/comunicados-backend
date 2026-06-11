@@ -166,6 +166,51 @@ class PublishAnnouncementFlowTest {
     }
 
     @Test
+    void shouldPublishWhenRepresentativeHasOwnClass() throws Exception {
+        UUID announcementId = UUID.randomUUID();
+        UUID userId = UUID.randomUUID();
+        UUID classId = UUID.randomUUID();
+
+        Announcement announcement = createValidAnnouncementForClass(announcementId, classId);
+
+        when(requestContextProvider.getRequestContext())
+                .thenReturn(createContext(userId, UserType.REPRESENTATIVE, new ContextClass(classId, ClassRole.REPRESENTATIVE)));
+        when(announcementRepository.findByIdAndRemovedAtIsNull(announcementId))
+                .thenReturn(Optional.of(announcement));
+        when(announcementRepository.save(announcement))
+                .thenReturn(announcement);
+
+        mockMvc.perform(patch("/api/posts/{id}/publish", announcementId))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.status").value(AnnouncementStatus.PUBLISHED.name()));
+
+        verify(announcementRepository).save(announcement);
+        verify(announcementHistoryRepository).save(any(AnnouncementHistory.class));
+    }
+
+    @Test
+    void shouldReturnForbiddenWhenRepresentativeHasDifferentClass() throws Exception {
+        UUID announcementId = UUID.randomUUID();
+        UUID userId = UUID.randomUUID();
+
+        UUID announcementClassId = UUID.randomUUID();
+        UUID representativeClassId = UUID.randomUUID();
+
+        Announcement announcement = createValidAnnouncementForClass(announcementId, announcementClassId);
+
+        when(requestContextProvider.getRequestContext())
+                .thenReturn(createContext(userId, UserType.REPRESENTATIVE, new ContextClass(representativeClassId, ClassRole.REPRESENTATIVE)));
+        when(announcementRepository.findByIdAndRemovedAtIsNull(announcementId))
+                .thenReturn(Optional.of(announcement));
+
+        mockMvc.perform(patch("/api/posts/{id}/publish", announcementId))
+                .andExpect(status().isForbidden());
+
+        verify(announcementRepository, never()).save(any());
+        verify(announcementHistoryRepository, never()).save(any());
+    }
+
+    @Test
     void shouldReturnForbiddenWhenTeacherHasNoLinkedClass() throws Exception {
         UUID announcementId = UUID.randomUUID();
         UUID userId = UUID.randomUUID();
@@ -177,6 +222,26 @@ class PublishAnnouncementFlowTest {
 
         when(requestContextProvider.getRequestContext())
                 .thenReturn(createContext(userId, UserType.TEACHER, new ContextClass(teacherClassId, ClassRole.TEACHER)));
+        when(announcementRepository.findByIdAndRemovedAtIsNull(announcementId))
+                .thenReturn(Optional.of(announcement));
+
+        mockMvc.perform(patch("/api/posts/{id}/publish", announcementId))
+                .andExpect(status().isForbidden());
+
+        verify(announcementRepository, never()).save(any());
+        verify(announcementHistoryRepository, never()).save(any());
+    }
+
+    @Test
+    void shouldReturnForbiddenWhenTeacherHasNoClassesInContext() throws Exception {
+        UUID announcementId = UUID.randomUUID();
+        UUID userId = UUID.randomUUID();
+        UUID classId = UUID.randomUUID();
+
+        Announcement announcement = createValidAnnouncementForClass(announcementId, classId);
+
+        when(requestContextProvider.getRequestContext())
+                .thenReturn(new RequestContext(userId, UserType.TEACHER, null));
         when(announcementRepository.findByIdAndRemovedAtIsNull(announcementId))
                 .thenReturn(Optional.of(announcement));
 
