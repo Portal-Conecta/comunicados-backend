@@ -4,9 +4,11 @@ import java.net.URI;
 import java.util.List;
 import java.util.UUID;
 
+import org.springframework.data.domain.Page;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.DeleteMapping;
 import org.springframework.web.bind.annotation.GetMapping;
+import org.springframework.web.bind.annotation.ModelAttribute;
 import org.springframework.web.bind.annotation.PatchMapping;
 import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.PostMapping;
@@ -16,10 +18,17 @@ import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
 
 import com.portal.conecta.comunicados.module.comunicado.application.command.CreateAnnouncementCommand;
+import com.portal.conecta.comunicados.module.comunicado.application.query.GetAnnouncementByIdQuery;
+import com.portal.conecta.comunicados.module.comunicado.application.query.ListAnnouncementsQuery;
 import com.portal.conecta.comunicados.module.comunicado.application.usecase.CreateAnnouncementUseCase;
+import com.portal.conecta.comunicados.module.comunicado.application.usecase.GetAnnouncementByIdUseCase;
+import com.portal.conecta.comunicados.module.comunicado.application.usecase.ListAnnouncementsUseCase;
 import com.portal.conecta.comunicados.module.comunicado.domain.model.Announcement;
 import com.portal.conecta.comunicados.module.comunicado.presentation.dto.request.CreateAnnouncementRequest;
+import com.portal.conecta.comunicados.module.comunicado.presentation.dto.request.PostFilterRequest;
+import com.portal.conecta.comunicados.module.comunicado.presentation.dto.response.AnnouncementDetailResponse;
 import com.portal.conecta.comunicados.module.comunicado.presentation.dto.response.AnnouncementResponse;
+import com.portal.conecta.comunicados.module.comunicado.presentation.dto.response.ListAnnouncementsResponse;
 import com.portal.conecta.comunicados.shared.context.RequestContextProvider;
 
 import io.swagger.v3.oas.annotations.Operation;
@@ -36,6 +45,8 @@ import lombok.RequiredArgsConstructor;
 public class AnnouncementController {
 
     private final CreateAnnouncementUseCase createAnnouncementUseCase;
+    private final ListAnnouncementsUseCase listAnnouncementsUseCase;
+    private final GetAnnouncementByIdUseCase getAnnouncementByIdUseCase;
     private final RequestContextProvider contextProvider;
 
     @Operation(summary = "Criar comunicado")
@@ -71,15 +82,41 @@ public class AnnouncementController {
         return ResponseEntity.created(URI.create("/api/posts/" + created.getId())).body(response);
     }
 
+    @Operation(
+            summary = "Listar comunicados",
+            description = "Lista paginada de comunicados visíveis ao perfil autenticado, em ordem "
+                    + "cronológica decrescente. Comunicados removidos nunca aparecem. Aceita filtros "
+                    + "por origem (WEG/SENAI/BOTH), turma e intervalo de publicação."
+    )
+    @ApiResponses({
+            @ApiResponse(responseCode = "200", description = "Lista retornada"),
+            @ApiResponse(responseCode = "400", description = "Parâmetros de filtro inválidos"),
+            @ApiResponse(responseCode = "401", description = "Não autenticado")
+    })
+    @GetMapping
+    public ResponseEntity<ListAnnouncementsResponse> list(@Valid @ModelAttribute PostFilterRequest filter) {
+        UUID userId = contextProvider.getRequestContext().userId();
+
+        ListAnnouncementsQuery query = new ListAnnouncementsQuery(filter, userId);
+        Page<Announcement> page = listAnnouncementsUseCase.execute(query);
+
+        return ResponseEntity.ok(ListAnnouncementsResponse.from(page));
+    }
+
     @Operation(summary = "Buscar comunicado por ID")
     @ApiResponses({
             @ApiResponse(responseCode = "200", description = "Comunicado encontrado"),
-            @ApiResponse(responseCode = "404", description = "Não encontrado"),
-            @ApiResponse(responseCode = "403", description = "Fora do escopo")
+            @ApiResponse(responseCode = "404", description = "Não encontrado ou fora do escopo"),
+            @ApiResponse(responseCode = "401", description = "Não autenticado")
     })
     @GetMapping("/{id}")
-    public ResponseEntity<Object> getById(@PathVariable UUID id) {
-        return ResponseEntity.ok(null);
+    public ResponseEntity<AnnouncementDetailResponse> getById(@PathVariable UUID id) {
+        UUID userId = contextProvider.getRequestContext().userId();
+
+        GetAnnouncementByIdQuery query = new GetAnnouncementByIdQuery(id, userId);
+        Announcement announcement = getAnnouncementByIdUseCase.execute(query);
+
+        return ResponseEntity.ok(AnnouncementDetailResponse.from(announcement));
     }
 
     @Operation(summary = "Atualizar comunicado completo")
