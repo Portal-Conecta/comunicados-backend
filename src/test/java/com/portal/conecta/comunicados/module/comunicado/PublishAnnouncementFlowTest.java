@@ -28,9 +28,18 @@ import com.portal.conecta.comunicados.shared.context.ContextClass;
 import com.portal.conecta.comunicados.shared.context.RequestContext;
 import com.portal.conecta.comunicados.shared.context.RequestContextProvider;
 import com.portal.conecta.comunicados.shared.context.UserType;
+
 import java.util.List;
 import java.util.Optional;
 import java.util.UUID;
+import java.time.Instant;
+
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.boot.webmvc.test.autoconfigure.AutoConfigureMockMvc;
+import org.springframework.boot.webmvc.test.autoconfigure.WebMvcTest;
+import org.springframework.http.HttpStatus;
+import org.springframework.test.context.bean.override.mockito.MockitoBean;
+import org.springframework.web.server.ResponseStatusException;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.mockito.ArgumentCaptor;
@@ -392,6 +401,99 @@ class PublishAnnouncementFlowTest {
 
         Announcement announcement = createValidAnnouncement(announcementId);
         announcement.setDestinations(List.of(destination));
+
+        return announcement;
+    }
+
+}
+
+@WebMvcTest(AnnouncementController.class)
+@AutoConfigureMockMvc(addFilters = false)
+class PublishAnnouncementWebMvcTest {
+
+    @Autowired
+    private MockMvc mockMvc;
+
+    @MockitoBean
+    private PublishAnnouncementUseCase publishAnnouncementUseCase;
+
+    @Test
+    void shouldPublishAnnouncementByEndpoint() throws Exception {
+        UUID announcementId = UUID.randomUUID();
+        UUID userId = UUID.randomUUID();
+
+        Announcement announcement = createPublishedAnnouncement(announcementId, userId);
+
+        when(publishAnnouncementUseCase.execute(PublishAnnouncementCommand.from(announcementId)))
+                .thenReturn(announcement);
+
+        mockMvc.perform(patch("/api/posts/{id}/publish", announcementId))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.id").value(announcementId.toString()))
+                .andExpect(jsonPath("$.status").value(AnnouncementStatus.PUBLISHED.name()))
+                .andExpect(jsonPath("$.publishedByUserId").value(userId.toString()));
+    }
+
+    @Test
+    void shouldReturnBadRequestByEndpoint() throws Exception {
+        UUID announcementId = UUID.randomUUID();
+
+        when(publishAnnouncementUseCase.execute(PublishAnnouncementCommand.from(announcementId)))
+                .thenThrow(new ResponseStatusException(HttpStatus.BAD_REQUEST, "Dados obrigatórios ausentes"));
+
+        mockMvc.perform(patch("/api/posts/{id}/publish", announcementId))
+                .andExpect(status().isBadRequest());
+    }
+
+    @Test
+    void shouldReturnForbiddenByEndpoint() throws Exception {
+        UUID announcementId = UUID.randomUUID();
+
+        when(publishAnnouncementUseCase.execute(PublishAnnouncementCommand.from(announcementId)))
+                .thenThrow(new ResponseStatusException(HttpStatus.FORBIDDEN, "Sem permissão"));
+
+        mockMvc.perform(patch("/api/posts/{id}/publish", announcementId))
+                .andExpect(status().isForbidden());
+    }
+
+    @Test
+    void shouldReturnNotFoundByEndpoint() throws Exception {
+        UUID announcementId = UUID.randomUUID();
+
+        when(publishAnnouncementUseCase.execute(PublishAnnouncementCommand.from(announcementId)))
+                .thenThrow(new ResponseStatusException(HttpStatus.NOT_FOUND, "Comunicado não encontrado"));
+
+        mockMvc.perform(patch("/api/posts/{id}/publish", announcementId))
+                .andExpect(status().isNotFound());
+    }
+
+    @Test
+    void shouldReturnConflictByEndpoint() throws Exception {
+        UUID announcementId = UUID.randomUUID();
+
+        when(publishAnnouncementUseCase.execute(PublishAnnouncementCommand.from(announcementId)))
+                .thenThrow(new ResponseStatusException(HttpStatus.CONFLICT, "Status inválido para publicação"));
+
+        mockMvc.perform(patch("/api/posts/{id}/publish", announcementId))
+                .andExpect(status().isConflict());
+    }
+
+    private Announcement createPublishedAnnouncement(UUID announcementId, UUID userId) {
+        Instant now = Instant.now();
+
+        Announcement announcement = new Announcement();
+
+        announcement.setId(announcementId);
+        announcement.setTitle("Comunicado publicado");
+        announcement.setDescription("Descricao do comunicado publicado");
+        announcement.setOrigin(AnnouncementOrigin.SENAI);
+        announcement.setStatus(AnnouncementStatus.PUBLISHED);
+        announcement.setPinned(false);
+        announcement.setCreatedByUserId(userId);
+        announcement.setPublishedByUserId(userId);
+        announcement.setPublishedAt(now);
+        announcement.setCreatedAt(now);
+        announcement.setUpdatedAt(now);
 
         return announcement;
     }
