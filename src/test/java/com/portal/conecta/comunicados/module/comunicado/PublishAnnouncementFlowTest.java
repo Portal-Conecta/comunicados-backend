@@ -11,6 +11,7 @@ import static org.springframework.test.web.servlet.request.MockMvcRequestBuilder
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.jsonPath;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
 
+import com.portal.conecta.comunicados.module.comunicado.application.command.PublishAnnouncementCommand;
 import com.portal.conecta.comunicados.module.comunicado.application.usecase.PublishAnnouncementUseCase;
 import com.portal.conecta.comunicados.module.comunicado.domain.enums.AnnouncementDestinationType;
 import com.portal.conecta.comunicados.module.comunicado.domain.enums.AnnouncementHistoryAction;
@@ -41,6 +42,7 @@ class PublishAnnouncementFlowTest {
     private AnnouncementRepository announcementRepository;
     private AnnouncementHistoryRepository announcementHistoryRepository;
     private RequestContextProvider requestContextProvider;
+    private PublishAnnouncementUseCase publishAnnouncementUseCase;
     private MockMvc mockMvc;
 
     @BeforeEach
@@ -49,16 +51,13 @@ class PublishAnnouncementFlowTest {
         announcementHistoryRepository = mock(AnnouncementHistoryRepository.class);
         requestContextProvider = mock(RequestContextProvider.class);
 
-        PublishAnnouncementUseCase publishAnnouncementUseCase = new PublishAnnouncementUseCase(
+        publishAnnouncementUseCase = new PublishAnnouncementUseCase(
                 announcementRepository,
                 announcementHistoryRepository,
                 requestContextProvider
         );
 
-
-        AnnouncementController controller = new AnnouncementController(
-                publishAnnouncementUseCase
-        );
+        AnnouncementController controller = new AnnouncementController(publishAnnouncementUseCase);
 
         mockMvc = MockMvcBuilders.standaloneSetup(controller).build();
     }
@@ -98,6 +97,30 @@ class PublishAnnouncementFlowTest {
         assertEquals(AnnouncementHistoryAction.PUBLICATION, history.getAction());
         assertNotNull(history.getSnapshot());
         assertNotNull(history.getCreatedAt());
+    }
+
+    @Test
+    void shouldPublishDraftAnnouncementDirectlyInUseCase() {
+        UUID announcementId = UUID.randomUUID();
+        UUID userId = UUID.randomUUID();
+
+        Announcement announcement = createValidAnnouncement(announcementId);
+
+        when(requestContextProvider.getRequestContext())
+                .thenReturn(createContext(userId, UserType.SENAI));
+        when(announcementRepository.findByIdAndRemovedAtIsNull(announcementId))
+                .thenReturn(Optional.of(announcement));
+        when(announcementRepository.save(announcement))
+                .thenReturn(announcement);
+
+        Announcement result = publishAnnouncementUseCase.execute(PublishAnnouncementCommand.from(announcementId));
+
+        assertEquals(AnnouncementStatus.PUBLISHED, result.getStatus());
+        assertEquals(userId, result.getPublishedByUserId());
+        assertNotNull(result.getPublishedAt());
+
+        verify(announcementRepository).save(announcement);
+        verify(announcementHistoryRepository).save(any(AnnouncementHistory.class));
     }
 
     @Test
@@ -353,7 +376,7 @@ class PublishAnnouncementFlowTest {
 
         announcement.setId(announcementId);
         announcement.setTitle("Comunicado de teste");
-        announcement.setDescription("Descrição do comunicado de teste");
+        announcement.setDescription("Descricao do comunicado de teste");
         announcement.setOrigin(AnnouncementOrigin.SENAI);
         announcement.setStatus(AnnouncementStatus.DRAFT);
         announcement.setPinned(false);
@@ -372,5 +395,4 @@ class PublishAnnouncementFlowTest {
 
         return announcement;
     }
-
 }
