@@ -18,14 +18,14 @@ import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
 
 import com.portal.conecta.comunicados.module.comunicado.application.command.CreateAnnouncementCommand;
+import com.portal.conecta.comunicados.module.comunicado.application.command.PublishAnnouncementCommand;
 import com.portal.conecta.comunicados.module.comunicado.application.query.GetAnnouncementByIdQuery;
 import com.portal.conecta.comunicados.module.comunicado.application.query.ListAnnouncementsQuery;
 import com.portal.conecta.comunicados.module.comunicado.application.usecase.CreateAnnouncementUseCase;
-import com.portal.conecta.comunicados.module.comunicado.application.command.PublishAnnouncementCommand;
-import com.portal.conecta.comunicados.module.comunicado.application.usecase.PublishAnnouncementUseCase;
+import com.portal.conecta.comunicados.module.comunicado.application.usecase.DeleteAnnouncementUseCase;
 import com.portal.conecta.comunicados.module.comunicado.application.usecase.GetAnnouncementByIdUseCase;
 import com.portal.conecta.comunicados.module.comunicado.application.usecase.ListAnnouncementsUseCase;
-import com.portal.conecta.comunicados.module.comunicado.application.usecase.DeleteAnnouncementUseCase;
+import com.portal.conecta.comunicados.module.comunicado.application.usecase.PublishAnnouncementUseCase;
 import com.portal.conecta.comunicados.module.comunicado.domain.model.Announcement;
 import com.portal.conecta.comunicados.module.comunicado.presentation.dto.request.CreateAnnouncementRequest;
 import com.portal.conecta.comunicados.module.comunicado.presentation.dto.request.PostFilterRequest;
@@ -67,22 +67,6 @@ public class AnnouncementController {
 
         Announcement created = createAnnouncementUseCase.execute(command);
 
-        AnnouncementResponse response = new AnnouncementResponse(
-            created.getId(),
-            created.getTitle(),
-            created.getDescription(),
-            created.getOrigin(),
-            created.getStatus(),
-            created.isPinned(),
-            created.getPinnedOrder(),
-            created.getCreatedByUserId(),
-            created.getPublishedByUserId(),
-            created.getScheduledFor(),
-            created.getPublishedAt(),
-            created.getRemovedAt(),
-            created.getCreatedAt(),
-            created.getUpdatedAt()
-        );
         AnnouncementResponse response = AnnouncementResponse.fromEntity(created);
         return ResponseEntity.created(URI.create("/api/posts/" + created.getId())).body(response);
     }
@@ -172,7 +156,7 @@ public class AnnouncementController {
     public ResponseEntity<AnnouncementResponse> publish(@PathVariable UUID id) {
         var command = PublishAnnouncementCommand.from(id);
         var announcement = publishAnnouncementUseCase.execute(command);
-        var response = AnnouncementResponse.from(announcement);
+        var response = AnnouncementResponse.fromEntity(announcement);
 
         return ResponseEntity.ok(response);
     }

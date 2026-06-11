@@ -29,6 +29,9 @@ import com.portal.conecta.comunicados.shared.context.RequestContext;
 import com.portal.conecta.comunicados.shared.context.RequestContextProvider;
 import com.portal.conecta.comunicados.shared.context.UserType;
 import com.portal.conecta.comunicados.module.comunicado.application.usecase.CreateAnnouncementUseCase;
+import com.portal.conecta.comunicados.module.comunicado.application.usecase.DeleteAnnouncementUseCase;
+import com.portal.conecta.comunicados.module.comunicado.application.usecase.GetAnnouncementByIdUseCase;
+import com.portal.conecta.comunicados.module.comunicado.application.usecase.ListAnnouncementsUseCase;
 import com.portal.conecta.comunicados.shared.security.error.SecurityErrorResponseWriter;
 import com.portal.conecta.comunicados.shared.security.token.JwtExtractToken;
 
@@ -55,6 +58,9 @@ class PublishAnnouncementFlowTest {
     private AnnouncementHistoryRepository announcementHistoryRepository;
     private RequestContextProvider requestContextProvider;
     private CreateAnnouncementUseCase createAnnouncementUseCase;
+    private ListAnnouncementsUseCase listAnnouncementsUseCase;
+    private GetAnnouncementByIdUseCase getAnnouncementByIdUseCase;
+    private DeleteAnnouncementUseCase deleteAnnouncementUseCase;
     private PublishAnnouncementUseCase publishAnnouncementUseCase;
     private MockMvc mockMvc;
 
@@ -64,6 +70,9 @@ class PublishAnnouncementFlowTest {
         announcementHistoryRepository = mock(AnnouncementHistoryRepository.class);
         requestContextProvider = mock(RequestContextProvider.class);
         createAnnouncementUseCase = mock(CreateAnnouncementUseCase.class);
+        listAnnouncementsUseCase = mock(ListAnnouncementsUseCase.class);
+        getAnnouncementByIdUseCase = mock(GetAnnouncementByIdUseCase.class);
+        deleteAnnouncementUseCase = mock(DeleteAnnouncementUseCase.class);
 
         publishAnnouncementUseCase = new PublishAnnouncementUseCase(
                 announcementRepository,
@@ -74,6 +83,9 @@ class PublishAnnouncementFlowTest {
         AnnouncementController controller = new AnnouncementController(
                 publishAnnouncementUseCase,
                 createAnnouncementUseCase,
+                listAnnouncementsUseCase,
+                getAnnouncementByIdUseCase,
+                deleteAnnouncementUseCase,
                 requestContextProvider
         );
 
@@ -428,6 +440,15 @@ class PublishAnnouncementWebMvcTest {
 
     @MockitoBean
     private CreateAnnouncementUseCase createAnnouncementUseCase;
+
+    @MockitoBean
+    private ListAnnouncementsUseCase listAnnouncementsUseCase;
+
+    @MockitoBean
+    private GetAnnouncementByIdUseCase getAnnouncementByIdUseCase;
+
+    @MockitoBean
+    private DeleteAnnouncementUseCase deleteAnnouncementUseCase;
 
     @MockitoBean
     private RequestContextProvider requestContextProvider;
