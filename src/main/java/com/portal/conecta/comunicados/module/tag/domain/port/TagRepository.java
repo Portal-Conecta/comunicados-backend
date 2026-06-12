@@ -1,16 +1,13 @@
 package com.portal.conecta.comunicados.module.tag.domain.port;
 
-import java.util.Optional;
-import java.util.UUID;
-
+import com.portal.conecta.comunicados.module.tag.domain.model.Tag;
+import com.portal.conecta.comunicados.module.tag.domain.enums.TagEntityType;
 import org.springframework.data.jpa.repository.JpaRepository;
 
-import com.portal.conecta.comunicados.module.tag.domain.enums.TagEntityType;
-import com.portal.conecta.comunicados.module.tag.domain.model.Tag;
+import java.util.List;
+import java.util.UUID;
 
 public interface TagRepository extends JpaRepository<Tag, UUID> {
 
-    java.util.List<Tag> findByEntityTypeAndActiveTrue(TagEntityType entityType);
-
-    Optional<Tag> findByEntityTypeAndHubEntityId(TagEntityType entityType, UUID hubEntityId);
+    List<Tag> findByEntityTypeAndActiveTrue(TagEntityType entityType);
 }
