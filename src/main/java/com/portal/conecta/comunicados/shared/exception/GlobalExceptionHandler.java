@@ -17,6 +17,7 @@ import org.springframework.validation.BindException;
 import org.springframework.validation.FieldError;
 import org.springframework.web.bind.MethodArgumentNotValidException;
 import org.springframework.web.bind.MissingServletRequestParameterException;
+import org.springframework.web.HttpRequestMethodNotSupportedException;
 import org.springframework.web.bind.annotation.ExceptionHandler;
 import org.springframework.web.bind.annotation.RestControllerAdvice;
 import org.springframework.web.method.annotation.MethodArgumentTypeMismatchException;
@@ -183,6 +184,14 @@ public class GlobalExceptionHandler {
         String message = Objects.requireNonNullElse(exception.getReason(), exception.getMessage());
 
         return buildResponse(status, message, request);
+    }
+
+    @ExceptionHandler(HttpRequestMethodNotSupportedException.class)
+    public ResponseEntity<ApiError> handleMethodNotSupported(
+            HttpRequestMethodNotSupportedException exception,
+            HttpServletRequest request
+    ) {
+        return buildResponse(HttpStatus.METHOD_NOT_ALLOWED, exception.getMessage(), request);
     }
 
     @ExceptionHandler(RuntimeException.class)

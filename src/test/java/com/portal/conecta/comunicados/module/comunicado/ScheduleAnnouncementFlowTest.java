@@ -12,7 +12,6 @@ import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
 
 import com.portal.conecta.comunicados.module.comunicado.application.command.ScheduleAnnouncementCommand;
-import com.portal.conecta.comunicados.module.comunicado.application.usecase.CreateAnnouncementUseCase;
 import com.portal.conecta.comunicados.module.comunicado.application.usecase.DeleteAnnouncementUseCase;
 import com.portal.conecta.comunicados.module.comunicado.application.usecase.GetAnnouncementByIdUseCase;
 import com.portal.conecta.comunicados.module.comunicado.application.usecase.ListAnnouncementsUseCase;
@@ -27,6 +26,7 @@ import com.portal.conecta.comunicados.module.comunicado.domain.model.Announcemen
 import com.portal.conecta.comunicados.module.comunicado.domain.model.AnnouncementHistory;
 import com.portal.conecta.comunicados.module.comunicado.domain.port.announcement.AnnouncementHistoryRepository;
 import com.portal.conecta.comunicados.module.comunicado.domain.port.announcement.AnnouncementRepository;
+import com.portal.conecta.comunicados.module.comunicado.domain.validator.AnnouncementPermissionValidator;
 import com.portal.conecta.comunicados.module.comunicado.presentation.controller.AnnouncementController;
 import com.portal.conecta.comunicados.module.comunicado.presentation.dto.request.ScheduleAnnouncementRequest;
 import com.portal.conecta.comunicados.shared.context.ClassRole;
@@ -62,7 +62,6 @@ class ScheduleAnnouncementFlowTest {
     private AnnouncementRepository announcementRepository;
     private AnnouncementHistoryRepository announcementHistoryRepository;
     private RequestContextProvider requestContextProvider;
-    private CreateAnnouncementUseCase createAnnouncementUseCase;
     private ListAnnouncementsUseCase listAnnouncementsUseCase;
     private GetAnnouncementByIdUseCase getAnnouncementByIdUseCase;
     private DeleteAnnouncementUseCase deleteAnnouncementUseCase;
@@ -75,7 +74,6 @@ class ScheduleAnnouncementFlowTest {
         announcementRepository = mock(AnnouncementRepository.class);
         announcementHistoryRepository = mock(AnnouncementHistoryRepository.class);
         requestContextProvider = mock(RequestContextProvider.class);
-        createAnnouncementUseCase = mock(CreateAnnouncementUseCase.class);
         listAnnouncementsUseCase = mock(ListAnnouncementsUseCase.class);
         getAnnouncementByIdUseCase = mock(GetAnnouncementByIdUseCase.class);
         deleteAnnouncementUseCase = mock(DeleteAnnouncementUseCase.class);
@@ -84,13 +82,13 @@ class ScheduleAnnouncementFlowTest {
         scheduleAnnouncementUseCase = new ScheduleAnnouncementUseCase(
                 announcementRepository,
                 announcementHistoryRepository,
-                requestContextProvider
+                requestContextProvider,
+                new AnnouncementPermissionValidator()
         );
 
         AnnouncementController controller = new AnnouncementController(
                 publishAnnouncementUseCase,
                 scheduleAnnouncementUseCase,
-                createAnnouncementUseCase,
                 listAnnouncementsUseCase,
                 getAnnouncementByIdUseCase,
                 deleteAnnouncementUseCase,
@@ -103,7 +101,7 @@ class ScheduleAnnouncementFlowTest {
     }
 
     @Test
-    void shouldScheduleDraftAnnouncement() throws Exception {
+    void shouldScheduleAnnouncement() throws Exception {
         UUID announcementId = UUID.randomUUID();
         UUID userId = UUID.randomUUID();
         Instant scheduledFor = Instant.now().plus(1, ChronoUnit.DAYS);
@@ -141,7 +139,7 @@ class ScheduleAnnouncementFlowTest {
     }
 
     @Test
-    void shouldScheduleDraftAnnouncementDirectlyInUseCase() {
+    void shouldScheduleAnnouncementDirectlyInUseCase() {
         UUID announcementId = UUID.randomUUID();
         UUID userId = UUID.randomUUID();
         Instant scheduledFor = Instant.now().plus(2, ChronoUnit.HOURS);
@@ -341,7 +339,7 @@ class ScheduleAnnouncementFlowTest {
         announcement.setTitle("Comunicado de teste");
         announcement.setDescription("Descricao do comunicado de teste");
         announcement.setOrigin(AnnouncementOrigin.SENAI);
-        announcement.setStatus(AnnouncementStatus.DRAFT);
+        announcement.setStatus(AnnouncementStatus.SCHEDULED);
         announcement.setPinned(false);
         announcement.setDestinations(List.of(new AnnouncementDestination()));
 
@@ -372,9 +370,6 @@ class ScheduleAnnouncementWebMvcTest {
 
     @MockitoBean
     private ScheduleAnnouncementUseCase scheduleAnnouncementUseCase;
-
-    @MockitoBean
-    private CreateAnnouncementUseCase createAnnouncementUseCase;
 
     @MockitoBean
     private ListAnnouncementsUseCase listAnnouncementsUseCase;

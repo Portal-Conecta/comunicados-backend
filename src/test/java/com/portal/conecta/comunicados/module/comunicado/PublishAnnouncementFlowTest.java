@@ -1,17 +1,36 @@
 package com.portal.conecta.comunicados.module.comunicado;
 
+import java.time.Instant;
+import java.util.List;
+import java.util.Optional;
+import java.util.UUID;
+
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
+import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Test;
+import org.mockito.ArgumentCaptor;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.never;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.boot.webmvc.test.autoconfigure.AutoConfigureMockMvc;
+import org.springframework.boot.webmvc.test.autoconfigure.WebMvcTest;
+import org.springframework.http.HttpStatus;
+import org.springframework.test.context.bean.override.mockito.MockitoBean;
+import org.springframework.test.web.servlet.MockMvc;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.patch;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.jsonPath;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
+import org.springframework.test.web.servlet.setup.MockMvcBuilders;
+import org.springframework.web.server.ResponseStatusException;
 
 import com.portal.conecta.comunicados.module.comunicado.application.command.PublishAnnouncementCommand;
+import com.portal.conecta.comunicados.module.comunicado.application.usecase.DeleteAnnouncementUseCase;
+import com.portal.conecta.comunicados.module.comunicado.application.usecase.GetAnnouncementByIdUseCase;
+import com.portal.conecta.comunicados.module.comunicado.application.usecase.ListAnnouncementsUseCase;
 import com.portal.conecta.comunicados.module.comunicado.application.usecase.PublishAnnouncementUseCase;
 import com.portal.conecta.comunicados.module.comunicado.application.usecase.ScheduleAnnouncementUseCase;
 import com.portal.conecta.comunicados.module.comunicado.domain.enums.AnnouncementDestinationType;
@@ -23,42 +42,21 @@ import com.portal.conecta.comunicados.module.comunicado.domain.model.Announcemen
 import com.portal.conecta.comunicados.module.comunicado.domain.model.AnnouncementHistory;
 import com.portal.conecta.comunicados.module.comunicado.domain.port.announcement.AnnouncementHistoryRepository;
 import com.portal.conecta.comunicados.module.comunicado.domain.port.announcement.AnnouncementRepository;
+import com.portal.conecta.comunicados.module.comunicado.domain.validator.AnnouncementPermissionValidator;
 import com.portal.conecta.comunicados.module.comunicado.presentation.controller.AnnouncementController;
 import com.portal.conecta.comunicados.shared.context.ClassRole;
 import com.portal.conecta.comunicados.shared.context.ContextClass;
 import com.portal.conecta.comunicados.shared.context.RequestContext;
 import com.portal.conecta.comunicados.shared.context.RequestContextProvider;
 import com.portal.conecta.comunicados.shared.context.UserType;
-import com.portal.conecta.comunicados.module.comunicado.application.usecase.CreateAnnouncementUseCase;
-import com.portal.conecta.comunicados.module.comunicado.application.usecase.DeleteAnnouncementUseCase;
-import com.portal.conecta.comunicados.module.comunicado.application.usecase.GetAnnouncementByIdUseCase;
-import com.portal.conecta.comunicados.module.comunicado.application.usecase.ListAnnouncementsUseCase;
 import com.portal.conecta.comunicados.shared.security.error.SecurityErrorResponseWriter;
 import com.portal.conecta.comunicados.shared.security.token.JwtExtractToken;
-
-import java.util.List;
-import java.util.Optional;
-import java.util.UUID;
-import java.time.Instant;
-
-import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.boot.webmvc.test.autoconfigure.AutoConfigureMockMvc;
-import org.springframework.boot.webmvc.test.autoconfigure.WebMvcTest;
-import org.springframework.http.HttpStatus;
-import org.springframework.test.context.bean.override.mockito.MockitoBean;
-import org.springframework.web.server.ResponseStatusException;
-import org.junit.jupiter.api.BeforeEach;
-import org.junit.jupiter.api.Test;
-import org.mockito.ArgumentCaptor;
-import org.springframework.test.web.servlet.MockMvc;
-import org.springframework.test.web.servlet.setup.MockMvcBuilders;
 
 class PublishAnnouncementFlowTest {
 
     private AnnouncementRepository announcementRepository;
     private AnnouncementHistoryRepository announcementHistoryRepository;
     private RequestContextProvider requestContextProvider;
-    private CreateAnnouncementUseCase createAnnouncementUseCase;
     private ListAnnouncementsUseCase listAnnouncementsUseCase;
     private GetAnnouncementByIdUseCase getAnnouncementByIdUseCase;
     private DeleteAnnouncementUseCase deleteAnnouncementUseCase;
@@ -71,7 +69,6 @@ class PublishAnnouncementFlowTest {
         announcementRepository = mock(AnnouncementRepository.class);
         announcementHistoryRepository = mock(AnnouncementHistoryRepository.class);
         requestContextProvider = mock(RequestContextProvider.class);
-        createAnnouncementUseCase = mock(CreateAnnouncementUseCase.class);
         listAnnouncementsUseCase = mock(ListAnnouncementsUseCase.class);
         getAnnouncementByIdUseCase = mock(GetAnnouncementByIdUseCase.class);
         deleteAnnouncementUseCase = mock(DeleteAnnouncementUseCase.class);
@@ -79,14 +76,14 @@ class PublishAnnouncementFlowTest {
         publishAnnouncementUseCase = new PublishAnnouncementUseCase(
                 announcementRepository,
                 announcementHistoryRepository,
-                requestContextProvider
+                requestContextProvider,
+                new AnnouncementPermissionValidator()
         );
         scheduleAnnouncementUseCase = mock(ScheduleAnnouncementUseCase.class);
 
         AnnouncementController controller = new AnnouncementController(
                 publishAnnouncementUseCase,
                 scheduleAnnouncementUseCase,
-                createAnnouncementUseCase,
                 listAnnouncementsUseCase,
                 getAnnouncementByIdUseCase,
                 deleteAnnouncementUseCase,
@@ -97,12 +94,11 @@ class PublishAnnouncementFlowTest {
     }
 
     @Test
-    void shouldPublishDraftAnnouncement() throws Exception {
+    void shouldPublishScheduledAnnouncement() throws Exception {
         UUID announcementId = UUID.randomUUID();
         UUID userId = UUID.randomUUID();
 
         Announcement announcement = createValidAnnouncement(announcementId);
-        announcement.setStatus(AnnouncementStatus.DRAFT);
 
         when(requestContextProvider.getRequestContext())
                 .thenReturn(createContext(userId, UserType.SENAI));
@@ -134,7 +130,7 @@ class PublishAnnouncementFlowTest {
     }
 
     @Test
-    void shouldPublishDraftAnnouncementDirectlyInUseCase() {
+    void shouldPublishScheduledAnnouncementDirectlyInUseCase() {
         UUID announcementId = UUID.randomUUID();
         UUID userId = UUID.randomUUID();
 
@@ -152,29 +148,6 @@ class PublishAnnouncementFlowTest {
         assertEquals(AnnouncementStatus.PUBLISHED, result.getStatus());
         assertEquals(userId, result.getPublishedByUserId());
         assertNotNull(result.getPublishedAt());
-
-        verify(announcementRepository).save(announcement);
-        verify(announcementHistoryRepository).save(any(AnnouncementHistory.class));
-    }
-
-    @Test
-    void shouldPublishScheduledAnnouncement() throws Exception {
-        UUID announcementId = UUID.randomUUID();
-        UUID userId = UUID.randomUUID();
-
-        Announcement announcement = createValidAnnouncement(announcementId);
-        announcement.setStatus(AnnouncementStatus.SCHEDULED);
-
-        when(requestContextProvider.getRequestContext())
-                .thenReturn(createContext(userId, UserType.WEG));
-        when(announcementRepository.findByIdAndRemovedAtIsNull(announcementId))
-                .thenReturn(Optional.of(announcement));
-        when(announcementRepository.save(announcement))
-                .thenReturn(announcement);
-
-        mockMvc.perform(patch("/api/posts/{id}/publish", announcementId))
-                .andExpect(status().isOk())
-                .andExpect(jsonPath("$.status").value(AnnouncementStatus.PUBLISHED.name()));
 
         verify(announcementRepository).save(announcement);
         verify(announcementHistoryRepository).save(any(AnnouncementHistory.class));
@@ -412,7 +385,7 @@ class PublishAnnouncementFlowTest {
         announcement.setTitle("Comunicado de teste");
         announcement.setDescription("Descricao do comunicado de teste");
         announcement.setOrigin(AnnouncementOrigin.SENAI);
-        announcement.setStatus(AnnouncementStatus.DRAFT);
+        announcement.setStatus(AnnouncementStatus.SCHEDULED);
         announcement.setPinned(false);
         announcement.setDestinations(List.of(new AnnouncementDestination()));
 
@@ -444,9 +417,6 @@ class PublishAnnouncementWebMvcTest {
 
     @MockitoBean
     private ScheduleAnnouncementUseCase scheduleAnnouncementUseCase;
-
-    @MockitoBean
-    private CreateAnnouncementUseCase createAnnouncementUseCase;
 
     @MockitoBean
     private ListAnnouncementsUseCase listAnnouncementsUseCase;
@@ -521,7 +491,7 @@ class PublishAnnouncementWebMvcTest {
         UUID announcementId = UUID.randomUUID();
 
         when(publishAnnouncementUseCase.execute(PublishAnnouncementCommand.from(announcementId)))
-                .thenThrow(new ResponseStatusException(HttpStatus.CONFLICT, "Somente comunicados em rascunho ou agendados podem ser publicados!"));
+                .thenThrow(new ResponseStatusException(HttpStatus.CONFLICT, "Somente comunicados agendados podem ser publicados!"));
 
         mockMvc.perform(patch("/api/posts/{id}/publish", announcementId))
                 .andExpect(status().isConflict());

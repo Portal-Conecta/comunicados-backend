@@ -1,10 +1,9 @@
 package com.portal.conecta.comunicados.module.comunicado.presentation.dto.response;
 
-import com.portal.conecta.comunicados.module.comunicado.domain.model.Announcement;
-
 import java.util.List;
 
 import com.portal.conecta.comunicados.module.comunicado.domain.model.Announcement;
+
 
 public record AnnouncementDetailResponse(
 

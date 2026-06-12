@@ -3,7 +3,6 @@ package com.portal.conecta.comunicados.module.comunicado.presentation.dto.reques
 import java.time.Instant;
 
 import com.portal.conecta.comunicados.module.comunicado.domain.enums.AnnouncementOrigin;
-import com.portal.conecta.comunicados.module.comunicado.domain.enums.AnnouncementStatus;
 import com.portal.conecta.comunicados.module.comunicado.domain.model.Announcement;
 
 import jakarta.validation.constraints.Min;
@@ -15,7 +14,6 @@ public record UpdateAnnouncementRequest(
     String title,
     String description,
     AnnouncementOrigin origin,
-    AnnouncementStatus status,
     Boolean pinned,
     @Min(0)
     Short pinnedOrder,
@@ -28,7 +26,6 @@ public record UpdateAnnouncementRequest(
                 entity.getTitle(),
                 entity.getDescription(),
                 entity.getOrigin(),
-                entity.getStatus(),
                 entity.isPinned(),
                 entity.getPinnedOrder(),
                 entity.getScheduledFor()

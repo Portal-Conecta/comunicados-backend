@@ -17,19 +17,16 @@ import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
 
-import com.portal.conecta.comunicados.module.comunicado.application.command.CreateAnnouncementCommand;
 import com.portal.conecta.comunicados.module.comunicado.application.command.PublishAnnouncementCommand;
 import com.portal.conecta.comunicados.module.comunicado.application.command.ScheduleAnnouncementCommand;
 import com.portal.conecta.comunicados.module.comunicado.application.query.GetAnnouncementByIdQuery;
 import com.portal.conecta.comunicados.module.comunicado.application.query.ListAnnouncementsQuery;
-import com.portal.conecta.comunicados.module.comunicado.application.usecase.CreateAnnouncementUseCase;
 import com.portal.conecta.comunicados.module.comunicado.application.usecase.DeleteAnnouncementUseCase;
 import com.portal.conecta.comunicados.module.comunicado.application.usecase.GetAnnouncementByIdUseCase;
 import com.portal.conecta.comunicados.module.comunicado.application.usecase.ListAnnouncementsUseCase;
 import com.portal.conecta.comunicados.module.comunicado.application.usecase.PublishAnnouncementUseCase;
 import com.portal.conecta.comunicados.module.comunicado.application.usecase.ScheduleAnnouncementUseCase;
 import com.portal.conecta.comunicados.module.comunicado.domain.model.Announcement;
-import com.portal.conecta.comunicados.module.comunicado.presentation.dto.request.CreateAnnouncementRequest;
 import com.portal.conecta.comunicados.module.comunicado.presentation.dto.request.PostFilterRequest;
 import com.portal.conecta.comunicados.module.comunicado.presentation.dto.request.ScheduleAnnouncementRequest;
 import com.portal.conecta.comunicados.module.comunicado.presentation.dto.response.AnnouncementDetailResponse;
@@ -52,28 +49,10 @@ public class AnnouncementController {
 
     private final PublishAnnouncementUseCase publishAnnouncementUseCase;
     private final ScheduleAnnouncementUseCase scheduleAnnouncementUseCase;
-    private final CreateAnnouncementUseCase createAnnouncementUseCase;
     private final ListAnnouncementsUseCase listAnnouncementsUseCase;
     private final GetAnnouncementByIdUseCase getAnnouncementByIdUseCase;
     private final DeleteAnnouncementUseCase deleteAnnouncementUseCase;
     private final RequestContextProvider contextProvider;
-
-    @Operation(summary = "Criar comunicado")
-    @ApiResponses({
-            @ApiResponse(responseCode = "201", description = "Criado com sucesso"),
-            @ApiResponse(responseCode = "400", description = "Validação falhou"),
-            @ApiResponse(responseCode = "403", description = "Sem permissão")
-    })
-    @PostMapping
-    public ResponseEntity<AnnouncementResponse> save(@Valid @RequestBody CreateAnnouncementRequest request) {
-        UUID userId = contextProvider.getRequestContext().userId();
-        CreateAnnouncementCommand command = CreateAnnouncementCommand.fromRequest(request, userId);
-
-        Announcement created = createAnnouncementUseCase.execute(command);
-
-        AnnouncementResponse response = AnnouncementResponse.fromEntity(created);
-        return ResponseEntity.created(URI.create("/api/posts/" + created.getId())).body(response);
-    }
 
     @Operation(
             summary = "Listar comunicados",
@@ -147,7 +126,12 @@ public class AnnouncementController {
         return ResponseEntity.noContent().build();
     }
 
-    @Operation(summary = "Publicar comunicado")
+    @Deprecated
+    @Operation(
+            summary = "Publicar comunicado agendado (legado)",
+            description = "Transiciona SCHEDULED → PUBLISHED. Preferir POST /api/posts/publish (#107) para "
+                    + "criação + publicação atômica. Este endpoint permanece para o job de agendamento."
+    )
     @ApiResponses({
             @ApiResponse(responseCode = "200", description = "Publicado"),
             @ApiResponse(responseCode = "400", description = "Dados obrigatórios ausentes"),
@@ -165,7 +149,12 @@ public class AnnouncementController {
         return ResponseEntity.ok(response);
     }
 
-    @Operation(summary = "Agendar comunicado")
+    @Deprecated
+    @Operation(
+            summary = "Reagendar comunicado (legado)",
+            description = "Atualiza a data de um comunicado SCHEDULED. Preferir POST /api/posts/schedule (#108) "
+                    + "para criação + agendamento atômico."
+    )
     @ApiResponses({
             @ApiResponse(responseCode = "200", description = "Agendado"),
             @ApiResponse(responseCode = "400", description = "Data de agendamento no passado ou dados obrigatórios ausentes"),
