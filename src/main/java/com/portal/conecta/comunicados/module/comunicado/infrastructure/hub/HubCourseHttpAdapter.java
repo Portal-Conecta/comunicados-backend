@@ -2,6 +2,8 @@ package com.portal.conecta.comunicados.module.comunicado.infrastructure.hub;
 
 import com.portal.conecta.comunicados.module.comunicado.domain.port.hub.HubCoursePort;
 import lombok.extern.slf4j.Slf4j;
+import org.springframework.beans.factory.annotation.Qualifier;
+import org.springframework.boot.autoconfigure.condition.ConditionalOnProperty;
 import org.springframework.http.HttpHeaders;
 import org.springframework.stereotype.Component;
 import org.springframework.web.client.RestClient;
@@ -16,13 +18,14 @@ import java.util.UUID;
 
 @Component
 @Slf4j
+@ConditionalOnProperty(prefix = "hub.api", name = "mock-enabled", havingValue = "false")
 public class HubCourseHttpAdapter implements HubCoursePort {
 
     private static final String MY_COURSES_PATH = "/me/courses";
 
     private final RestClient hubRestClient;
 
-    public HubCourseHttpAdapter(RestClient hubRestClient) {
+    public HubCourseHttpAdapter(@Qualifier("hubRestClient") RestClient hubRestClient) {
         this.hubRestClient = hubRestClient;
     }
 
