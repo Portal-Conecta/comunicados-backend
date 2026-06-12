@@ -1,10 +1,12 @@
 package com.portal.conecta.comunicados.module.comunicado.domain.port.support;
 
+import com.portal.conecta.comunicados.module.comunicado.domain.model.hub.HubUser;
+import com.portal.conecta.comunicados.shared.context.RequestContext;
+import com.portal.conecta.comunicados.shared.context.UserType;
+
+import java.util.List;
 import java.util.Optional;
 import java.util.UUID;
-
-import com.portal.conecta.comunicados.module.comunicado.domain.model.hub.HubUser;
-import com.portal.conecta.comunicados.shared.context.UserType;
 
 public interface HubUserPort {
 
@@ -13,4 +15,6 @@ public interface HubUserPort {
     Optional<HubUser> findById(UUID userId);
 
     Optional<UserType> findUserTypeById(UUID userId);
+
+    List<UUID> findUserIdsByNameContaining(String term, RequestContext context);
 }

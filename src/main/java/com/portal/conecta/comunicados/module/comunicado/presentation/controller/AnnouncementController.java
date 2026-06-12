@@ -60,7 +60,8 @@ public class AnnouncementController {
             summary = "Listar comunicados",
             description = "Lista paginada de comunicados visíveis ao perfil autenticado, em ordem "
                     + "cronológica decrescente. Comunicados removidos nunca aparecem. Aceita filtros "
-                    + "por origem (WEG/SENAI/BOTH), turma e intervalo de publicação."
+                    + "por origem (WEG/SENAI/BOTH), turma, intervalo de publicação e termo de busca "
+                    + "textual (`search`) em título, descrição, tags e destinatários."
     )
     @ApiResponses({
             @ApiResponse(responseCode = "200", description = "Lista retornada"),
