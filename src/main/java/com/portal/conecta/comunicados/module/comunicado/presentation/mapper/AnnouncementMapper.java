@@ -51,8 +51,8 @@ public interface AnnouncementMapper {
         return new CreateAnnouncementCommand(request, createdByUserId);
     }
 
-    default UpdateAnnouncementCommand toUpdateCommand(UUID id, UpdateAnnouncementRequest request) {
-        return new UpdateAnnouncementCommand(id, request);
+    default UpdateAnnouncementCommand toUpdateCommand(UUID id, UpdateAnnouncementRequest request, UUID updatedByUserId) {
+        return UpdateAnnouncementCommand.fromRequest(id, request, updatedByUserId);
     }
 
     default ScheduleAnnouncementCommand toScheduleCommand(UUID id, ScheduleAnnouncementRequest request) {

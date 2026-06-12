@@ -33,6 +33,9 @@ import com.portal.conecta.comunicados.module.comunicado.presentation.dto.respons
 import com.portal.conecta.comunicados.module.comunicado.presentation.dto.response.AnnouncementResponse;
 import com.portal.conecta.comunicados.module.comunicado.presentation.dto.response.ListAnnouncementsResponse;
 import com.portal.conecta.comunicados.shared.context.RequestContextProvider;
+import com.portal.conecta.comunicados.module.comunicado.application.command.UpdateAnnouncementCommand;
+import com.portal.conecta.comunicados.module.comunicado.application.usecase.UpdateAnnouncementUseCase;
+import com.portal.conecta.comunicados.module.comunicado.presentation.dto.request.UpdateAnnouncementRequest;
 
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.responses.ApiResponse;
@@ -53,6 +56,7 @@ public class AnnouncementController {
     private final GetAnnouncementByIdUseCase getAnnouncementByIdUseCase;
     private final DeleteAnnouncementUseCase deleteAnnouncementUseCase;
     private final RequestContextProvider contextProvider;
+    private final UpdateAnnouncementUseCase updateAnnouncementUseCase;
 
     @Operation(summary = "Criar comunicado")
     @ApiResponses({
@@ -111,13 +115,21 @@ public class AnnouncementController {
     @Operation(summary = "Atualizar comunicado completo")
     @ApiResponses({
             @ApiResponse(responseCode = "200", description = "Atualizado"),
-            @ApiResponse(responseCode = "403", description = "Sem permissão"),
-            @ApiResponse(responseCode = "404", description = "Não encontrado"),
-            @ApiResponse(responseCode = "422", description = "Regra de negócio violada")
+            @ApiResponse(responseCode = "403", description = "Sem permissao"),
+            @ApiResponse(responseCode = "404", description = "Nao encontrado"),
+            @ApiResponse(responseCode = "409", description = "Comunicado removido nao pode ser editado")
     })
     @PutMapping("/{id}")
-    public ResponseEntity<Object> update(@PathVariable UUID id, @Valid @RequestBody Object request) {
-        return ResponseEntity.ok(null);
+    public ResponseEntity<AnnouncementResponse> update(
+            @PathVariable UUID id,
+            @Valid @RequestBody UpdateAnnouncementRequest request
+    ) {
+        UUID userId = contextProvider.getRequestContext().userId();
+        UpdateAnnouncementCommand command = UpdateAnnouncementCommand.fromRequest(id, request, userId);
+
+        Announcement updated = updateAnnouncementUseCase.execute(command);
+
+        return ResponseEntity.ok(AnnouncementResponse.fromEntity(updated));
     }
 
     @Operation(summary = "Atualizar comunicado parcialmente")
