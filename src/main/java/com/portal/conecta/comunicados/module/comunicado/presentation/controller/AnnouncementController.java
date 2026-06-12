@@ -28,10 +28,12 @@ import com.portal.conecta.comunicados.module.comunicado.application.usecase.Publ
 import com.portal.conecta.comunicados.module.comunicado.application.usecase.ScheduleAnnouncementUseCase;
 import com.portal.conecta.comunicados.module.comunicado.domain.model.Announcement;
 import com.portal.conecta.comunicados.module.comunicado.presentation.dto.request.PostFilterRequest;
+import com.portal.conecta.comunicados.module.comunicado.presentation.dto.request.PublishAnnouncementRequest;
 import com.portal.conecta.comunicados.module.comunicado.presentation.dto.request.ScheduleAnnouncementRequest;
 import com.portal.conecta.comunicados.module.comunicado.presentation.dto.response.AnnouncementDetailResponse;
 import com.portal.conecta.comunicados.module.comunicado.presentation.dto.response.AnnouncementResponse;
 import com.portal.conecta.comunicados.module.comunicado.presentation.dto.response.ListAnnouncementsResponse;
+import com.portal.conecta.comunicados.shared.context.RequestContext;
 import com.portal.conecta.comunicados.shared.context.RequestContextProvider;
 
 import io.swagger.v3.oas.annotations.Operation;
@@ -126,52 +128,52 @@ public class AnnouncementController {
         return ResponseEntity.noContent().build();
     }
 
-    @Deprecated
     @Operation(
-            summary = "Publicar comunicado agendado (legado)",
-            description = "Transiciona SCHEDULED → PUBLISHED. Preferir POST /api/posts/publish (#107) para "
-                    + "criação + publicação atômica. Este endpoint permanece para o job de agendamento."
+            summary = "Publicar comunicado",
+            description = "Cria e publica o comunicado numa única transação (#107): nasce PUBLISHED, com "
+                    + "destinos e histórico (CREATION + PUBLICATION). O autor/publicador é o usuário autenticado."
     )
     @ApiResponses({
-            @ApiResponse(responseCode = "200", description = "Publicado"),
-            @ApiResponse(responseCode = "400", description = "Dados obrigatórios ausentes"),
-            @ApiResponse(responseCode = "401", description = "Token de autenticação ausente ou inválido"),
-            @ApiResponse(responseCode = "403", description = "Sem permissão"),
-            @ApiResponse(responseCode = "404", description = "Comunicado não encontrado"),
-            @ApiResponse(responseCode = "409", description = "Comunicado não pode ser publicado nesse status")
+            @ApiResponse(responseCode = "201", description = "Comunicado criado e publicado"),
+            @ApiResponse(responseCode = "400", description = "Dados obrigatórios ausentes ou inválidos"),
+            @ApiResponse(responseCode = "401", description = "Não autenticado"),
+            @ApiResponse(responseCode = "403", description = "Sem permissão / fora do escopo (PA02/PA03)")
     })
-    @PatchMapping("/{id}/publish")
-    public ResponseEntity<AnnouncementResponse> publish(@PathVariable UUID id) {
-        var command = PublishAnnouncementCommand.from(id);
-        var announcement = publishAnnouncementUseCase.execute(command);
-        var response = AnnouncementResponse.fromEntity(announcement);
+    @PostMapping("/publish")
+    public ResponseEntity<AnnouncementResponse> publish(@Valid @RequestBody PublishAnnouncementRequest request) {
+        RequestContext context = contextProvider.getRequestContext();
 
-        return ResponseEntity.ok(response);
+        PublishAnnouncementCommand command = PublishAnnouncementCommand.from(request, context);
+        Announcement published = publishAnnouncementUseCase.execute(command);
+
+        return created(published);
     }
 
-    @Deprecated
     @Operation(
-            summary = "Reagendar comunicado (legado)",
-            description = "Atualiza a data de um comunicado SCHEDULED. Preferir POST /api/posts/schedule (#108) "
-                    + "para criação + agendamento atômico."
+            summary = "Agendar comunicado",
+            description = "Cria e agenda o comunicado numa única transação (#108): nasce SCHEDULED, com "
+                    + "destinos e histórico (CREATION + SCHEDULED). scheduledFor precisa ser futuro."
     )
     @ApiResponses({
-            @ApiResponse(responseCode = "200", description = "Agendado"),
-            @ApiResponse(responseCode = "400", description = "Data de agendamento no passado ou dados obrigatórios ausentes"),
+            @ApiResponse(responseCode = "201", description = "Comunicado criado e agendado"),
+            @ApiResponse(responseCode = "400", description = "Data no passado ou dados obrigatórios ausentes"),
             @ApiResponse(responseCode = "401", description = "Não autenticado"),
-            @ApiResponse(responseCode = "403", description = "Sem permissão — APRENDIZ"),
-            @ApiResponse(responseCode = "404", description = "Comunicado não encontrado"),
-            @ApiResponse(responseCode = "409", description = "Comunicado não pode ser agendado nesse status")
+            @ApiResponse(responseCode = "403", description = "Sem permissão / fora do escopo")
     })
-    @PatchMapping("/{id}/schedule")
-    public ResponseEntity<AnnouncementResponse> schedule(
-            @PathVariable UUID id,
-            @Valid @RequestBody ScheduleAnnouncementRequest request
-    ) {
-        ScheduleAnnouncementCommand command = ScheduleAnnouncementCommand.fromRequest(id, request);
+    @PostMapping("/schedule")
+    public ResponseEntity<AnnouncementResponse> schedule(@Valid @RequestBody ScheduleAnnouncementRequest request) {
+        RequestContext context = contextProvider.getRequestContext();
+
+        ScheduleAnnouncementCommand command = ScheduleAnnouncementCommand.from(request, context);
         Announcement scheduled = scheduleAnnouncementUseCase.execute(command);
 
-        return ResponseEntity.ok(AnnouncementResponse.fromEntity(scheduled));
+        return created(scheduled);
+    }
+
+    private ResponseEntity<AnnouncementResponse> created(Announcement announcement) {
+        return ResponseEntity
+                .created(URI.create("/api/posts/" + announcement.getId()))
+                .body(AnnouncementResponse.fromEntity(announcement));
     }
 
     @Operation(summary = "Cancelar agendamento")

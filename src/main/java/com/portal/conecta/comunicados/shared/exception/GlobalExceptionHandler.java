@@ -1,5 +1,6 @@
 package com.portal.conecta.comunicados.shared.exception;
 
+import com.portal.conecta.comunicados.module.comunicado.domain.exception.AnnouncementMustBeInTheFutureException;
 import com.portal.conecta.comunicados.module.comunicado.domain.exception.AnnouncementNotFoundException;
 import com.portal.conecta.comunicados.module.comunicado.domain.exception.AnnouncementPermissionDeniedException;
 import com.portal.conecta.comunicados.module.tag.domain.exception.TagNotFoundException;
@@ -66,6 +67,14 @@ public class GlobalExceptionHandler {
             HttpServletRequest request
     ) {
         return buildResponse(HttpStatus.NOT_FOUND, exception, request);
+    }
+
+    @ExceptionHandler(AnnouncementMustBeInTheFutureException.class)
+    public ResponseEntity<ApiError> handleAnnouncementMustBeInTheFuture(
+            AnnouncementMustBeInTheFutureException exception,
+            HttpServletRequest request
+    ) {
+        return buildResponse(HttpStatus.BAD_REQUEST, exception, request);
     }
 
     @ExceptionHandler(DataIntegrityViolationException.class)

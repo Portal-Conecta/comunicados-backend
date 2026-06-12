@@ -10,6 +10,7 @@ import com.portal.conecta.comunicados.module.comunicado.domain.model.Announcemen
 import com.portal.conecta.comunicados.module.comunicado.domain.model.AnnouncementHistory;
 import com.portal.conecta.comunicados.module.comunicado.domain.port.announcement.AnnouncementHistoryRepository;
 import com.portal.conecta.comunicados.module.comunicado.domain.port.announcement.AnnouncementRepository;
+import com.portal.conecta.comunicados.module.comunicado.domain.port.support.HubClassPort;
 import com.portal.conecta.comunicados.module.comunicado.domain.port.support.HubUserPort;
 import com.portal.conecta.comunicados.module.comunicado.domain.validator.AnnouncementPermissionValidator;
 import com.portal.conecta.comunicados.shared.context.RequestContext;
@@ -52,7 +53,8 @@ class DeleteAnnouncementUseCaseTest {
     private HubUserPort hubUserPort;
 
     @Spy
-    private AnnouncementPermissionValidator permissionValidator = new AnnouncementPermissionValidator();
+    private AnnouncementPermissionValidator permissionValidator =
+            new AnnouncementPermissionValidator(org.mockito.Mockito.mock(HubClassPort.class));
 
     @InjectMocks
     private DeleteAnnouncementUseCase useCase;
