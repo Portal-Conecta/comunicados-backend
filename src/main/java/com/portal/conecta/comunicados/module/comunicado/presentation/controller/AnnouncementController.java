@@ -4,9 +4,11 @@ import java.net.URI;
 import java.util.List;
 import java.util.UUID;
 
+import org.springframework.data.domain.Page;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.DeleteMapping;
 import org.springframework.web.bind.annotation.GetMapping;
+import org.springframework.web.bind.annotation.ModelAttribute;
 import org.springframework.web.bind.annotation.PatchMapping;
 import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.PostMapping;
@@ -16,10 +18,20 @@ import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
 
 import com.portal.conecta.comunicados.module.comunicado.application.command.CreateAnnouncementCommand;
+import com.portal.conecta.comunicados.module.comunicado.application.command.PublishAnnouncementCommand;
+import com.portal.conecta.comunicados.module.comunicado.application.query.GetAnnouncementByIdQuery;
+import com.portal.conecta.comunicados.module.comunicado.application.query.ListAnnouncementsQuery;
 import com.portal.conecta.comunicados.module.comunicado.application.usecase.CreateAnnouncementUseCase;
+import com.portal.conecta.comunicados.module.comunicado.application.usecase.DeleteAnnouncementUseCase;
+import com.portal.conecta.comunicados.module.comunicado.application.usecase.GetAnnouncementByIdUseCase;
+import com.portal.conecta.comunicados.module.comunicado.application.usecase.ListAnnouncementsUseCase;
+import com.portal.conecta.comunicados.module.comunicado.application.usecase.PublishAnnouncementUseCase;
 import com.portal.conecta.comunicados.module.comunicado.domain.model.Announcement;
 import com.portal.conecta.comunicados.module.comunicado.presentation.dto.request.CreateAnnouncementRequest;
+import com.portal.conecta.comunicados.module.comunicado.presentation.dto.request.PostFilterRequest;
+import com.portal.conecta.comunicados.module.comunicado.presentation.dto.response.AnnouncementDetailResponse;
 import com.portal.conecta.comunicados.module.comunicado.presentation.dto.response.AnnouncementResponse;
+import com.portal.conecta.comunicados.module.comunicado.presentation.dto.response.ListAnnouncementsResponse;
 import com.portal.conecta.comunicados.shared.context.RequestContextProvider;
 
 import io.swagger.v3.oas.annotations.Operation;
@@ -35,7 +47,11 @@ import lombok.RequiredArgsConstructor;
 @RequiredArgsConstructor
 public class AnnouncementController {
 
+    private final PublishAnnouncementUseCase publishAnnouncementUseCase;
     private final CreateAnnouncementUseCase createAnnouncementUseCase;
+    private final ListAnnouncementsUseCase listAnnouncementsUseCase;
+    private final GetAnnouncementByIdUseCase getAnnouncementByIdUseCase;
+    private final DeleteAnnouncementUseCase deleteAnnouncementUseCase;
     private final RequestContextProvider contextProvider;
 
     @Operation(summary = "Criar comunicado")
@@ -47,39 +63,49 @@ public class AnnouncementController {
     @PostMapping
     public ResponseEntity<AnnouncementResponse> save(@Valid @RequestBody CreateAnnouncementRequest request) {
         UUID userId = contextProvider.getRequestContext().userId();
-
-        CreateAnnouncementCommand command = new CreateAnnouncementCommand(request, userId);
+        CreateAnnouncementCommand command = CreateAnnouncementCommand.fromRequest(request, userId);
 
         Announcement created = createAnnouncementUseCase.execute(command);
 
-        AnnouncementResponse response = new AnnouncementResponse(
-            created.getId(), 
-            created.getTitle(), 
-            created.getDescription(), 
-            created.getOrigin(), 
-            created.getStatus(), 
-            created.isPinned(), 
-            created.getPinnedOrder(), 
-            created.getCreatedByUserId(), 
-            created.getPublishedByUserId(), 
-            created.getScheduledFor(), 
-            created.getPublishedAt(), 
-            created.getRemovedAt(), 
-            created.getCreatedAt(), 
-            created.getUpdatedAt()
-        );
+        AnnouncementResponse response = AnnouncementResponse.fromEntity(created);
         return ResponseEntity.created(URI.create("/api/posts/" + created.getId())).body(response);
+    }
+
+    @Operation(
+            summary = "Listar comunicados",
+            description = "Lista paginada de comunicados visíveis ao perfil autenticado, em ordem "
+                    + "cronológica decrescente. Comunicados removidos nunca aparecem. Aceita filtros "
+                    + "por origem (WEG/SENAI/BOTH), turma e intervalo de publicação."
+    )
+    @ApiResponses({
+            @ApiResponse(responseCode = "200", description = "Lista retornada"),
+            @ApiResponse(responseCode = "400", description = "Parâmetros de filtro inválidos"),
+            @ApiResponse(responseCode = "401", description = "Não autenticado")
+    })
+    @GetMapping
+    public ResponseEntity<ListAnnouncementsResponse> list(@Valid @ModelAttribute PostFilterRequest filter) {
+        UUID userId = contextProvider.getRequestContext().userId();
+
+        ListAnnouncementsQuery query = new ListAnnouncementsQuery(filter, userId);
+        Page<Announcement> page = listAnnouncementsUseCase.execute(query);
+
+        return ResponseEntity.ok(ListAnnouncementsResponse.fromPage(page));
     }
 
     @Operation(summary = "Buscar comunicado por ID")
     @ApiResponses({
             @ApiResponse(responseCode = "200", description = "Comunicado encontrado"),
-            @ApiResponse(responseCode = "404", description = "Não encontrado"),
-            @ApiResponse(responseCode = "403", description = "Fora do escopo")
+            @ApiResponse(responseCode = "404", description = "Não encontrado ou fora do escopo"),
+            @ApiResponse(responseCode = "401", description = "Não autenticado")
     })
     @GetMapping("/{id}")
-    public ResponseEntity<Object> getById(@PathVariable UUID id) {
-        return ResponseEntity.ok(null);
+    public ResponseEntity<AnnouncementDetailResponse> getById(@PathVariable UUID id) {
+        UUID userId = contextProvider.getRequestContext().userId();
+
+        GetAnnouncementByIdQuery query = new GetAnnouncementByIdQuery(id, userId);
+        Announcement announcement = getAnnouncementByIdUseCase.execute(query);
+
+        return ResponseEntity.ok(AnnouncementDetailResponse.fromEntity(announcement));
     }
 
     @Operation(summary = "Atualizar comunicado completo")
@@ -113,18 +139,26 @@ public class AnnouncementController {
     })
     @DeleteMapping("/{id}")
     public ResponseEntity<Void> delete(@PathVariable UUID id) {
+        deleteAnnouncementUseCase.execute(id);
         return ResponseEntity.noContent().build();
     }
 
-    @Operation(summary = "Publicar comunicado", description = "RN-C04, C05. Requer destino e título.")
+    @Operation(summary = "Publicar comunicado")
     @ApiResponses({
             @ApiResponse(responseCode = "200", description = "Publicado"),
+            @ApiResponse(responseCode = "400", description = "Dados obrigatórios ausentes"),
+            @ApiResponse(responseCode = "401", description = "Token de autenticação ausente ou inválido"),
             @ApiResponse(responseCode = "403", description = "Sem permissão"),
-            @ApiResponse(responseCode = "422", description = "RN-C05 — destino obrigatório")
+            @ApiResponse(responseCode = "404", description = "Comunicado não encontrado"),
+            @ApiResponse(responseCode = "409", description = "Comunicado não pode ser publicado nesse status")
     })
     @PatchMapping("/{id}/publish")
-    public ResponseEntity<Object> publish(@PathVariable UUID id, @RequestBody(required = false) Object request) {
-        return ResponseEntity.ok(null);
+    public ResponseEntity<AnnouncementResponse> publish(@PathVariable UUID id) {
+        var command = PublishAnnouncementCommand.from(id);
+        var announcement = publishAnnouncementUseCase.execute(command);
+        var response = AnnouncementResponse.fromEntity(announcement);
+
+        return ResponseEntity.ok(response);
     }
 
     @Operation(summary = "Agendar comunicado")

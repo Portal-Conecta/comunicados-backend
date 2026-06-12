@@ -4,6 +4,7 @@ import com.portal.conecta.comunicados.module.tag.domain.enums.TagEntityType;
 import com.portal.conecta.comunicados.module.tag.domain.model.Tag;
 
 import java.time.Instant;
+import java.util.List;
 import java.util.UUID;
 
 public record TagResponse(
@@ -15,13 +16,21 @@ public record TagResponse(
     Instant createdAt
 
 ) {
-    public static TagResponse from(Tag tag) {
+
+    public static TagResponse fromEntity(Tag entity) {
         return new TagResponse(
-                tag.getId(),
-                tag.getName(),
-                tag.getEntityType(),
-                tag.isActive(),
-                tag.getCreatedAt()
+                entity.getId(),
+                entity.getName(),
+                entity.getEntityType(),
+                entity.isActive(),
+                entity.getCreatedAt()
         );
+    }
+
+    public static List<TagResponse> fromEntities(List<Tag> entities) {
+        if (entities == null || entities.isEmpty()) {
+            return List.of();
+        }
+        return entities.stream().map(TagResponse::fromEntity).toList();
     }
 }
