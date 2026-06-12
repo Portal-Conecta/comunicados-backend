@@ -3,6 +3,9 @@ package com.portal.conecta.comunicados;
 import com.portal.conecta.comunicados.module.comunicado.application.usecase.CreateAnnouncementUseCase;
 import com.portal.conecta.comunicados.module.comunicado.application.usecase.GetAnnouncementByIdUseCase;
 import com.portal.conecta.comunicados.module.comunicado.application.usecase.ListAnnouncementsUseCase;
+import com.portal.conecta.comunicados.module.comunicado.application.usecase.DeleteAnnouncementUseCase;
+import com.portal.conecta.comunicados.module.comunicado.application.usecase.PublishAnnouncementUseCase;
+import com.portal.conecta.comunicados.module.comunicado.application.usecase.UpdateAnnouncementUseCase;
 import com.portal.conecta.comunicados.module.comunicado.domain.exception.AnnouncementNotFoundException;
 import com.portal.conecta.comunicados.module.comunicado.domain.model.Announcement;
 import com.portal.conecta.comunicados.module.comunicado.presentation.controller.AnnouncementController;
@@ -44,6 +47,9 @@ class AnnouncementControllerTest {
     private MockMvc mockMvc;
 
     @MockitoBean
+    private PublishAnnouncementUseCase publishAnnouncementUseCase;
+
+    @MockitoBean
     private CreateAnnouncementUseCase createAnnouncementUseCase;
 
     @MockitoBean
@@ -53,7 +59,13 @@ class AnnouncementControllerTest {
     private GetAnnouncementByIdUseCase getAnnouncementByIdUseCase;
 
     @MockitoBean
+    private DeleteAnnouncementUseCase deleteAnnouncementUseCase;
+
+    @MockitoBean
     private RequestContextProvider contextProvider;
+
+    @MockitoBean
+    private UpdateAnnouncementUseCase updateAnnouncementUseCase;
 
     private void stubContext() {
         when(contextProvider.getRequestContext())

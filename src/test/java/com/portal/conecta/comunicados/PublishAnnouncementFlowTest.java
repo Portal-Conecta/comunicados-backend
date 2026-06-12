@@ -1,4 +1,4 @@
-package com.portal.conecta.comunicados.module.comunicado;
+package com.portal.conecta.comunicados;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
@@ -34,6 +34,7 @@ import com.portal.conecta.comunicados.module.comunicado.application.usecase.GetA
 import com.portal.conecta.comunicados.module.comunicado.application.usecase.ListAnnouncementsUseCase;
 import com.portal.conecta.comunicados.shared.security.error.SecurityErrorResponseWriter;
 import com.portal.conecta.comunicados.shared.security.token.JwtExtractToken;
+import com.portal.conecta.comunicados.module.comunicado.application.usecase.UpdateAnnouncementUseCase;
 
 import java.util.List;
 import java.util.Optional;
@@ -62,6 +63,7 @@ class PublishAnnouncementFlowTest {
     private GetAnnouncementByIdUseCase getAnnouncementByIdUseCase;
     private DeleteAnnouncementUseCase deleteAnnouncementUseCase;
     private PublishAnnouncementUseCase publishAnnouncementUseCase;
+    private UpdateAnnouncementUseCase updateAnnouncementUseCase;
     private MockMvc mockMvc;
 
     @BeforeEach
@@ -73,6 +75,7 @@ class PublishAnnouncementFlowTest {
         listAnnouncementsUseCase = mock(ListAnnouncementsUseCase.class);
         getAnnouncementByIdUseCase = mock(GetAnnouncementByIdUseCase.class);
         deleteAnnouncementUseCase = mock(DeleteAnnouncementUseCase.class);
+        updateAnnouncementUseCase = mock(UpdateAnnouncementUseCase.class);
 
         publishAnnouncementUseCase = new PublishAnnouncementUseCase(
                 announcementRepository,
@@ -86,7 +89,8 @@ class PublishAnnouncementFlowTest {
                 listAnnouncementsUseCase,
                 getAnnouncementByIdUseCase,
                 deleteAnnouncementUseCase,
-                requestContextProvider
+                requestContextProvider,
+                updateAnnouncementUseCase
         );
 
         mockMvc = MockMvcBuilders.standaloneSetup(controller).build();
@@ -458,6 +462,9 @@ class PublishAnnouncementWebMvcTest {
 
     @MockitoBean
     private SecurityErrorResponseWriter securityErrorResponseWriter;
+
+    @MockitoBean
+    private UpdateAnnouncementUseCase updateAnnouncementUseCase;
 
     @Test
     void shouldPublishAnnouncementByEndpoint() throws Exception {
