@@ -2,6 +2,8 @@ package com.portal.conecta.comunicados.shared.exception;
 
 import com.portal.conecta.comunicados.module.comunicado.domain.exception.AnnouncementNotFoundException;
 import com.portal.conecta.comunicados.module.comunicado.domain.exception.AnnouncementPermissionDeniedException;
+import com.portal.conecta.comunicados.module.tag.domain.exception.TagNotFoundException;
+import com.portal.conecta.comunicados.module.tag.domain.exception.TagPermissionDeniedException;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.validation.ConstraintViolationException;
 import java.util.List;
@@ -24,6 +26,22 @@ import org.springframework.web.server.ResponseStatusException;
 @RestControllerAdvice
 @Slf4j
 public class GlobalExceptionHandler {
+
+    @ExceptionHandler(TagNotFoundException.class)
+    public ResponseEntity<ApiError> handleTagNotFound(
+            TagNotFoundException exception,
+            HttpServletRequest request
+    ) {
+        return buildResponse(HttpStatus.NOT_FOUND, exception, request);
+    }
+
+    @ExceptionHandler(TagPermissionDeniedException.class)
+    public ResponseEntity<ApiError> handleTagPermissionDenied(
+            TagPermissionDeniedException exception,
+            HttpServletRequest request
+    ) {
+        return buildResponse(HttpStatus.NOT_FOUND, exception, request);
+    }
 
     @ExceptionHandler(UnauthorizedUserException.class)
     public ResponseEntity<ApiError> handleUnauthorized(
