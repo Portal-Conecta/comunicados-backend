@@ -5,5 +5,5 @@ import java.util.UUID;
 
 public record TagLinkDestinationCommand(
         AnnouncementDestinationType type,
-        UUID referenceId
+        UUID hubEntityId
 ) {}
