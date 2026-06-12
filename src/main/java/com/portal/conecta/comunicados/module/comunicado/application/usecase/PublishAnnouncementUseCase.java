@@ -1,7 +1,6 @@
 package com.portal.conecta.comunicados.module.comunicado.application.usecase;
 
 import java.time.Instant;
-import java.util.List;
 import java.util.UUID;
 
 import org.springframework.http.HttpStatus;
@@ -10,22 +9,23 @@ import org.springframework.transaction.annotation.Transactional;
 import org.springframework.web.server.ResponseStatusException;
 
 import com.portal.conecta.comunicados.module.comunicado.application.command.PublishAnnouncementCommand;
-import com.portal.conecta.comunicados.module.comunicado.domain.enums.AnnouncementDestinationType;
 import com.portal.conecta.comunicados.module.comunicado.domain.enums.AnnouncementHistoryAction;
 import com.portal.conecta.comunicados.module.comunicado.domain.enums.AnnouncementStatus;
 import com.portal.conecta.comunicados.module.comunicado.domain.model.Announcement;
-import com.portal.conecta.comunicados.module.comunicado.domain.model.AnnouncementDestination;
 import com.portal.conecta.comunicados.module.comunicado.domain.model.AnnouncementHistory;
 import com.portal.conecta.comunicados.module.comunicado.domain.port.announcement.AnnouncementHistoryRepository;
 import com.portal.conecta.comunicados.module.comunicado.domain.port.announcement.AnnouncementRepository;
-import com.portal.conecta.comunicados.shared.context.ClassRole;
-import com.portal.conecta.comunicados.shared.context.ContextClass;
+import com.portal.conecta.comunicados.module.comunicado.domain.validator.AnnouncementPermissionValidator;
 import com.portal.conecta.comunicados.shared.context.RequestContext;
 import com.portal.conecta.comunicados.shared.context.RequestContextProvider;
-import com.portal.conecta.comunicados.shared.context.UserType;
 
 import lombok.RequiredArgsConstructor;
 
+/**
+ * Publicação legada via PATCH — transiciona comunicados {@link AnnouncementStatus#SCHEDULED} para
+ * {@link AnnouncementStatus#PUBLISHED}. Será usado pelo job de agendamento e, após #107, coexistirá
+ * com {@code POST /api/posts/publish} para criação + publicação atômica.
+ */
 @Service
 @RequiredArgsConstructor
 public class PublishAnnouncementUseCase {
@@ -33,6 +33,7 @@ public class PublishAnnouncementUseCase {
     private final AnnouncementRepository announcementRepository;
     private final AnnouncementHistoryRepository announcementHistoryRepository;
     private final RequestContextProvider requestContextProvider;
+    private final AnnouncementPermissionValidator permissionValidator;
 
     @Transactional
     public Announcement execute(PublishAnnouncementCommand command) {
@@ -56,21 +57,21 @@ public class PublishAnnouncementUseCase {
     }
 
     private void validateCanPublish(Announcement announcement, RequestContext context) {
-        validatePublisher(context);
+        validateAuthenticatedUser(context);
         validateStatus(announcement);
         validateRequiredFields(announcement);
         validatePermission(announcement, context);
     }
 
-    private void validatePublisher(RequestContext context) {
-        if (context == null || context.userId() == null || context.userType() == null) {
-            throw new ResponseStatusException(HttpStatus.UNAUTHORIZED, "Usuário autenticado é obrigatório!");
+    private void validateStatus(Announcement announcement) {
+        if (announcement.getStatus() != AnnouncementStatus.SCHEDULED) {
+            throw new ResponseStatusException(HttpStatus.CONFLICT, "Somente comunicados agendados podem ser publicados!");
         }
     }
 
-    private void validateStatus(Announcement announcement) {
-        if (announcement.getStatus() != AnnouncementStatus.DRAFT && announcement.getStatus() != AnnouncementStatus.SCHEDULED) {
-            throw new ResponseStatusException(HttpStatus.CONFLICT, "Somente comunicados em rascunho ou agendados podem ser publicados!");
+    private void validateAuthenticatedUser(RequestContext context) {
+        if (context == null || context.userId() == null || context.userType() == null) {
+            throw new ResponseStatusException(HttpStatus.UNAUTHORIZED, "Usuário autenticado é obrigatório!");
         }
     }
 
@@ -89,58 +90,9 @@ public class PublishAnnouncementUseCase {
     }
 
     private void validatePermission(Announcement announcement, RequestContext context) {
-        if (canPublishAnyScope(context.userType())) {
-            return;
+        if (!permissionValidator.canPublishOrSchedule(announcement, context)) {
+            throw new ResponseStatusException(HttpStatus.FORBIDDEN, "Usuário sem permissão para publicar este comunicado!");
         }
-
-        if (context.userType() == UserType.STUDENT) {
-            throw forbidden();
-        }
-
-        if (context.userType() == UserType.TEACHER && canPublishLinkedClasses(announcement, context, ClassRole.TEACHER)) {
-            return;
-        }
-
-        if (context.userType() == UserType.REPRESENTATIVE && canPublishLinkedClasses(announcement, context, ClassRole.REPRESENTATIVE)) {
-            return;
-        }
-
-        throw forbidden();
-    }
-
-    private boolean canPublishAnyScope(UserType userType) {
-        return userType == UserType.SENAI
-                || userType == UserType.WEG
-                || userType == UserType.ADMIN;
-    }
-
-    private boolean canPublishLinkedClasses(Announcement announcement, RequestContext context, ClassRole requiredRole) {
-        List<ContextClass> contextClasses = context.classes() == null ? List.of() : context.classes();
-
-        List<UUID> allowedClassIds = contextClasses.stream()
-                .filter(contextClass -> contextClass.role() == requiredRole)
-                .map(ContextClass::classId)
-                .toList();
-
-        if (allowedClassIds.isEmpty()) {
-            return false;
-        }
-
-        return announcement.getDestinations().stream()
-                .allMatch(destination -> isAllowedClassDestination(destination, allowedClassIds));
-    }
-
-    private boolean isAllowedClassDestination(
-            AnnouncementDestination destination,
-            List<UUID> allowedClassIds
-    ) {
-        return destination.getType() == AnnouncementDestinationType.CLASS
-                && destination.getReferenceId() != null
-                && allowedClassIds.contains(destination.getReferenceId());
-    }
-
-    private ResponseStatusException forbidden() {
-        return new ResponseStatusException(HttpStatus.FORBIDDEN, "Usuário sem permissão para publicar este comunicado!");
     }
 
     private void saveHistory(Announcement announcement, UUID publishedByUserId, Instant now) {

@@ -31,9 +31,6 @@ public record UpdateAnnouncementCommand(
         if (data.origin() != null) {
             existing.setOrigin(data.origin());
         }
-        if (data.status() != null) {
-            existing.setStatus(data.status());
-        }
         if (data.pinned() != null) {
             existing.setPinned(data.pinned());
         }
