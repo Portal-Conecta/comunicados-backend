@@ -20,7 +20,7 @@ server:
 
 app:
   messaging:
-    enabled: ${MESSAGING_ENABLED:true}
+    enabled: ${MESSAGING_ENABLED:false}
     core:
       exchange: portal.core.events
       queue: comunicados.core-entities
