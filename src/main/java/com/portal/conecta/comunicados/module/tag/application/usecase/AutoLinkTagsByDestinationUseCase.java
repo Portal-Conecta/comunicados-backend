@@ -58,25 +58,26 @@ public class AutoLinkTagsByDestinationUseCase {
         TagEntityType tagType = DESTINATION_TO_TAG_TYPE.get(destination.type());
         if (tagType == null) return Optional.empty();
 
-        if (destination.referenceId() != null) {
-            return findByTypeAndReference(tagType, destination.referenceId());
+        if (destination.hubEntityId() != null) {
+            return findByTypeAndHubEntity(tagType, destination.hubEntityId());
         }
-        return findWithoutReference(tagType);
+        return findFirstActiveByType(tagType);
     }
 
-    private Optional<Tag> findByTypeAndReference(TagEntityType type, UUID referenceId) {
-        Optional<Tag> tag = tagRepository.findByEntityTypeAndReferenceIdAndActiveTrue(type, referenceId);
+    private Optional<Tag> findByTypeAndHubEntity(TagEntityType type, UUID hubEntityId) {
+        Optional<Tag> tag = tagRepository.findByEntityTypeAndHubEntityIdAndActiveTrue(type, hubEntityId);
         if (tag.isEmpty()) {
-            log.debug("Auto-link: tag ativa não encontrada para type={} referenceId={}", type, referenceId);
+            log.debug("Auto-link: tag ativa não encontrada para type={} hubEntityId={}", type, hubEntityId);
         }
         return tag;
     }
 
-    private Optional<Tag> findWithoutReference(TagEntityType type) {
-        Optional<Tag> tag = tagRepository.findFirstByEntityTypeAndActiveTrueAndReferenceIdIsNull(type);
-        if (tag.isEmpty()) {
-            log.debug("Auto-link: tag ativa sem referência não encontrada para type={}", type);
+    private Optional<Tag> findFirstActiveByType(TagEntityType type) {
+        List<Tag> tags = tagRepository.findByEntityTypeAndActiveTrue(type);
+        if (tags.isEmpty()) {
+            log.debug("Auto-link: nenhuma tag ativa encontrada para type={}", type);
+            return Optional.empty();
         }
-        return tag;
+        return Optional.of(tags.get(0));
     }
 }

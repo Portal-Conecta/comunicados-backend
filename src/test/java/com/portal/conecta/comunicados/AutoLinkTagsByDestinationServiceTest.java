@@ -56,7 +56,7 @@ class AutoLinkTagsByDestinationServiceTest {
     void shouldLinkClassTag() {
         UUID classId = UUID.randomUUID();
         Tag tag = activeTag(TagEntityType.CLASS, classId);
-        when(tagRepository.findByEntityTypeAndReferenceIdAndActiveTrue(TagEntityType.CLASS, classId))
+        when(tagRepository.findByEntityTypeAndHubEntityIdAndActiveTrue(TagEntityType.CLASS, classId))
                 .thenReturn(Optional.of(tag));
 
         useCase.execute(announcement, List.of(command(AnnouncementDestinationType.CLASS, classId)));
@@ -71,7 +71,7 @@ class AutoLinkTagsByDestinationServiceTest {
     void shouldLinkCourseTag() {
         UUID courseId = UUID.randomUUID();
         Tag tag = activeTag(TagEntityType.COURSE, courseId);
-        when(tagRepository.findByEntityTypeAndReferenceIdAndActiveTrue(TagEntityType.COURSE, courseId))
+        when(tagRepository.findByEntityTypeAndHubEntityIdAndActiveTrue(TagEntityType.COURSE, courseId))
                 .thenReturn(Optional.of(tag));
 
         useCase.execute(announcement, List.of(command(AnnouncementDestinationType.COURSE, courseId)));
@@ -84,8 +84,8 @@ class AutoLinkTagsByDestinationServiceTest {
     @Test
     void shouldLinkGeneralTag() {
         Tag tag = activeTag(TagEntityType.GENERAL, null);
-        when(tagRepository.findFirstByEntityTypeAndActiveTrueAndReferenceIdIsNull(TagEntityType.GENERAL))
-                .thenReturn(Optional.of(tag));
+        when(tagRepository.findByEntityTypeAndActiveTrue(TagEntityType.GENERAL))
+                .thenReturn(List.of(tag));
 
         useCase.execute(announcement, List.of(command(AnnouncementDestinationType.GENERAL, null)));
 
@@ -102,7 +102,7 @@ class AutoLinkTagsByDestinationServiceTest {
     @Test
     void shouldSkipWhenTagNotFound() {
         UUID classId = UUID.randomUUID();
-        when(tagRepository.findByEntityTypeAndReferenceIdAndActiveTrue(TagEntityType.CLASS, classId))
+        when(tagRepository.findByEntityTypeAndHubEntityIdAndActiveTrue(TagEntityType.CLASS, classId))
                 .thenReturn(Optional.empty());
 
         useCase.execute(announcement, List.of(command(AnnouncementDestinationType.CLASS, classId)));
@@ -114,7 +114,7 @@ class AutoLinkTagsByDestinationServiceTest {
     void shouldNotDuplicateAlreadyLinkedTag() {
         UUID classId = UUID.randomUUID();
         Tag tag = activeTag(TagEntityType.CLASS, classId);
-        when(tagRepository.findByEntityTypeAndReferenceIdAndActiveTrue(TagEntityType.CLASS, classId))
+        when(tagRepository.findByEntityTypeAndHubEntityIdAndActiveTrue(TagEntityType.CLASS, classId))
                 .thenReturn(Optional.of(tag));
 
         AnnouncementTag existing = AnnouncementTag.builder().announcement(announcement).tag(tag).build();
@@ -132,9 +132,9 @@ class AutoLinkTagsByDestinationServiceTest {
         Tag tag1 = activeTag(TagEntityType.CLASS, class1);
         Tag tag2 = activeTag(TagEntityType.CLASS, class2);
 
-        when(tagRepository.findByEntityTypeAndReferenceIdAndActiveTrue(TagEntityType.CLASS, class1))
+        when(tagRepository.findByEntityTypeAndHubEntityIdAndActiveTrue(TagEntityType.CLASS, class1))
                 .thenReturn(Optional.of(tag1));
-        when(tagRepository.findByEntityTypeAndReferenceIdAndActiveTrue(TagEntityType.CLASS, class2))
+        when(tagRepository.findByEntityTypeAndHubEntityIdAndActiveTrue(TagEntityType.CLASS, class2))
                 .thenReturn(Optional.of(tag2));
 
         useCase.execute(announcement, List.of(
@@ -147,18 +147,19 @@ class AutoLinkTagsByDestinationServiceTest {
         assertThat(captor.getValue()).hasSize(2);
     }
 
-    private Tag activeTag(TagEntityType type, UUID referenceId) {
+    private Tag activeTag(TagEntityType type, UUID hubEntityId) {
         return Tag.builder()
                 .id(UUID.randomUUID())
                 .name("Tag " + type)
                 .entityType(type)
-                .referenceId(referenceId)
+                .hubEntityId(hubEntityId != null ? hubEntityId : UUID.randomUUID())
                 .active(true)
                 .createdAt(Instant.now())
+                .updatedAt(Instant.now())
                 .build();
     }
 
-    private TagLinkDestinationCommand command(AnnouncementDestinationType type, UUID referenceId) {
-        return new TagLinkDestinationCommand(type, referenceId);
+    private TagLinkDestinationCommand command(AnnouncementDestinationType type, UUID hubEntityId) {
+        return new TagLinkDestinationCommand(type, hubEntityId);
     }
 }
