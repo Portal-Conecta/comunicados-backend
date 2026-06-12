@@ -34,6 +34,7 @@ import com.portal.conecta.comunicados.module.comunicado.domain.port.announcement
 import com.portal.conecta.comunicados.module.comunicado.domain.port.announcement.AnnouncementRepository;
 import com.portal.conecta.comunicados.module.comunicado.domain.port.support.HubClassPort;
 import com.portal.conecta.comunicados.module.comunicado.domain.validator.AnnouncementPermissionValidator;
+import com.portal.conecta.comunicados.module.tag.application.usecase.AutoLinkTagsByDestinationUseCase;
 import com.portal.conecta.comunicados.module.comunicado.presentation.controller.AnnouncementController;
 import com.portal.conecta.comunicados.module.comunicado.presentation.dto.request.CreateAnnouncementDestinationInput;
 import com.portal.conecta.comunicados.module.comunicado.presentation.dto.request.ScheduleAnnouncementRequest;
@@ -76,6 +77,7 @@ class ScheduleAnnouncementFlowTest {
     private AnnouncementHistoryRepository announcementHistoryRepository;
     private RequestContextProvider requestContextProvider;
     private HubClassPort hubClassPort;
+    private AutoLinkTagsByDestinationUseCase autoLinkTagsUseCase;
     private ListAnnouncementsUseCase listAnnouncementsUseCase;
     private GetAnnouncementByIdUseCase getAnnouncementByIdUseCase;
     private DeleteAnnouncementUseCase deleteAnnouncementUseCase;
@@ -90,6 +92,7 @@ class ScheduleAnnouncementFlowTest {
         announcementHistoryRepository = mock(AnnouncementHistoryRepository.class);
         requestContextProvider = mock(RequestContextProvider.class);
         hubClassPort = mock(HubClassPort.class);
+        autoLinkTagsUseCase = mock(AutoLinkTagsByDestinationUseCase.class);
         listAnnouncementsUseCase = mock(ListAnnouncementsUseCase.class);
         getAnnouncementByIdUseCase = mock(GetAnnouncementByIdUseCase.class);
         deleteAnnouncementUseCase = mock(DeleteAnnouncementUseCase.class);
@@ -100,7 +103,8 @@ class ScheduleAnnouncementFlowTest {
                 announcementDestinationRepository,
                 announcementHistoryRepository,
                 requestContextProvider,
-                new AnnouncementPermissionValidator(hubClassPort)
+                new AnnouncementPermissionValidator(hubClassPort),
+                autoLinkTagsUseCase
         );
 
         AnnouncementController controller = new AnnouncementController(
