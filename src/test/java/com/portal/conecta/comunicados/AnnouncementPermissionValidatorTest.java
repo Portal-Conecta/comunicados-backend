@@ -3,8 +3,11 @@ package com.portal.conecta.comunicados;
 import com.portal.conecta.comunicados.module.comunicado.domain.enums.AnnouncementOrigin;
 import com.portal.conecta.comunicados.module.comunicado.domain.enums.AnnouncementStatus;
 import com.portal.conecta.comunicados.module.comunicado.domain.model.Announcement;
+import com.portal.conecta.comunicados.module.comunicado.domain.port.support.HubClassPort;
 import com.portal.conecta.comunicados.module.comunicado.domain.validator.AnnouncementPermissionValidator;
 import com.portal.conecta.comunicados.shared.context.UserType;
+
+import static org.mockito.Mockito.mock;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.params.ParameterizedTest;
@@ -25,7 +28,7 @@ class AnnouncementPermissionValidatorTest {
 
     @BeforeEach
     void setUp() {
-        validator = new AnnouncementPermissionValidator();
+        validator = new AnnouncementPermissionValidator(mock(HubClassPort.class));
         actorId = UUID.randomUUID();
         creatorId = UUID.randomUUID();
         announcement = activeAnnouncement(creatorId);
