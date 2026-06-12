@@ -123,7 +123,7 @@ class PublishAnnouncementFlowTest {
         when(requestContextProvider.getRequestContext())
                 .thenReturn(createContext(userId, UserType.SENAI));
 
-        perform(publishRequest(user(studentId)))
+        perform(publishRequest(userDestination(studentId)))
                 .andExpect(status().isCreated())
                 .andExpect(jsonPath("$.id").exists())
                 .andExpect(jsonPath("$.status").value(AnnouncementStatus.PUBLISHED.name()))
@@ -155,7 +155,7 @@ class PublishAnnouncementFlowTest {
         when(requestContextProvider.getRequestContext())
                 .thenReturn(createContext(userId, UserType.WEG));
 
-        perform(publishRequest(user(UUID.randomUUID()), user(UUID.randomUUID())))
+        perform(publishRequest(userDestination(UUID.randomUUID()), userDestination(UUID.randomUUID())))
                 .andExpect(status().isCreated())
                 .andExpect(jsonPath("$.status").value(AnnouncementStatus.PUBLISHED.name()));
 
@@ -170,7 +170,7 @@ class PublishAnnouncementFlowTest {
         when(requestContextProvider.getRequestContext())
                 .thenReturn(createContext(userId, UserType.STUDENT));
 
-        perform(publishRequest(user(UUID.randomUUID())))
+        perform(publishRequest(userDestination(UUID.randomUUID())))
                 .andExpect(status().isForbidden());
 
         verify(announcementRepository, never()).save(any());
@@ -185,7 +185,7 @@ class PublishAnnouncementFlowTest {
         when(requestContextProvider.getRequestContext())
                 .thenReturn(createContext(userId, UserType.TEACHER, new ContextClass(classId, ClassRole.TEACHER)));
 
-        perform(publishRequest(clazz(classId)))
+        perform(publishRequest(classDestination(classId)))
                 .andExpect(status().isCreated())
                 .andExpect(jsonPath("$.status").value(AnnouncementStatus.PUBLISHED.name()));
 
@@ -201,7 +201,7 @@ class PublishAnnouncementFlowTest {
         when(requestContextProvider.getRequestContext())
                 .thenReturn(createContext(userId, UserType.TEACHER, new ContextClass(teacherClassId, ClassRole.TEACHER)));
 
-        perform(publishRequest(clazz(otherClassId)))
+        perform(publishRequest(classDestination(otherClassId)))
                 .andExpect(status().isForbidden());
 
         verify(announcementRepository, never()).save(any());
@@ -217,7 +217,7 @@ class PublishAnnouncementFlowTest {
                 .thenReturn(createContext(userId, UserType.TEACHER, new ContextClass(classId, ClassRole.TEACHER)));
         when(hubClassPort.getClassIdForUser(studentId)).thenReturn(classId);
 
-        perform(publishRequest(user(studentId)))
+        perform(publishRequest(userDestination(studentId)))
                 .andExpect(status().isCreated())
                 .andExpect(jsonPath("$.status").value(AnnouncementStatus.PUBLISHED.name()));
 
@@ -234,7 +234,7 @@ class PublishAnnouncementFlowTest {
                 .thenReturn(createContext(userId, UserType.TEACHER, new ContextClass(classId, ClassRole.TEACHER)));
         when(hubClassPort.getClassIdForUser(studentId)).thenReturn(UUID.randomUUID());
 
-        perform(publishRequest(user(studentId)))
+        perform(publishRequest(userDestination(studentId)))
                 .andExpect(status().isForbidden());
 
         verify(announcementRepository, never()).save(any());
@@ -246,7 +246,7 @@ class PublishAnnouncementFlowTest {
                 .thenReturn(createContext(UUID.randomUUID(), UserType.SENAI));
 
         PublishAnnouncementRequest request = new PublishAnnouncementRequest(
-                "", "Descricao", AnnouncementOrigin.SENAI, List.of(user(UUID.randomUUID())), null, null);
+                "", "Descricao", AnnouncementOrigin.SENAI, List.of(userDestination(UUID.randomUUID())), null, null);
 
         perform(request).andExpect(status().isBadRequest());
         verify(announcementRepository, never()).save(any());
@@ -268,11 +268,11 @@ class PublishAnnouncementFlowTest {
         return new RequestContext(userId, userType, List.of(classes));
     }
 
-    private CreateAnnouncementDestinationInput user(UUID referenceId) {
+    private CreateAnnouncementDestinationInput userDestination(UUID referenceId) {
         return new CreateAnnouncementDestinationInput(AnnouncementDestinationType.USER, referenceId);
     }
 
-    private CreateAnnouncementDestinationInput clazz(UUID referenceId) {
+    private CreateAnnouncementDestinationInput classDestination(UUID referenceId) {
         return new CreateAnnouncementDestinationInput(AnnouncementDestinationType.CLASS, referenceId);
     }
 

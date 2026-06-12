@@ -134,7 +134,7 @@ class ScheduleAnnouncementFlowTest {
         when(requestContextProvider.getRequestContext())
                 .thenReturn(createContext(userId, UserType.SENAI));
 
-        perform(scheduleRequest(scheduledFor, clazz(classId)))
+        perform(scheduleRequest(scheduledFor, classDestination(classId)))
                 .andExpect(status().isCreated())
                 .andExpect(jsonPath("$.id").exists())
                 .andExpect(jsonPath("$.status").value(AnnouncementStatus.SCHEDULED.name()))
@@ -166,7 +166,7 @@ class ScheduleAnnouncementFlowTest {
         when(requestContextProvider.getRequestContext())
                 .thenReturn(createContext(userId, UserType.STUDENT));
 
-        perform(scheduleRequest(scheduledFor, clazz(UUID.randomUUID())))
+        perform(scheduleRequest(scheduledFor, classDestination(UUID.randomUUID())))
                 .andExpect(status().isForbidden());
 
         verify(announcementRepository, never()).save(any());
@@ -181,7 +181,7 @@ class ScheduleAnnouncementFlowTest {
         when(requestContextProvider.getRequestContext())
                 .thenReturn(createContext(userId, UserType.TEACHER, new ContextClass(classId, ClassRole.TEACHER)));
 
-        perform(scheduleRequest(scheduledFor, clazz(classId)))
+        perform(scheduleRequest(scheduledFor, classDestination(classId)))
                 .andExpect(status().isCreated())
                 .andExpect(jsonPath("$.status").value(AnnouncementStatus.SCHEDULED.name()));
 
@@ -202,7 +202,7 @@ class ScheduleAnnouncementFlowTest {
                         new ContextClass(representativeClassId, ClassRole.REPRESENTATIVE)
                 ));
 
-        perform(scheduleRequest(scheduledFor, clazz(announcementClassId)))
+        perform(scheduleRequest(scheduledFor, classDestination(announcementClassId)))
                 .andExpect(status().isForbidden());
 
         verify(announcementRepository, never()).save(any());
@@ -216,7 +216,7 @@ class ScheduleAnnouncementFlowTest {
         when(requestContextProvider.getRequestContext())
                 .thenReturn(createContext(userId, UserType.SENAI));
 
-        perform(scheduleRequest(scheduledFor, clazz(UUID.randomUUID())))
+        perform(scheduleRequest(scheduledFor, classDestination(UUID.randomUUID())))
                 .andExpect(status().isBadRequest());
 
         verify(announcementRepository, never()).save(any());
@@ -232,7 +232,7 @@ class ScheduleAnnouncementFlowTest {
 
         ScheduleAnnouncementCommand command = new ScheduleAnnouncementCommand(
                 "Titulo", "Descricao", AnnouncementOrigin.SENAI, false, past, userId,
-                List.of(clazz(UUID.randomUUID()))
+                List.of(classDestination(UUID.randomUUID()))
         );
 
         assertThrows(AnnouncementMustBeInTheFutureException.class, () -> scheduleAnnouncementUseCase.execute(command));
@@ -258,7 +258,7 @@ class ScheduleAnnouncementFlowTest {
         return new RequestContext(userId, userType, List.of(classes));
     }
 
-    private CreateAnnouncementDestinationInput clazz(UUID referenceId) {
+    private CreateAnnouncementDestinationInput classDestination(UUID referenceId) {
         return new CreateAnnouncementDestinationInput(AnnouncementDestinationType.CLASS, referenceId);
     }
 
