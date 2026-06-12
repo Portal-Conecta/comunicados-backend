@@ -488,7 +488,7 @@ class PublishAnnouncementWebMvcTest {
         UUID announcementId = UUID.randomUUID();
 
         when(publishAnnouncementUseCase.execute(PublishAnnouncementCommand.from(announcementId)))
-                .thenThrow(new ResponseStatusException(HttpStatus.BAD_REQUEST, "Dados obrigatórios ausentes"));
+                .thenThrow(new ResponseStatusException(HttpStatus.BAD_REQUEST, "Título é obrigatório para publicar o comunicado!"));
 
         mockMvc.perform(patch("/api/posts/{id}/publish", announcementId))
                 .andExpect(status().isBadRequest());
@@ -499,7 +499,7 @@ class PublishAnnouncementWebMvcTest {
         UUID announcementId = UUID.randomUUID();
 
         when(publishAnnouncementUseCase.execute(PublishAnnouncementCommand.from(announcementId)))
-                .thenThrow(new ResponseStatusException(HttpStatus.FORBIDDEN, "Sem permissão"));
+                .thenThrow(new ResponseStatusException(HttpStatus.FORBIDDEN, "Usuário sem permissão para publicar este comunicado!"));
 
         mockMvc.perform(patch("/api/posts/{id}/publish", announcementId))
                 .andExpect(status().isForbidden());
@@ -510,7 +510,7 @@ class PublishAnnouncementWebMvcTest {
         UUID announcementId = UUID.randomUUID();
 
         when(publishAnnouncementUseCase.execute(PublishAnnouncementCommand.from(announcementId)))
-                .thenThrow(new ResponseStatusException(HttpStatus.NOT_FOUND, "Comunicado não encontrado"));
+                .thenThrow(new ResponseStatusException(HttpStatus.NOT_FOUND, "Comunicado não encontrado!"));
 
         mockMvc.perform(patch("/api/posts/{id}/publish", announcementId))
                 .andExpect(status().isNotFound());
@@ -521,7 +521,7 @@ class PublishAnnouncementWebMvcTest {
         UUID announcementId = UUID.randomUUID();
 
         when(publishAnnouncementUseCase.execute(PublishAnnouncementCommand.from(announcementId)))
-                .thenThrow(new ResponseStatusException(HttpStatus.CONFLICT, "Status inválido para publicação"));
+                .thenThrow(new ResponseStatusException(HttpStatus.CONFLICT, "Somente comunicados em rascunho ou agendados podem ser publicados!"));
 
         mockMvc.perform(patch("/api/posts/{id}/publish", announcementId))
                 .andExpect(status().isConflict());

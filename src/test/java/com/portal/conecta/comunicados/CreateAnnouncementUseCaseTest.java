@@ -128,7 +128,7 @@ class CreateAnnouncementUseCaseTest {
 
         assertThatThrownBy(() -> useCase.execute(command))
                 .isInstanceOf(AnnouncementPermissionDeniedException.class)
-                .hasMessageContaining("User does not have permission to create an announcement.");
+                .hasMessageContaining("Usuário não tem permissão para criar um comunicado.");
 
         verify(announcementRepository, never()).save(any());
         verify(destinationRepository, never()).saveAll(anyList());

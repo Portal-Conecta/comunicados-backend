@@ -34,6 +34,7 @@ import com.portal.conecta.comunicados.shared.context.ContextClass;
 import com.portal.conecta.comunicados.shared.context.RequestContext;
 import com.portal.conecta.comunicados.shared.context.RequestContextProvider;
 import com.portal.conecta.comunicados.shared.context.UserType;
+import com.portal.conecta.comunicados.shared.exception.GlobalExceptionHandler;
 import com.portal.conecta.comunicados.shared.security.error.SecurityErrorResponseWriter;
 import com.portal.conecta.comunicados.shared.security.token.JwtExtractToken;
 
@@ -96,7 +97,9 @@ class ScheduleAnnouncementFlowTest {
                 requestContextProvider
         );
 
-        mockMvc = MockMvcBuilders.standaloneSetup(controller).build();
+        mockMvc = MockMvcBuilders.standaloneSetup(controller)
+                .setControllerAdvice(new GlobalExceptionHandler())
+                .build();
     }
 
     @Test
@@ -179,7 +182,8 @@ class ScheduleAnnouncementFlowTest {
         mockMvc.perform(patch("/api/posts/{id}/schedule", announcementId)
                         .contentType(MediaType.APPLICATION_JSON)
                         .content("{\"scheduledFor\":\"" + scheduledFor + "\"}"))
-                .andExpect(status().isForbidden());
+                .andExpect(status().isUnauthorized())
+                .andExpect(jsonPath("$.message").value("Usuário não autorizado."));
 
         verify(announcementRepository, never()).save(any());
         verify(announcementHistoryRepository, never()).save(any());
@@ -234,7 +238,8 @@ class ScheduleAnnouncementFlowTest {
         mockMvc.perform(patch("/api/posts/{id}/schedule", announcementId)
                         .contentType(MediaType.APPLICATION_JSON)
                         .content("{\"scheduledFor\":\"" + scheduledFor + "\"}"))
-                .andExpect(status().isForbidden());
+                .andExpect(status().isUnauthorized())
+                .andExpect(jsonPath("$.message").value("Usuário não autorizado."));
 
         verify(announcementRepository, never()).save(any());
         verify(announcementHistoryRepository, never()).save(any());
@@ -416,7 +421,7 @@ class ScheduleAnnouncementWebMvcTest {
         Instant scheduledFor = Instant.now().plus(1, ChronoUnit.DAYS);
 
         when(scheduleAnnouncementUseCase.execute(any(ScheduleAnnouncementCommand.class)))
-                .thenThrow(new ResponseStatusException(HttpStatus.FORBIDDEN, "Sem permissão"));
+                .thenThrow(new ResponseStatusException(HttpStatus.FORBIDDEN, "Usuário sem permissão para agendar este comunicado!"));
 
         mockMvc.perform(patch("/api/posts/{id}/schedule", announcementId)
                         .contentType(MediaType.APPLICATION_JSON)
