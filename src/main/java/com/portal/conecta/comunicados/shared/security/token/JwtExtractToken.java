@@ -30,7 +30,9 @@ public class JwtExtractToken {
         UUID userId = UUID.fromString(claims.getSubject());
         UserType userType = UserType.valueOf(claims.get("userType", String.class));
         List<ContextClass> classes = extractClasses(claims.get("classes"));
-        return new RequestContext(userId, userType, classes);
+        Integer permissionVersion = extractPermissionVersion(claims.get("permissionVersion"));
+
+        return new RequestContext(userId, userType, classes, permissionVersion);
     }
 
     public boolean isValidToken(String token) {
@@ -81,4 +83,31 @@ public class JwtExtractToken {
                 ClassRole.valueOf(role.toString())
         );
     }
+
+    private Integer extractPermissionVersion(Object permissionVersionClaim) {
+        if (permissionVersionClaim == null) {
+            return null;
+        }
+
+        if (permissionVersionClaim instanceof Number number) {
+            int permissionVersion = number.intValue();
+            validatePermissionVersion(permissionVersion);
+            return permissionVersion;
+        }
+
+        try {
+            int permissionVersion = Integer.parseInt(permissionVersionClaim.toString());
+            validatePermissionVersion(permissionVersion);
+            return permissionVersion;
+        } catch (NumberFormatException exception) {
+            throw new IllegalArgumentException("Invalid permissionVersion claim.", exception);
+        }
+    }
+
+    private void validatePermissionVersion(Integer permissionVersion) {
+        if (permissionVersion < 0) {
+            throw new IllegalArgumentException("Invalid permissionVersion claim.");
+        }
+    }
+
 }
