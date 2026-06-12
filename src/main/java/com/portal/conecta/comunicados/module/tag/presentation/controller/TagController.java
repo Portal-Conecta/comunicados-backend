@@ -45,7 +45,7 @@ public class TagController {
     ) {
         List<TagResponse> response = listTagsUseCase.execute(entityType)
                 .stream()
-                .map(TagResponse::from)
+                .map(TagResponse::fromEntity)
                 .toList();
         return ResponseEntity.ok(response);
     }
@@ -61,7 +61,7 @@ public class TagController {
         List<TagResponse> response = listAnnouncementTagsUseCase.execute(id)
                 .stream()
                 .map(AnnouncementTag::getTag)
-                .map(TagResponse::from)
+                .map(TagResponse::fromEntity)
                 .toList();
         return ResponseEntity.ok(response);
     }
@@ -84,7 +84,7 @@ public class TagController {
         List<TagResponse> response = linkAnnouncementTagUseCase.execute(command)
                 .stream()
                 .map(AnnouncementTag::getTag)
-                .map(TagResponse::from)
+                .map(TagResponse::fromEntity)
                 .toList();
 
         return ResponseEntity.ok(response);
