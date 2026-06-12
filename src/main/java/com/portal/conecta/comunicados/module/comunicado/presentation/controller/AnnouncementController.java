@@ -19,6 +19,7 @@ import org.springframework.web.bind.annotation.RestController;
 
 import com.portal.conecta.comunicados.module.comunicado.application.command.CreateAnnouncementCommand;
 import com.portal.conecta.comunicados.module.comunicado.application.command.PublishAnnouncementCommand;
+import com.portal.conecta.comunicados.module.comunicado.application.command.ScheduleAnnouncementCommand;
 import com.portal.conecta.comunicados.module.comunicado.application.query.GetAnnouncementByIdQuery;
 import com.portal.conecta.comunicados.module.comunicado.application.query.ListAnnouncementsQuery;
 import com.portal.conecta.comunicados.module.comunicado.application.usecase.CreateAnnouncementUseCase;
@@ -26,9 +27,11 @@ import com.portal.conecta.comunicados.module.comunicado.application.usecase.Dele
 import com.portal.conecta.comunicados.module.comunicado.application.usecase.GetAnnouncementByIdUseCase;
 import com.portal.conecta.comunicados.module.comunicado.application.usecase.ListAnnouncementsUseCase;
 import com.portal.conecta.comunicados.module.comunicado.application.usecase.PublishAnnouncementUseCase;
+import com.portal.conecta.comunicados.module.comunicado.application.usecase.ScheduleAnnouncementUseCase;
 import com.portal.conecta.comunicados.module.comunicado.domain.model.Announcement;
 import com.portal.conecta.comunicados.module.comunicado.presentation.dto.request.CreateAnnouncementRequest;
 import com.portal.conecta.comunicados.module.comunicado.presentation.dto.request.PostFilterRequest;
+import com.portal.conecta.comunicados.module.comunicado.presentation.dto.request.ScheduleAnnouncementRequest;
 import com.portal.conecta.comunicados.module.comunicado.presentation.dto.response.AnnouncementDetailResponse;
 import com.portal.conecta.comunicados.module.comunicado.presentation.dto.response.AnnouncementResponse;
 import com.portal.conecta.comunicados.module.comunicado.presentation.dto.response.ListAnnouncementsResponse;
@@ -48,6 +51,7 @@ import lombok.RequiredArgsConstructor;
 public class AnnouncementController {
 
     private final PublishAnnouncementUseCase publishAnnouncementUseCase;
+    private final ScheduleAnnouncementUseCase scheduleAnnouncementUseCase;
     private final CreateAnnouncementUseCase createAnnouncementUseCase;
     private final ListAnnouncementsUseCase listAnnouncementsUseCase;
     private final GetAnnouncementByIdUseCase getAnnouncementByIdUseCase;
@@ -164,12 +168,21 @@ public class AnnouncementController {
     @Operation(summary = "Agendar comunicado")
     @ApiResponses({
             @ApiResponse(responseCode = "200", description = "Agendado"),
+            @ApiResponse(responseCode = "400", description = "Data de agendamento no passado ou dados obrigatórios ausentes"),
+            @ApiResponse(responseCode = "401", description = "Não autenticado"),
             @ApiResponse(responseCode = "403", description = "Sem permissão — APRENDIZ"),
-            @ApiResponse(responseCode = "422", description = "AG02 — data no passado")
+            @ApiResponse(responseCode = "404", description = "Comunicado não encontrado"),
+            @ApiResponse(responseCode = "409", description = "Comunicado não pode ser agendado nesse status")
     })
     @PatchMapping("/{id}/schedule")
-    public ResponseEntity<Object> schedule(@PathVariable UUID id, @Valid @RequestBody Object request) {
-        return ResponseEntity.ok(null);
+    public ResponseEntity<AnnouncementResponse> schedule(
+            @PathVariable UUID id,
+            @Valid @RequestBody ScheduleAnnouncementRequest request
+    ) {
+        ScheduleAnnouncementCommand command = ScheduleAnnouncementCommand.fromRequest(id, request);
+        Announcement scheduled = scheduleAnnouncementUseCase.execute(command);
+
+        return ResponseEntity.ok(AnnouncementResponse.fromEntity(scheduled));
     }
 
     @Operation(summary = "Cancelar agendamento")

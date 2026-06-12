@@ -1,8 +1,11 @@
 package com.portal.conecta.comunicados;
 
 import com.portal.conecta.comunicados.module.comunicado.application.usecase.CreateAnnouncementUseCase;
+import com.portal.conecta.comunicados.module.comunicado.application.usecase.DeleteAnnouncementUseCase;
 import com.portal.conecta.comunicados.module.comunicado.application.usecase.GetAnnouncementByIdUseCase;
 import com.portal.conecta.comunicados.module.comunicado.application.usecase.ListAnnouncementsUseCase;
+import com.portal.conecta.comunicados.module.comunicado.application.usecase.PublishAnnouncementUseCase;
+import com.portal.conecta.comunicados.module.comunicado.application.usecase.ScheduleAnnouncementUseCase;
 import com.portal.conecta.comunicados.module.comunicado.domain.exception.AnnouncementNotFoundException;
 import com.portal.conecta.comunicados.module.comunicado.domain.model.Announcement;
 import com.portal.conecta.comunicados.module.comunicado.presentation.controller.AnnouncementController;
@@ -44,6 +47,12 @@ class AnnouncementControllerTest {
     private MockMvc mockMvc;
 
     @MockitoBean
+    private PublishAnnouncementUseCase publishAnnouncementUseCase;
+
+    @MockitoBean
+    private ScheduleAnnouncementUseCase scheduleAnnouncementUseCase;
+
+    @MockitoBean
     private CreateAnnouncementUseCase createAnnouncementUseCase;
 
     @MockitoBean
@@ -51,6 +60,9 @@ class AnnouncementControllerTest {
 
     @MockitoBean
     private GetAnnouncementByIdUseCase getAnnouncementByIdUseCase;
+
+    @MockitoBean
+    private DeleteAnnouncementUseCase deleteAnnouncementUseCase;
 
     @MockitoBean
     private RequestContextProvider contextProvider;

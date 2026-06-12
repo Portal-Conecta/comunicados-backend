@@ -11,7 +11,11 @@ import static org.springframework.test.web.servlet.request.MockMvcRequestBuilder
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.jsonPath;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
 
-import com.portal.conecta.comunicados.module.comunicado.application.command.PublishAnnouncementCommand;
+import com.portal.conecta.comunicados.module.comunicado.application.command.ScheduleAnnouncementCommand;
+import com.portal.conecta.comunicados.module.comunicado.application.usecase.CreateAnnouncementUseCase;
+import com.portal.conecta.comunicados.module.comunicado.application.usecase.DeleteAnnouncementUseCase;
+import com.portal.conecta.comunicados.module.comunicado.application.usecase.GetAnnouncementByIdUseCase;
+import com.portal.conecta.comunicados.module.comunicado.application.usecase.ListAnnouncementsUseCase;
 import com.portal.conecta.comunicados.module.comunicado.application.usecase.PublishAnnouncementUseCase;
 import com.portal.conecta.comunicados.module.comunicado.application.usecase.ScheduleAnnouncementUseCase;
 import com.portal.conecta.comunicados.module.comunicado.domain.enums.AnnouncementDestinationType;
@@ -24,36 +28,36 @@ import com.portal.conecta.comunicados.module.comunicado.domain.model.Announcemen
 import com.portal.conecta.comunicados.module.comunicado.domain.port.announcement.AnnouncementHistoryRepository;
 import com.portal.conecta.comunicados.module.comunicado.domain.port.announcement.AnnouncementRepository;
 import com.portal.conecta.comunicados.module.comunicado.presentation.controller.AnnouncementController;
+import com.portal.conecta.comunicados.module.comunicado.presentation.dto.request.ScheduleAnnouncementRequest;
 import com.portal.conecta.comunicados.shared.context.ClassRole;
 import com.portal.conecta.comunicados.shared.context.ContextClass;
 import com.portal.conecta.comunicados.shared.context.RequestContext;
 import com.portal.conecta.comunicados.shared.context.RequestContextProvider;
 import com.portal.conecta.comunicados.shared.context.UserType;
-import com.portal.conecta.comunicados.module.comunicado.application.usecase.CreateAnnouncementUseCase;
-import com.portal.conecta.comunicados.module.comunicado.application.usecase.DeleteAnnouncementUseCase;
-import com.portal.conecta.comunicados.module.comunicado.application.usecase.GetAnnouncementByIdUseCase;
-import com.portal.conecta.comunicados.module.comunicado.application.usecase.ListAnnouncementsUseCase;
+import com.portal.conecta.comunicados.shared.exception.GlobalExceptionHandler;
 import com.portal.conecta.comunicados.shared.security.error.SecurityErrorResponseWriter;
 import com.portal.conecta.comunicados.shared.security.token.JwtExtractToken;
 
+import java.time.Instant;
+import java.time.temporal.ChronoUnit;
 import java.util.List;
 import java.util.Optional;
 import java.util.UUID;
-import java.time.Instant;
 
+import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Test;
+import org.mockito.ArgumentCaptor;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.webmvc.test.autoconfigure.AutoConfigureMockMvc;
 import org.springframework.boot.webmvc.test.autoconfigure.WebMvcTest;
 import org.springframework.http.HttpStatus;
+import org.springframework.http.MediaType;
 import org.springframework.test.context.bean.override.mockito.MockitoBean;
-import org.springframework.web.server.ResponseStatusException;
-import org.junit.jupiter.api.BeforeEach;
-import org.junit.jupiter.api.Test;
-import org.mockito.ArgumentCaptor;
 import org.springframework.test.web.servlet.MockMvc;
 import org.springframework.test.web.servlet.setup.MockMvcBuilders;
+import org.springframework.web.server.ResponseStatusException;
 
-class PublishAnnouncementFlowTest {
+class ScheduleAnnouncementFlowTest {
 
     private AnnouncementRepository announcementRepository;
     private AnnouncementHistoryRepository announcementHistoryRepository;
@@ -75,13 +79,13 @@ class PublishAnnouncementFlowTest {
         listAnnouncementsUseCase = mock(ListAnnouncementsUseCase.class);
         getAnnouncementByIdUseCase = mock(GetAnnouncementByIdUseCase.class);
         deleteAnnouncementUseCase = mock(DeleteAnnouncementUseCase.class);
+        publishAnnouncementUseCase = mock(PublishAnnouncementUseCase.class);
 
-        publishAnnouncementUseCase = new PublishAnnouncementUseCase(
+        scheduleAnnouncementUseCase = new ScheduleAnnouncementUseCase(
                 announcementRepository,
                 announcementHistoryRepository,
                 requestContextProvider
         );
-        scheduleAnnouncementUseCase = mock(ScheduleAnnouncementUseCase.class);
 
         AnnouncementController controller = new AnnouncementController(
                 publishAnnouncementUseCase,
@@ -93,16 +97,18 @@ class PublishAnnouncementFlowTest {
                 requestContextProvider
         );
 
-        mockMvc = MockMvcBuilders.standaloneSetup(controller).build();
+        mockMvc = MockMvcBuilders.standaloneSetup(controller)
+                .setControllerAdvice(new GlobalExceptionHandler())
+                .build();
     }
 
     @Test
-    void shouldPublishDraftAnnouncement() throws Exception {
+    void shouldScheduleDraftAnnouncement() throws Exception {
         UUID announcementId = UUID.randomUUID();
         UUID userId = UUID.randomUUID();
+        Instant scheduledFor = Instant.now().plus(1, ChronoUnit.DAYS);
 
         Announcement announcement = createValidAnnouncement(announcementId);
-        announcement.setStatus(AnnouncementStatus.DRAFT);
 
         when(requestContextProvider.getRequestContext())
                 .thenReturn(createContext(userId, UserType.SENAI));
@@ -111,15 +117,16 @@ class PublishAnnouncementFlowTest {
         when(announcementRepository.save(announcement))
                 .thenReturn(announcement);
 
-        mockMvc.perform(patch("/api/posts/{id}/publish", announcementId))
+        mockMvc.perform(patch("/api/posts/{id}/schedule", announcementId)
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content("{\"scheduledFor\":\"" + scheduledFor + "\"}"))
                 .andExpect(status().isOk())
                 .andExpect(jsonPath("$.id").value(announcementId.toString()))
-                .andExpect(jsonPath("$.status").value(AnnouncementStatus.PUBLISHED.name()))
-                .andExpect(jsonPath("$.publishedByUserId").value(userId.toString()));
+                .andExpect(jsonPath("$.status").value(AnnouncementStatus.SCHEDULED.name()))
+                .andExpect(jsonPath("$.scheduledFor").exists());
 
-        assertEquals(AnnouncementStatus.PUBLISHED, announcement.getStatus());
-        assertEquals(userId, announcement.getPublishedByUserId());
-        assertNotNull(announcement.getPublishedAt());
+        assertEquals(AnnouncementStatus.SCHEDULED, announcement.getStatus());
+        assertEquals(scheduledFor, announcement.getScheduledFor());
 
         ArgumentCaptor<AnnouncementHistory> historyCaptor = ArgumentCaptor.forClass(AnnouncementHistory.class);
         verify(announcementHistoryRepository).save(historyCaptor.capture());
@@ -128,42 +135,20 @@ class PublishAnnouncementFlowTest {
 
         assertEquals(announcement, history.getAnnouncement());
         assertEquals(userId, history.getUserId());
-        assertEquals(AnnouncementHistoryAction.PUBLICATION, history.getAction());
+        assertEquals(AnnouncementHistoryAction.SCHEDULED, history.getAction());
         assertNotNull(history.getSnapshot());
         assertNotNull(history.getCreatedAt());
     }
 
     @Test
-    void shouldPublishDraftAnnouncementDirectlyInUseCase() {
+    void shouldScheduleDraftAnnouncementDirectlyInUseCase() {
         UUID announcementId = UUID.randomUUID();
         UUID userId = UUID.randomUUID();
+        Instant scheduledFor = Instant.now().plus(2, ChronoUnit.HOURS);
 
         Announcement announcement = createValidAnnouncement(announcementId);
-
-        when(requestContextProvider.getRequestContext())
-                .thenReturn(createContext(userId, UserType.SENAI));
-        when(announcementRepository.findByIdAndRemovedAtIsNull(announcementId))
-                .thenReturn(Optional.of(announcement));
-        when(announcementRepository.save(announcement))
-                .thenReturn(announcement);
-
-        Announcement result = publishAnnouncementUseCase.execute(PublishAnnouncementCommand.from(announcementId));
-
-        assertEquals(AnnouncementStatus.PUBLISHED, result.getStatus());
-        assertEquals(userId, result.getPublishedByUserId());
-        assertNotNull(result.getPublishedAt());
-
-        verify(announcementRepository).save(announcement);
-        verify(announcementHistoryRepository).save(any(AnnouncementHistory.class));
-    }
-
-    @Test
-    void shouldPublishScheduledAnnouncement() throws Exception {
-        UUID announcementId = UUID.randomUUID();
-        UUID userId = UUID.randomUUID();
-
-        Announcement announcement = createValidAnnouncement(announcementId);
-        announcement.setStatus(AnnouncementStatus.SCHEDULED);
+        ScheduleAnnouncementRequest request = new ScheduleAnnouncementRequest(scheduledFor);
+        ScheduleAnnouncementCommand command = ScheduleAnnouncementCommand.fromRequest(announcementId, request);
 
         when(requestContextProvider.getRequestContext())
                 .thenReturn(createContext(userId, UserType.WEG));
@@ -172,9 +157,10 @@ class PublishAnnouncementFlowTest {
         when(announcementRepository.save(announcement))
                 .thenReturn(announcement);
 
-        mockMvc.perform(patch("/api/posts/{id}/publish", announcementId))
-                .andExpect(status().isOk())
-                .andExpect(jsonPath("$.status").value(AnnouncementStatus.PUBLISHED.name()));
+        Announcement result = scheduleAnnouncementUseCase.execute(command);
+
+        assertEquals(AnnouncementStatus.SCHEDULED, result.getStatus());
+        assertEquals(scheduledFor, result.getScheduledFor());
 
         verify(announcementRepository).save(announcement);
         verify(announcementHistoryRepository).save(any(AnnouncementHistory.class));
@@ -184,6 +170,7 @@ class PublishAnnouncementFlowTest {
     void shouldReturnForbiddenForStudent() throws Exception {
         UUID announcementId = UUID.randomUUID();
         UUID userId = UUID.randomUUID();
+        Instant scheduledFor = Instant.now().plus(1, ChronoUnit.DAYS);
 
         Announcement announcement = createValidAnnouncement(announcementId);
 
@@ -192,18 +179,22 @@ class PublishAnnouncementFlowTest {
         when(announcementRepository.findByIdAndRemovedAtIsNull(announcementId))
                 .thenReturn(Optional.of(announcement));
 
-        mockMvc.perform(patch("/api/posts/{id}/publish", announcementId))
-                .andExpect(status().isForbidden());
+        mockMvc.perform(patch("/api/posts/{id}/schedule", announcementId)
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content("{\"scheduledFor\":\"" + scheduledFor + "\"}"))
+                .andExpect(status().isUnauthorized())
+                .andExpect(jsonPath("$.message").value("Usuário não autorizado."));
 
         verify(announcementRepository, never()).save(any());
         verify(announcementHistoryRepository, never()).save(any());
     }
 
     @Test
-    void shouldPublishWhenTeacherHasLinkedClass() throws Exception {
+    void shouldScheduleWhenTeacherHasLinkedClass() throws Exception {
         UUID announcementId = UUID.randomUUID();
         UUID userId = UUID.randomUUID();
         UUID classId = UUID.randomUUID();
+        Instant scheduledFor = Instant.now().plus(1, ChronoUnit.DAYS);
 
         Announcement announcement = createValidAnnouncementForClass(announcementId, classId);
 
@@ -214,32 +205,11 @@ class PublishAnnouncementFlowTest {
         when(announcementRepository.save(announcement))
                 .thenReturn(announcement);
 
-        mockMvc.perform(patch("/api/posts/{id}/publish", announcementId))
+        mockMvc.perform(patch("/api/posts/{id}/schedule", announcementId)
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content("{\"scheduledFor\":\"" + scheduledFor + "\"}"))
                 .andExpect(status().isOk())
-                .andExpect(jsonPath("$.status").value(AnnouncementStatus.PUBLISHED.name()));
-
-        verify(announcementRepository).save(announcement);
-        verify(announcementHistoryRepository).save(any(AnnouncementHistory.class));
-    }
-
-    @Test
-    void shouldPublishWhenRepresentativeHasOwnClass() throws Exception {
-        UUID announcementId = UUID.randomUUID();
-        UUID userId = UUID.randomUUID();
-        UUID classId = UUID.randomUUID();
-
-        Announcement announcement = createValidAnnouncementForClass(announcementId, classId);
-
-        when(requestContextProvider.getRequestContext())
-                .thenReturn(createContext(userId, UserType.REPRESENTATIVE, new ContextClass(classId, ClassRole.REPRESENTATIVE)));
-        when(announcementRepository.findByIdAndRemovedAtIsNull(announcementId))
-                .thenReturn(Optional.of(announcement));
-        when(announcementRepository.save(announcement))
-                .thenReturn(announcement);
-
-        mockMvc.perform(patch("/api/posts/{id}/publish", announcementId))
-                .andExpect(status().isOk())
-                .andExpect(jsonPath("$.status").value(AnnouncementStatus.PUBLISHED.name()));
+                .andExpect(jsonPath("$.status").value(AnnouncementStatus.SCHEDULED.name()));
 
         verify(announcementRepository).save(announcement);
         verify(announcementHistoryRepository).save(any(AnnouncementHistory.class));
@@ -249,6 +219,7 @@ class PublishAnnouncementFlowTest {
     void shouldReturnForbiddenWhenRepresentativeHasDifferentClass() throws Exception {
         UUID announcementId = UUID.randomUUID();
         UUID userId = UUID.randomUUID();
+        Instant scheduledFor = Instant.now().plus(1, ChronoUnit.DAYS);
 
         UUID announcementClassId = UUID.randomUUID();
         UUID representativeClassId = UUID.randomUUID();
@@ -256,54 +227,41 @@ class PublishAnnouncementFlowTest {
         Announcement announcement = createValidAnnouncementForClass(announcementId, announcementClassId);
 
         when(requestContextProvider.getRequestContext())
-                .thenReturn(createContext(userId, UserType.REPRESENTATIVE, new ContextClass(representativeClassId, ClassRole.REPRESENTATIVE)));
+                .thenReturn(createContext(
+                        userId,
+                        UserType.REPRESENTATIVE,
+                        new ContextClass(representativeClassId, ClassRole.REPRESENTATIVE)
+                ));
         when(announcementRepository.findByIdAndRemovedAtIsNull(announcementId))
                 .thenReturn(Optional.of(announcement));
 
-        mockMvc.perform(patch("/api/posts/{id}/publish", announcementId))
-                .andExpect(status().isForbidden());
+        mockMvc.perform(patch("/api/posts/{id}/schedule", announcementId)
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content("{\"scheduledFor\":\"" + scheduledFor + "\"}"))
+                .andExpect(status().isUnauthorized())
+                .andExpect(jsonPath("$.message").value("Usuário não autorizado."));
 
         verify(announcementRepository, never()).save(any());
         verify(announcementHistoryRepository, never()).save(any());
     }
 
     @Test
-    void shouldReturnForbiddenWhenTeacherHasNoLinkedClass() throws Exception {
+    void shouldReturnBadRequestWhenScheduledForIsInThePast() throws Exception {
         UUID announcementId = UUID.randomUUID();
         UUID userId = UUID.randomUUID();
+        Instant scheduledFor = Instant.now().minus(1, ChronoUnit.HOURS);
 
-        UUID announcementClassId = UUID.randomUUID();
-        UUID teacherClassId = UUID.randomUUID();
-
-        Announcement announcement = createValidAnnouncementForClass(announcementId, announcementClassId);
+        Announcement announcement = createValidAnnouncement(announcementId);
 
         when(requestContextProvider.getRequestContext())
-                .thenReturn(createContext(userId, UserType.TEACHER, new ContextClass(teacherClassId, ClassRole.TEACHER)));
+                .thenReturn(createContext(userId, UserType.SENAI));
         when(announcementRepository.findByIdAndRemovedAtIsNull(announcementId))
                 .thenReturn(Optional.of(announcement));
 
-        mockMvc.perform(patch("/api/posts/{id}/publish", announcementId))
-                .andExpect(status().isForbidden());
-
-        verify(announcementRepository, never()).save(any());
-        verify(announcementHistoryRepository, never()).save(any());
-    }
-
-    @Test
-    void shouldReturnForbiddenWhenTeacherHasNoClassesInContext() throws Exception {
-        UUID announcementId = UUID.randomUUID();
-        UUID userId = UUID.randomUUID();
-        UUID classId = UUID.randomUUID();
-
-        Announcement announcement = createValidAnnouncementForClass(announcementId, classId);
-
-        when(requestContextProvider.getRequestContext())
-                .thenReturn(new RequestContext(userId, UserType.TEACHER, null));
-        when(announcementRepository.findByIdAndRemovedAtIsNull(announcementId))
-                .thenReturn(Optional.of(announcement));
-
-        mockMvc.perform(patch("/api/posts/{id}/publish", announcementId))
-                .andExpect(status().isForbidden());
+        mockMvc.perform(patch("/api/posts/{id}/schedule", announcementId)
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content("{\"scheduledFor\":\"" + scheduledFor + "\"}"))
+                .andExpect(status().isBadRequest());
 
         verify(announcementRepository, never()).save(any());
         verify(announcementHistoryRepository, never()).save(any());
@@ -313,13 +271,16 @@ class PublishAnnouncementFlowTest {
     void shouldReturnNotFoundWhenAnnouncementDoesNotExist() throws Exception {
         UUID announcementId = UUID.randomUUID();
         UUID userId = UUID.randomUUID();
+        Instant scheduledFor = Instant.now().plus(1, ChronoUnit.DAYS);
 
         when(requestContextProvider.getRequestContext())
                 .thenReturn(createContext(userId, UserType.SENAI));
         when(announcementRepository.findByIdAndRemovedAtIsNull(announcementId))
                 .thenReturn(Optional.empty());
 
-        mockMvc.perform(patch("/api/posts/{id}/publish", announcementId))
+        mockMvc.perform(patch("/api/posts/{id}/schedule", announcementId)
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content("{\"scheduledFor\":\"" + scheduledFor + "\"}"))
                 .andExpect(status().isNotFound());
 
         verify(announcementRepository, never()).save(any());
@@ -330,6 +291,7 @@ class PublishAnnouncementFlowTest {
     void shouldReturnConflictWhenAnnouncementIsAlreadyPublished() throws Exception {
         UUID announcementId = UUID.randomUUID();
         UUID userId = UUID.randomUUID();
+        Instant scheduledFor = Instant.now().plus(1, ChronoUnit.DAYS);
 
         Announcement announcement = createValidAnnouncement(announcementId);
         announcement.setStatus(AnnouncementStatus.PUBLISHED);
@@ -339,7 +301,9 @@ class PublishAnnouncementFlowTest {
         when(announcementRepository.findByIdAndRemovedAtIsNull(announcementId))
                 .thenReturn(Optional.of(announcement));
 
-        mockMvc.perform(patch("/api/posts/{id}/publish", announcementId))
+        mockMvc.perform(patch("/api/posts/{id}/schedule", announcementId)
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content("{\"scheduledFor\":\"" + scheduledFor + "\"}"))
                 .andExpect(status().isConflict());
 
         verify(announcementRepository, never()).save(any());
@@ -348,46 +312,9 @@ class PublishAnnouncementFlowTest {
 
     @Test
     void shouldReturnBadRequestWhenAnnouncementIsIncomplete() throws Exception {
-        assertBadRequestForAnnouncementWithoutTitle();
-        assertBadRequestForAnnouncementWithoutDescription();
-        assertBadRequestForAnnouncementWithoutDestination();
-    }
-
-    private void assertBadRequestForAnnouncementWithoutTitle() throws Exception {
         UUID announcementId = UUID.randomUUID();
         UUID userId = UUID.randomUUID();
-
-        Announcement announcement = createValidAnnouncement(announcementId);
-        announcement.setTitle("");
-
-        when(requestContextProvider.getRequestContext())
-                .thenReturn(createContext(userId, UserType.SENAI));
-        when(announcementRepository.findByIdAndRemovedAtIsNull(announcementId))
-                .thenReturn(Optional.of(announcement));
-
-        mockMvc.perform(patch("/api/posts/{id}/publish", announcementId))
-                .andExpect(status().isBadRequest());
-    }
-
-    private void assertBadRequestForAnnouncementWithoutDescription() throws Exception {
-        UUID announcementId = UUID.randomUUID();
-        UUID userId = UUID.randomUUID();
-
-        Announcement announcement = createValidAnnouncement(announcementId);
-        announcement.setDescription("");
-
-        when(requestContextProvider.getRequestContext())
-                .thenReturn(createContext(userId, UserType.SENAI));
-        when(announcementRepository.findByIdAndRemovedAtIsNull(announcementId))
-                .thenReturn(Optional.of(announcement));
-
-        mockMvc.perform(patch("/api/posts/{id}/publish", announcementId))
-                .andExpect(status().isBadRequest());
-    }
-
-    private void assertBadRequestForAnnouncementWithoutDestination() throws Exception {
-        UUID announcementId = UUID.randomUUID();
-        UUID userId = UUID.randomUUID();
+        Instant scheduledFor = Instant.now().plus(1, ChronoUnit.DAYS);
 
         Announcement announcement = createValidAnnouncement(announcementId);
         announcement.setDestinations(List.of());
@@ -397,7 +324,9 @@ class PublishAnnouncementFlowTest {
         when(announcementRepository.findByIdAndRemovedAtIsNull(announcementId))
                 .thenReturn(Optional.of(announcement));
 
-        mockMvc.perform(patch("/api/posts/{id}/publish", announcementId))
+        mockMvc.perform(patch("/api/posts/{id}/schedule", announcementId)
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content("{\"scheduledFor\":\"" + scheduledFor + "\"}"))
                 .andExpect(status().isBadRequest());
     }
 
@@ -429,12 +358,11 @@ class PublishAnnouncementFlowTest {
 
         return announcement;
     }
-
 }
 
 @WebMvcTest(AnnouncementController.class)
 @AutoConfigureMockMvc(addFilters = false)
-class PublishAnnouncementWebMvcTest {
+class ScheduleAnnouncementWebMvcTest {
 
     @Autowired
     private MockMvc mockMvc;
@@ -467,84 +395,56 @@ class PublishAnnouncementWebMvcTest {
     private SecurityErrorResponseWriter securityErrorResponseWriter;
 
     @Test
-    void shouldPublishAnnouncementByEndpoint() throws Exception {
+    void shouldScheduleAnnouncementByEndpoint() throws Exception {
         UUID announcementId = UUID.randomUUID();
         UUID userId = UUID.randomUUID();
+        Instant scheduledFor = Instant.now().plus(1, ChronoUnit.DAYS);
 
-        Announcement announcement = createPublishedAnnouncement(announcementId, userId);
+        Announcement announcement = createScheduledAnnouncement(announcementId, userId, scheduledFor);
+        ScheduleAnnouncementRequest request = new ScheduleAnnouncementRequest(scheduledFor);
+        ScheduleAnnouncementCommand command = ScheduleAnnouncementCommand.fromRequest(announcementId, request);
 
-        when(publishAnnouncementUseCase.execute(PublishAnnouncementCommand.from(announcementId)))
-                .thenReturn(announcement);
+        when(scheduleAnnouncementUseCase.execute(command)).thenReturn(announcement);
 
-        mockMvc.perform(patch("/api/posts/{id}/publish", announcementId))
+        mockMvc.perform(patch("/api/posts/{id}/schedule", announcementId)
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content("{\"scheduledFor\":\"" + scheduledFor + "\"}"))
                 .andExpect(status().isOk())
                 .andExpect(jsonPath("$.id").value(announcementId.toString()))
-                .andExpect(jsonPath("$.status").value(AnnouncementStatus.PUBLISHED.name()))
-                .andExpect(jsonPath("$.publishedByUserId").value(userId.toString()));
-    }
-
-    @Test
-    void shouldReturnBadRequestByEndpoint() throws Exception {
-        UUID announcementId = UUID.randomUUID();
-
-        when(publishAnnouncementUseCase.execute(PublishAnnouncementCommand.from(announcementId)))
-                .thenThrow(new ResponseStatusException(HttpStatus.BAD_REQUEST, "Título é obrigatório para publicar o comunicado!"));
-
-        mockMvc.perform(patch("/api/posts/{id}/publish", announcementId))
-                .andExpect(status().isBadRequest());
+                .andExpect(jsonPath("$.status").value(AnnouncementStatus.SCHEDULED.name()))
+                .andExpect(jsonPath("$.scheduledFor").exists());
     }
 
     @Test
     void shouldReturnForbiddenByEndpoint() throws Exception {
         UUID announcementId = UUID.randomUUID();
+        Instant scheduledFor = Instant.now().plus(1, ChronoUnit.DAYS);
 
-        when(publishAnnouncementUseCase.execute(PublishAnnouncementCommand.from(announcementId)))
-                .thenThrow(new ResponseStatusException(HttpStatus.FORBIDDEN, "Usuário sem permissão para publicar este comunicado!"));
+        when(scheduleAnnouncementUseCase.execute(any(ScheduleAnnouncementCommand.class)))
+                .thenThrow(new ResponseStatusException(HttpStatus.FORBIDDEN, "Usuário sem permissão para agendar este comunicado!"));
 
-        mockMvc.perform(patch("/api/posts/{id}/publish", announcementId))
+        mockMvc.perform(patch("/api/posts/{id}/schedule", announcementId)
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content("{\"scheduledFor\":\"" + scheduledFor + "\"}"))
                 .andExpect(status().isForbidden());
     }
 
-    @Test
-    void shouldReturnNotFoundByEndpoint() throws Exception {
-        UUID announcementId = UUID.randomUUID();
-
-        when(publishAnnouncementUseCase.execute(PublishAnnouncementCommand.from(announcementId)))
-                .thenThrow(new ResponseStatusException(HttpStatus.NOT_FOUND, "Comunicado não encontrado!"));
-
-        mockMvc.perform(patch("/api/posts/{id}/publish", announcementId))
-                .andExpect(status().isNotFound());
-    }
-
-    @Test
-    void shouldReturnConflictByEndpoint() throws Exception {
-        UUID announcementId = UUID.randomUUID();
-
-        when(publishAnnouncementUseCase.execute(PublishAnnouncementCommand.from(announcementId)))
-                .thenThrow(new ResponseStatusException(HttpStatus.CONFLICT, "Somente comunicados em rascunho ou agendados podem ser publicados!"));
-
-        mockMvc.perform(patch("/api/posts/{id}/publish", announcementId))
-                .andExpect(status().isConflict());
-    }
-
-    private Announcement createPublishedAnnouncement(UUID announcementId, UUID userId) {
+    private Announcement createScheduledAnnouncement(UUID announcementId, UUID userId, Instant scheduledFor) {
         Instant now = Instant.now();
 
         Announcement announcement = new Announcement();
 
         announcement.setId(announcementId);
-        announcement.setTitle("Comunicado publicado");
-        announcement.setDescription("Descricao do comunicado publicado");
+        announcement.setTitle("Comunicado agendado");
+        announcement.setDescription("Descricao do comunicado agendado");
         announcement.setOrigin(AnnouncementOrigin.SENAI);
-        announcement.setStatus(AnnouncementStatus.PUBLISHED);
+        announcement.setStatus(AnnouncementStatus.SCHEDULED);
         announcement.setPinned(false);
         announcement.setCreatedByUserId(userId);
-        announcement.setPublishedByUserId(userId);
-        announcement.setPublishedAt(now);
+        announcement.setScheduledFor(scheduledFor);
         announcement.setCreatedAt(now);
         announcement.setUpdatedAt(now);
 
         return announcement;
     }
-
 }
