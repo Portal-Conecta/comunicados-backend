@@ -6,6 +6,7 @@ import com.portal.conecta.comunicados.module.comunicado.domain.enums.Announcemen
 import com.portal.conecta.comunicados.module.comunicado.domain.model.Announcement;
 import com.portal.conecta.comunicados.module.comunicado.domain.port.announcement.AnnouncementRepository;
 import com.portal.conecta.comunicados.module.comunicado.domain.port.hub.HubCoursePort;
+import com.portal.conecta.comunicados.module.comunicado.domain.port.support.HubUserPort;
 import com.portal.conecta.comunicados.module.comunicado.domain.validator.AnnouncementPermissionValidator;
 import com.portal.conecta.comunicados.module.comunicado.presentation.dto.request.PostFilterRequest;
 import com.portal.conecta.comunicados.shared.context.ContextClass;
@@ -29,6 +30,7 @@ import static org.assertj.core.api.Assertions.assertThat;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.Mockito.never;
 import static org.mockito.Mockito.verify;
+import static org.mockito.Mockito.verifyNoInteractions;
 import static org.mockito.Mockito.when;
 
 @ExtendWith(MockitoExtension.class)
@@ -46,11 +48,14 @@ class ListAnnouncementsUseCaseTest {
     @Mock
     private HubCoursePort hubCoursePort;
 
+    @Mock
+    private HubUserPort hubUserPort;
+
     @InjectMocks
     private ListAnnouncementsUseCase useCase;
 
     private PostFilterRequest filter() {
-        return new PostFilterRequest(null, null, null, null, null, 0, 20);
+        return PostFilterRequest.defaults();
     }
 
     @Test
@@ -104,8 +109,7 @@ class ListAnnouncementsUseCaseTest {
         when(announcementRepository.findAll(any(Specification.class), any(Pageable.class)))
                 .thenReturn(new PageImpl<>(List.of()));
 
-        PostFilterRequest filterWithOrigin =
-                new PostFilterRequest(AnnouncementOrigin.WEG, null, null, null, null, 0, 20);
+        PostFilterRequest filterWithOrigin = PostFilterRequest.withOrigin(AnnouncementOrigin.WEG);
 
         Page<Announcement> result = useCase.execute(new ListAnnouncementsQuery(filterWithOrigin, userId));
 
@@ -123,7 +127,7 @@ class ListAnnouncementsUseCaseTest {
         when(announcementRepository.findAll(any(Specification.class), any(Pageable.class)))
                 .thenReturn(new PageImpl<>(List.of()));
 
-        PostFilterRequest pagedFilter = new PostFilterRequest(null, null, null, null, null, 2, 5);
+        PostFilterRequest pagedFilter = PostFilterRequest.withPaging(2, 5);
 
         useCase.execute(new ListAnnouncementsQuery(pagedFilter, userId));
 
@@ -135,5 +139,41 @@ class ListAnnouncementsUseCaseTest {
         assertThat(pageable.getPageNumber()).isEqualTo(2);
         assertThat(pageable.getPageSize()).isEqualTo(5);
         verify(permissionValidator, never()).canViewAll(UserType.STUDENT);
+    }
+
+    @Test
+    void shouldResolveHubUsers_WhenSearchIsProvided() {
+        UUID userId = UUID.randomUUID();
+        RequestContext context = new RequestContext(userId, UserType.SENAI, List.of());
+
+        when(contextProvider.getRequestContext()).thenReturn(context);
+        when(permissionValidator.canViewAll(UserType.SENAI)).thenReturn(true);
+        when(hubUserPort.findUserIdsByNameContaining("joão", context)).thenReturn(List.of(UUID.randomUUID()));
+        when(announcementRepository.findAll(any(Specification.class), any(Pageable.class)))
+                .thenReturn(new PageImpl<>(List.of()));
+
+        PostFilterRequest searchFilter = PostFilterRequest.withSearch("joão");
+
+        useCase.execute(new ListAnnouncementsQuery(searchFilter, userId));
+
+        verify(hubUserPort).findUserIdsByNameContaining("joão", context);
+        verify(announcementRepository).findAll(any(Specification.class), any(Pageable.class));
+    }
+
+    @Test
+    void shouldNotResolveHubUsers_WhenSearchIsBlank() {
+        UUID userId = UUID.randomUUID();
+        RequestContext context = new RequestContext(userId, UserType.ADMIN, List.of());
+
+        when(contextProvider.getRequestContext()).thenReturn(context);
+        when(permissionValidator.canViewAll(UserType.ADMIN)).thenReturn(true);
+        when(announcementRepository.findAll(any(Specification.class), any(Pageable.class)))
+                .thenReturn(new PageImpl<>(List.of()));
+
+        PostFilterRequest blankSearchFilter = PostFilterRequest.withSearch("   ");
+
+        useCase.execute(new ListAnnouncementsQuery(blankSearchFilter, userId));
+
+        verifyNoInteractions(hubUserPort);
     }
 }
