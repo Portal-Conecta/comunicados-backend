@@ -167,4 +167,25 @@ public class AnnouncementPermissionValidator {
         }
         return false;
     }
+
+    public boolean canUpdate(UserType userType, UUID userId, Announcement announcement) {
+        if (userType == null || userId == null || announcement == null) {
+            return false;
+        }
+
+        if (announcement.getStatus() == AnnouncementStatus.REMOVED || announcement.getRemovedAt() != null) {
+            return false;
+        }
+
+        if (userType == UserType.ADMIN || userType == UserType.SENAI || userType == UserType.WEG) {
+            return true;
+        }
+
+        if (userType == UserType.TEACHER || userType == UserType.REPRESENTATIVE) {
+            return userId.equals(announcement.getCreatedByUserId());
+        }
+
+        return false;
+    }
+
 }
