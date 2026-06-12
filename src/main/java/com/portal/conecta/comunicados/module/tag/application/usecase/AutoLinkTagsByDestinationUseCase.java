@@ -1,0 +1,82 @@
+package com.portal.conecta.comunicados.module.tag.application.usecase;
+
+import com.portal.conecta.comunicados.module.comunicado.domain.enums.AnnouncementDestinationType;
+import com.portal.conecta.comunicados.module.comunicado.domain.model.Announcement;
+import com.portal.conecta.comunicados.module.comunicado.domain.model.AnnouncementTag;
+import com.portal.conecta.comunicados.module.comunicado.domain.port.support.AnnouncementTagRepository;
+import com.portal.conecta.comunicados.module.tag.application.dto.TagLinkDestinationCommand;
+import com.portal.conecta.comunicados.module.tag.domain.enums.TagEntityType;
+import com.portal.conecta.comunicados.module.tag.domain.model.Tag;
+import com.portal.conecta.comunicados.module.tag.domain.port.TagRepository;
+import lombok.RequiredArgsConstructor;
+import lombok.extern.slf4j.Slf4j;
+import org.springframework.stereotype.Component;
+
+import java.util.List;
+import java.util.Map;
+import java.util.Optional;
+import java.util.Set;
+import java.util.UUID;
+import java.util.stream.Collectors;
+
+@Slf4j
+@Component
+@RequiredArgsConstructor
+public class AutoLinkTagsByDestinationUseCase {
+
+    private static final Map<AnnouncementDestinationType, TagEntityType> DESTINATION_TO_TAG_TYPE = Map.of(
+            AnnouncementDestinationType.CLASS, TagEntityType.CLASS,
+            AnnouncementDestinationType.COURSE, TagEntityType.COURSE,
+            AnnouncementDestinationType.GENERAL, TagEntityType.GENERAL
+    );
+
+    private final TagRepository tagRepository;
+    private final AnnouncementTagRepository announcementTagRepository;
+
+    public void execute(Announcement announcement, List<TagLinkDestinationCommand> destinations) {
+        Set<UUID> alreadyLinked = announcementTagRepository
+                .findByAnnouncementId(announcement.getId())
+                .stream()
+                .map(at -> at.getTag().getId())
+                .collect(Collectors.toSet());
+
+        List<AnnouncementTag> newLinks = destinations.stream()
+                .map(this::resolveTag)
+                .flatMap(Optional::stream)
+                .filter(tag -> !alreadyLinked.contains(tag.getId()))
+                .distinct()
+                .map(tag -> AnnouncementTag.builder().announcement(announcement).tag(tag).build())
+                .toList();
+
+        if (!newLinks.isEmpty()) {
+            announcementTagRepository.saveAll(newLinks);
+            log.info("Auto-link: {} novas tags vinculadas ao comunicado {}", newLinks.size(), announcement.getId());
+        }
+    }
+
+    private Optional<Tag> resolveTag(TagLinkDestinationCommand destination) {
+        TagEntityType tagType = DESTINATION_TO_TAG_TYPE.get(destination.type());
+        if (tagType == null) return Optional.empty();
+
+        if (destination.referenceId() != null) {
+            return findByTypeAndReference(tagType, destination.referenceId());
+        }
+        return findWithoutReference(tagType);
+    }
+
+    private Optional<Tag> findByTypeAndReference(TagEntityType type, UUID referenceId) {
+        Optional<Tag> tag = tagRepository.findByEntityTypeAndReferenceIdAndActiveTrue(type, referenceId);
+        if (tag.isEmpty()) {
+            log.debug("Auto-link: tag ativa não encontrada para type={} referenceId={}", type, referenceId);
+        }
+        return tag;
+    }
+
+    private Optional<Tag> findWithoutReference(TagEntityType type) {
+        Optional<Tag> tag = tagRepository.findFirstByEntityTypeAndActiveTrueAndReferenceIdIsNull(type);
+        if (tag.isEmpty()) {
+            log.debug("Auto-link: tag ativa sem referência não encontrada para type={}", type);
+        }
+        return tag;
+    }
+}
