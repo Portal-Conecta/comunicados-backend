@@ -73,11 +73,10 @@ public class AutoLinkTagsByDestinationUseCase {
     }
 
     private Optional<Tag> findFirstActiveByType(TagEntityType type) {
-        List<Tag> tags = tagRepository.findByEntityTypeAndActiveTrue(type);
-        if (tags.isEmpty()) {
+        Optional<Tag> tag = tagRepository.findFirstByEntityTypeAndActiveTrueOrderByCreatedAtAsc(type);
+        if (tag.isEmpty()) {
             log.debug("Auto-link: nenhuma tag ativa encontrada para type={}", type);
-            return Optional.empty();
         }
-        return Optional.of(tags.get(0));
+        return tag;
     }
 }
