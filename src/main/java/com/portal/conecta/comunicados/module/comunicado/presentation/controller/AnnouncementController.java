@@ -4,6 +4,11 @@ import java.net.URI;
 import java.util.List;
 import java.util.UUID;
 
+import com.portal.conecta.comunicados.module.comunicado.application.command.PinAnnouncementCommand;
+import com.portal.conecta.comunicados.module.comunicado.application.command.UnpinAnnouncementCommand;
+import com.portal.conecta.comunicados.module.comunicado.application.usecase.*;
+import com.portal.conecta.comunicados.module.comunicado.presentation.dto.request.PinAnnouncementRequest;
+import com.portal.conecta.comunicados.shared.context.RequestContext;
 import org.springframework.data.domain.Page;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.DeleteMapping;
@@ -21,11 +26,6 @@ import com.portal.conecta.comunicados.module.comunicado.application.command.Publ
 import com.portal.conecta.comunicados.module.comunicado.application.command.ScheduleAnnouncementCommand;
 import com.portal.conecta.comunicados.module.comunicado.application.query.GetAnnouncementByIdQuery;
 import com.portal.conecta.comunicados.module.comunicado.application.query.ListAnnouncementsQuery;
-import com.portal.conecta.comunicados.module.comunicado.application.usecase.DeleteAnnouncementUseCase;
-import com.portal.conecta.comunicados.module.comunicado.application.usecase.GetAnnouncementByIdUseCase;
-import com.portal.conecta.comunicados.module.comunicado.application.usecase.ListAnnouncementsUseCase;
-import com.portal.conecta.comunicados.module.comunicado.application.usecase.PublishAnnouncementUseCase;
-import com.portal.conecta.comunicados.module.comunicado.application.usecase.ScheduleAnnouncementUseCase;
 import com.portal.conecta.comunicados.module.comunicado.domain.model.Announcement;
 import com.portal.conecta.comunicados.module.comunicado.presentation.dto.request.PostFilterRequest;
 import com.portal.conecta.comunicados.module.comunicado.presentation.dto.request.ScheduleAnnouncementRequest;
@@ -53,6 +53,8 @@ public class AnnouncementController {
     private final GetAnnouncementByIdUseCase getAnnouncementByIdUseCase;
     private final DeleteAnnouncementUseCase deleteAnnouncementUseCase;
     private final RequestContextProvider contextProvider;
+    private final PinAnnouncementUseCase pinAnnouncementUseCase;
+    private final UnpinAnnouncementUseCase unpinAnnouncementUseCase;
 
     @Operation(
             summary = "Listar comunicados",
@@ -190,8 +192,14 @@ public class AnnouncementController {
             @ApiResponse(responseCode = "403", description = "Sem permissão — DOCENTE/APRENDIZ")
     })
     @PatchMapping("/{id}/pin")
-    public ResponseEntity<Object> pin(@PathVariable UUID id, @RequestBody(required = false) Object request) {
-        return ResponseEntity.ok(null);
+    public ResponseEntity<AnnouncementResponse> pin(@PathVariable UUID id, @Valid @RequestBody PinAnnouncementRequest request) {
+        UUID pinnedByUserId = contextProvider.getRequestContext().userId();
+
+        PinAnnouncementCommand pinAnnouncementCommand = PinAnnouncementCommand.from(request, pinnedByUserId, id);
+
+        Announcement announcement = pinAnnouncementUseCase.execute(pinAnnouncementCommand);
+
+        return ResponseEntity.ok(AnnouncementResponse.fromEntity(announcement));
     }
 
     @Operation(summary = "Desafixar comunicado")
@@ -200,8 +208,14 @@ public class AnnouncementController {
             @ApiResponse(responseCode = "403", description = "Sem permissão")
     })
     @PatchMapping("/{id}/unpin")
-    public ResponseEntity<Object> unpin(@PathVariable UUID id) {
-        return ResponseEntity.ok(null);
+    public ResponseEntity<AnnouncementResponse> unpin(@PathVariable UUID id) {
+        UUID unpinnedByUserId = contextProvider.getRequestContext().userId();
+
+        UnpinAnnouncementCommand unpinAnnouncementCommand = UnpinAnnouncementCommand.from(id, unpinnedByUserId);
+
+        Announcement announcement = unpinAnnouncementUseCase.execute(unpinAnnouncementCommand);
+
+        return ResponseEntity.ok(AnnouncementResponse.fromEntity(announcement));
     }
 
     @Operation(summary = "Listar comunicados fixados")

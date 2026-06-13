@@ -41,11 +41,24 @@ public class AnnouncementPermissionValidator {
             UserType.REPRESENTATIVE
     );
 
+    private static final EnumSet<UserType> PIN_USER_TYPE = EnumSet.of(
+            UserType.ADMIN,
+            UserType.SENAI,
+            UserType.WEG
+    );
+
     public boolean canCreate(UserType userType) {
         if (userType == null) {
             return false;
         }
         return ALLOWED_TYPES.contains(userType);
+    }
+
+    public boolean canPin(UserType userType) {
+        if (userType == null) {
+            return false;
+        }
+        return PIN_USER_TYPE.contains(userType);
     }
 
     /**
