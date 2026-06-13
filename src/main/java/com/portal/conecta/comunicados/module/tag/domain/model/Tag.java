@@ -47,9 +47,6 @@ public class Tag {
     @Column(name = "hub_entity_id", nullable = false)
     private UUID hubEntityId;
 
-    @Column(name = "reference_id")
-    private UUID referenceId;
-
     @Column(name = "active", nullable = false)
     private boolean active;
 
