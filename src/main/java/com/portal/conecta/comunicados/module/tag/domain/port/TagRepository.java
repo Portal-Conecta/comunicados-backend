@@ -15,4 +15,6 @@ public interface TagRepository extends JpaRepository<Tag, UUID> {
     Optional<Tag> findByEntityTypeAndHubEntityId(TagEntityType entityType, UUID hubEntityId);
 
     Optional<Tag> findByEntityTypeAndHubEntityIdAndActiveTrue(TagEntityType entityType, UUID hubEntityId);
+
+    Optional<Tag> findFirstByEntityTypeAndActiveTrueOrderByCreatedAtAsc(TagEntityType entityType);
 }
