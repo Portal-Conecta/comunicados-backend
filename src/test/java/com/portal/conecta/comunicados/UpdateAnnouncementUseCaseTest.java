@@ -25,6 +25,7 @@ import com.portal.conecta.comunicados.module.comunicado.domain.model.Announcemen
 import com.portal.conecta.comunicados.module.comunicado.domain.port.announcement.AnnouncementDestinationRepository;
 import com.portal.conecta.comunicados.module.comunicado.domain.port.announcement.AnnouncementHistoryRepository;
 import com.portal.conecta.comunicados.module.comunicado.domain.port.announcement.AnnouncementRepository;
+import com.portal.conecta.comunicados.module.comunicado.domain.port.support.HubClassPort;
 import com.portal.conecta.comunicados.module.comunicado.domain.validator.AnnouncementPermissionValidator;
 import com.portal.conecta.comunicados.module.comunicado.presentation.dto.request.CreateAnnouncementDestinationRequest;
 import com.portal.conecta.comunicados.module.comunicado.presentation.dto.request.UpdateAnnouncementRequest;
@@ -75,7 +76,7 @@ class UpdateAnnouncementUseCaseTest {
                 destinationRepository,
                 historyRepository,
                 contextProvider,
-                new AnnouncementPermissionValidator()
+                new AnnouncementPermissionValidator(org.mockito.Mockito.mock(HubClassPort.class))
         );
 
         announcementId = UUID.randomUUID();
@@ -88,7 +89,7 @@ class UpdateAnnouncementUseCaseTest {
                 .title("Titulo antigo")
                 .description("Descricao antiga")
                 .origin(AnnouncementOrigin.SENAI)
-                .status(AnnouncementStatus.DRAFT)
+                .status(AnnouncementStatus.SCHEDULED)
                 .pinned(false)
                 .createdByUserId(creatorId)
                 .createdAt(Instant.now().minusSeconds(120))

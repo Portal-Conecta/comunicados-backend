@@ -22,6 +22,7 @@ import com.portal.conecta.comunicados.module.comunicado.application.usecase.GetA
 import com.portal.conecta.comunicados.module.comunicado.application.usecase.ListAnnouncementsUseCase;
 import com.portal.conecta.comunicados.module.comunicado.application.usecase.PublishAnnouncementUseCase;
 import com.portal.conecta.comunicados.module.comunicado.application.usecase.ScheduleAnnouncementUseCase;
+import com.portal.conecta.comunicados.module.comunicado.application.usecase.UpdateAnnouncementUseCase;
 import com.portal.conecta.comunicados.module.comunicado.domain.enums.AnnouncementDestinationType;
 import com.portal.conecta.comunicados.module.comunicado.domain.enums.AnnouncementHistoryAction;
 import com.portal.conecta.comunicados.module.comunicado.domain.enums.AnnouncementOrigin;
@@ -34,6 +35,7 @@ import com.portal.conecta.comunicados.module.comunicado.domain.port.announcement
 import com.portal.conecta.comunicados.module.comunicado.domain.port.announcement.AnnouncementRepository;
 import com.portal.conecta.comunicados.module.comunicado.domain.port.support.HubClassPort;
 import com.portal.conecta.comunicados.module.comunicado.domain.validator.AnnouncementPermissionValidator;
+import com.portal.conecta.comunicados.module.tag.application.usecase.AutoLinkTagsByDestinationUseCase;
 import com.portal.conecta.comunicados.module.comunicado.presentation.controller.AnnouncementController;
 import com.portal.conecta.comunicados.module.comunicado.presentation.dto.request.CreateAnnouncementDestinationInput;
 import com.portal.conecta.comunicados.module.comunicado.presentation.dto.request.ScheduleAnnouncementRequest;
@@ -76,11 +78,13 @@ class ScheduleAnnouncementFlowTest {
     private AnnouncementHistoryRepository announcementHistoryRepository;
     private RequestContextProvider requestContextProvider;
     private HubClassPort hubClassPort;
+    private AutoLinkTagsByDestinationUseCase autoLinkTagsUseCase;
     private ListAnnouncementsUseCase listAnnouncementsUseCase;
     private GetAnnouncementByIdUseCase getAnnouncementByIdUseCase;
     private DeleteAnnouncementUseCase deleteAnnouncementUseCase;
     private PublishAnnouncementUseCase publishAnnouncementUseCase;
     private ScheduleAnnouncementUseCase scheduleAnnouncementUseCase;
+    private UpdateAnnouncementUseCase updateAnnouncementUseCase;
     private MockMvc mockMvc;
 
     @BeforeEach
@@ -90,17 +94,20 @@ class ScheduleAnnouncementFlowTest {
         announcementHistoryRepository = mock(AnnouncementHistoryRepository.class);
         requestContextProvider = mock(RequestContextProvider.class);
         hubClassPort = mock(HubClassPort.class);
+        autoLinkTagsUseCase = mock(AutoLinkTagsByDestinationUseCase.class);
         listAnnouncementsUseCase = mock(ListAnnouncementsUseCase.class);
         getAnnouncementByIdUseCase = mock(GetAnnouncementByIdUseCase.class);
         deleteAnnouncementUseCase = mock(DeleteAnnouncementUseCase.class);
         publishAnnouncementUseCase = mock(PublishAnnouncementUseCase.class);
+        updateAnnouncementUseCase = mock(UpdateAnnouncementUseCase.class);
 
         scheduleAnnouncementUseCase = new ScheduleAnnouncementUseCase(
                 announcementRepository,
                 announcementDestinationRepository,
                 announcementHistoryRepository,
                 requestContextProvider,
-                new AnnouncementPermissionValidator(hubClassPort)
+                new AnnouncementPermissionValidator(hubClassPort),
+                autoLinkTagsUseCase
         );
 
         AnnouncementController controller = new AnnouncementController(
@@ -109,7 +116,8 @@ class ScheduleAnnouncementFlowTest {
                 listAnnouncementsUseCase,
                 getAnnouncementByIdUseCase,
                 deleteAnnouncementUseCase,
-                requestContextProvider
+                requestContextProvider,
+                updateAnnouncementUseCase
         );
 
         mockMvc = MockMvcBuilders.standaloneSetup(controller)
@@ -306,6 +314,9 @@ class ScheduleAnnouncementWebMvcTest {
 
     @MockitoBean
     private DeleteAnnouncementUseCase deleteAnnouncementUseCase;
+
+    @MockitoBean
+    private UpdateAnnouncementUseCase updateAnnouncementUseCase;
 
     @MockitoBean
     private RequestContextProvider requestContextProvider;
