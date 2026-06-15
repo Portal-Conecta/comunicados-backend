@@ -1,11 +1,13 @@
 package com.portal.conecta.comunicados;
 
-import com.portal.conecta.comunicados.module.comunicado.application.usecase.CreateAnnouncementUseCase;
+import com.portal.conecta.comunicados.module.comunicado.application.usecase.DeleteAnnouncementUseCase;
 import com.portal.conecta.comunicados.module.comunicado.application.usecase.GetAnnouncementByIdUseCase;
 import com.portal.conecta.comunicados.module.comunicado.application.usecase.ListAnnouncementsUseCase;
 import com.portal.conecta.comunicados.module.comunicado.application.usecase.DeleteAnnouncementUseCase;
 import com.portal.conecta.comunicados.module.comunicado.application.usecase.PublishAnnouncementUseCase;
 import com.portal.conecta.comunicados.module.comunicado.application.usecase.UpdateAnnouncementUseCase;
+import com.portal.conecta.comunicados.module.comunicado.application.usecase.PublishAnnouncementUseCase;
+import com.portal.conecta.comunicados.module.comunicado.application.usecase.ScheduleAnnouncementUseCase;
 import com.portal.conecta.comunicados.module.comunicado.domain.exception.AnnouncementNotFoundException;
 import com.portal.conecta.comunicados.module.comunicado.domain.model.Announcement;
 import com.portal.conecta.comunicados.module.comunicado.presentation.controller.AnnouncementController;
@@ -30,6 +32,7 @@ import java.util.UUID;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.Mockito.when;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
+import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.post;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.jsonPath;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
 
@@ -50,7 +53,7 @@ class AnnouncementControllerTest {
     private PublishAnnouncementUseCase publishAnnouncementUseCase;
 
     @MockitoBean
-    private CreateAnnouncementUseCase createAnnouncementUseCase;
+    private ScheduleAnnouncementUseCase scheduleAnnouncementUseCase;
 
     @MockitoBean
     private ListAnnouncementsUseCase listAnnouncementsUseCase;
@@ -109,6 +112,36 @@ class AnnouncementControllerTest {
         mockMvc.perform(get("/api/posts/{id}", id))
                 .andExpect(status().isOk())
                 .andExpect(jsonPath("$.announcement.id").value(id.toString()));
+    }
+
+    @Test
+    void shouldReturn405WhenCreatingAnnouncementViaPost() throws Exception {
+        stubContext();
+
+        mockMvc.perform(post("/api/posts")
+                        .contentType("application/json")
+                        .content("""
+                                {
+                                  "title": "Comunicado",
+                                  "description": "Descrição",
+                                  "origin": "SENAI",
+                                  "status": "DRAFT",
+                                  "destinations": []
+                                }
+                                """))
+                .andExpect(status().isMethodNotAllowed());
+    }
+
+    @Test
+    void shouldReturn200AndItems_WhenListingWithSearch() throws Exception {
+        stubContext();
+
+        when(listAnnouncementsUseCase.execute(any()))
+                .thenReturn(new PageImpl<>(List.of()));
+
+        mockMvc.perform(get("/api/posts").param("search", "retirada"))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.items").isArray());
     }
 
     @Test

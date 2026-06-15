@@ -1,5 +1,6 @@
 package com.portal.conecta.comunicados.shared.exception;
 
+import com.portal.conecta.comunicados.module.comunicado.domain.exception.AnnouncementMustBeInTheFutureException;
 import com.portal.conecta.comunicados.module.comunicado.domain.exception.AnnouncementNotFoundException;
 import com.portal.conecta.comunicados.module.comunicado.domain.exception.AnnouncementPermissionDeniedException;
 import com.portal.conecta.comunicados.module.tag.domain.exception.TagNotFoundException;
@@ -18,6 +19,7 @@ import org.springframework.validation.BindException;
 import org.springframework.validation.FieldError;
 import org.springframework.web.bind.MethodArgumentNotValidException;
 import org.springframework.web.bind.MissingServletRequestParameterException;
+import org.springframework.web.HttpRequestMethodNotSupportedException;
 import org.springframework.web.bind.annotation.ExceptionHandler;
 import org.springframework.web.bind.annotation.RestControllerAdvice;
 import org.springframework.web.method.annotation.MethodArgumentTypeMismatchException;
@@ -66,6 +68,14 @@ public class GlobalExceptionHandler {
             HttpServletRequest request
     ) {
         return buildResponse(HttpStatus.NOT_FOUND, exception, request);
+    }
+
+    @ExceptionHandler(AnnouncementMustBeInTheFutureException.class)
+    public ResponseEntity<ApiError> handleAnnouncementMustBeInTheFuture(
+            AnnouncementMustBeInTheFutureException exception,
+            HttpServletRequest request
+    ) {
+        return buildResponse(HttpStatus.BAD_REQUEST, exception, request);
     }
 
     @ExceptionHandler(DataIntegrityViolationException.class)
@@ -184,6 +194,14 @@ public class GlobalExceptionHandler {
         String message = Objects.requireNonNullElse(exception.getReason(), exception.getMessage());
 
         return buildResponse(status, message, request);
+    }
+
+    @ExceptionHandler(HttpRequestMethodNotSupportedException.class)
+    public ResponseEntity<ApiError> handleMethodNotSupported(
+            HttpRequestMethodNotSupportedException exception,
+            HttpServletRequest request
+    ) {
+        return buildResponse(HttpStatus.METHOD_NOT_ALLOWED, exception.getMessage(), request);
     }
 
     @ExceptionHandler(RuntimeException.class)

@@ -80,7 +80,4 @@ public class Announcement {
 
     @OneToMany(mappedBy = "announcement")
     private List<AnnouncementMention> mentions;
-
-    @OneToMany(mappedBy = "announcement")
-    private List<AnnouncementIndividualNotice> individualNotices;
 }

@@ -5,7 +5,8 @@ import java.time.Instant;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
-import com.portal.conecta.comunicados.module.comunicado.application.command.PublishAnnouncementCommand;
+import com.portal.conecta.comunicados.module.comunicado.application.command.ScheduleAnnouncementCommand;
+import com.portal.conecta.comunicados.module.comunicado.domain.exception.AnnouncementMustBeInTheFutureException;
 import com.portal.conecta.comunicados.module.comunicado.domain.exception.AnnouncementPermissionDeniedException;
 import com.portal.conecta.comunicados.module.comunicado.domain.model.Announcement;
 import com.portal.conecta.comunicados.module.comunicado.domain.port.announcement.AnnouncementDestinationRepository;
@@ -19,13 +20,12 @@ import com.portal.conecta.comunicados.shared.exception.UnauthorizedUserException
 import lombok.RequiredArgsConstructor;
 
 /**
- * Criação + publicação atômica (#107): cria o comunicado já {@code PUBLISHED}, com destinos e
- * histórico (CREATION + PUBLICATION), numa única transação. O autor/publicador é o usuário
- * autenticado.
+ * Criação + agendamento atômico (#108): cria o comunicado já {@code SCHEDULED}, com destinos e
+ * histórico (CREATION + SCHEDULED), numa única transação. {@code scheduledFor} precisa ser futuro.
  */
 @Service
 @RequiredArgsConstructor
-public class PublishAnnouncementUseCase {
+public class ScheduleAnnouncementUseCase {
 
     private final AnnouncementRepository announcementRepository;
     private final AnnouncementDestinationRepository announcementDestinationRepository;
@@ -34,10 +34,11 @@ public class PublishAnnouncementUseCase {
     private final AnnouncementPermissionValidator permissionValidator;
 
     @Transactional
-    public Announcement execute(PublishAnnouncementCommand command) {
+    public Announcement execute(ScheduleAnnouncementCommand command) {
         RequestContext context = requestContextProvider.getRequestContext();
 
         validateAuthenticatedUser(context);
+        validateScheduledFor(command);
         validatePermission(command, context);
 
         Instant now = Instant.now();
@@ -46,7 +47,7 @@ public class PublishAnnouncementUseCase {
         announcementDestinationRepository.saveAll(command.toDestinations(announcement));
 
         announcementHistoryRepository.save(command.toCreationHistory(announcement, now));
-        announcementHistoryRepository.save(command.toPublicationHistory(announcement, now));
+        announcementHistoryRepository.save(command.toScheduleHistory(announcement, now));
 
         return announcement;
     }
@@ -57,7 +58,13 @@ public class PublishAnnouncementUseCase {
         }
     }
 
-    private void validatePermission(PublishAnnouncementCommand command, RequestContext context) {
+    private void validateScheduledFor(ScheduleAnnouncementCommand command) {
+        if (command.scheduledFor() == null || !command.scheduledFor().isAfter(Instant.now())) {
+            throw new AnnouncementMustBeInTheFutureException();
+        }
+    }
+
+    private void validatePermission(ScheduleAnnouncementCommand command, RequestContext context) {
         if (!permissionValidator.canCreateForDestinations(context, command.destinations())) {
             throw new AnnouncementPermissionDeniedException();
         }

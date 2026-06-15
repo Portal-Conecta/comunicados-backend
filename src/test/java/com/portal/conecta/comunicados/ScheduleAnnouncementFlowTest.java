@@ -1,34 +1,22 @@
-package com.portal.conecta.comunicados;
-
-import java.time.Instant;
-import java.util.List;
-import java.util.UUID;
+package com.portal.conecta.comunicados.module.comunicado;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
-import org.junit.jupiter.api.BeforeEach;
-import org.junit.jupiter.api.Test;
-import org.mockito.ArgumentCaptor;
+import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.never;
 import static org.mockito.Mockito.times;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
-import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.boot.webmvc.test.autoconfigure.AutoConfigureMockMvc;
-import org.springframework.boot.webmvc.test.autoconfigure.WebMvcTest;
-import org.springframework.http.HttpStatus;
-import org.springframework.http.MediaType;
-import org.springframework.test.context.bean.override.mockito.MockitoBean;
-import org.springframework.test.web.servlet.MockMvc;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.post;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.jsonPath;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
-import org.springframework.test.web.servlet.setup.MockMvcBuilders;
-import org.springframework.web.server.ResponseStatusException;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
+import com.fasterxml.jackson.databind.SerializationFeature;
+import com.fasterxml.jackson.datatype.jsr310.JavaTimeModule;
+import com.portal.conecta.comunicados.module.comunicado.application.command.ScheduleAnnouncementCommand;
 import com.portal.conecta.comunicados.module.comunicado.application.usecase.DeleteAnnouncementUseCase;
 import com.portal.conecta.comunicados.module.comunicado.application.usecase.GetAnnouncementByIdUseCase;
 import com.portal.conecta.comunicados.module.comunicado.application.usecase.ListAnnouncementsUseCase;
@@ -38,6 +26,7 @@ import com.portal.conecta.comunicados.module.comunicado.domain.enums.Announcemen
 import com.portal.conecta.comunicados.module.comunicado.domain.enums.AnnouncementHistoryAction;
 import com.portal.conecta.comunicados.module.comunicado.domain.enums.AnnouncementOrigin;
 import com.portal.conecta.comunicados.module.comunicado.domain.enums.AnnouncementStatus;
+import com.portal.conecta.comunicados.module.comunicado.domain.exception.AnnouncementMustBeInTheFutureException;
 import com.portal.conecta.comunicados.module.comunicado.domain.model.Announcement;
 import com.portal.conecta.comunicados.module.comunicado.domain.model.AnnouncementHistory;
 import com.portal.conecta.comunicados.module.comunicado.domain.port.announcement.AnnouncementDestinationRepository;
@@ -47,7 +36,7 @@ import com.portal.conecta.comunicados.module.comunicado.domain.port.support.HubC
 import com.portal.conecta.comunicados.module.comunicado.domain.validator.AnnouncementPermissionValidator;
 import com.portal.conecta.comunicados.module.comunicado.presentation.controller.AnnouncementController;
 import com.portal.conecta.comunicados.module.comunicado.presentation.dto.request.CreateAnnouncementDestinationInput;
-import com.portal.conecta.comunicados.module.comunicado.presentation.dto.request.PublishAnnouncementRequest;
+import com.portal.conecta.comunicados.module.comunicado.presentation.dto.request.ScheduleAnnouncementRequest;
 import com.portal.conecta.comunicados.shared.context.ClassRole;
 import com.portal.conecta.comunicados.shared.context.ContextClass;
 import com.portal.conecta.comunicados.shared.context.RequestContext;
@@ -56,11 +45,31 @@ import com.portal.conecta.comunicados.shared.context.UserType;
 import com.portal.conecta.comunicados.shared.exception.GlobalExceptionHandler;
 import com.portal.conecta.comunicados.shared.security.error.SecurityErrorResponseWriter;
 import com.portal.conecta.comunicados.shared.security.token.JwtExtractToken;
-import com.portal.conecta.comunicados.module.comunicado.application.usecase.UpdateAnnouncementUseCase;
 
-class PublishAnnouncementFlowTest {
+import java.time.Instant;
+import java.time.temporal.ChronoUnit;
+import java.util.List;
+import java.util.UUID;
 
-    private static final ObjectMapper OBJECT_MAPPER = new ObjectMapper();
+import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Test;
+import org.mockito.ArgumentCaptor;
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.boot.webmvc.test.autoconfigure.AutoConfigureMockMvc;
+import org.springframework.boot.webmvc.test.autoconfigure.WebMvcTest;
+import org.springframework.http.HttpStatus;
+import org.springframework.http.MediaType;
+import org.springframework.test.context.bean.override.mockito.MockitoBean;
+import org.springframework.test.web.servlet.MockMvc;
+import org.springframework.test.web.servlet.ResultActions;
+import org.springframework.test.web.servlet.setup.MockMvcBuilders;
+import org.springframework.web.server.ResponseStatusException;
+
+class ScheduleAnnouncementFlowTest {
+
+    private static final ObjectMapper OBJECT_MAPPER = new ObjectMapper()
+            .registerModule(new JavaTimeModule())
+            .disable(SerializationFeature.WRITE_DATES_AS_TIMESTAMPS);
 
     private AnnouncementRepository announcementRepository;
     private AnnouncementDestinationRepository announcementDestinationRepository;
@@ -72,7 +81,6 @@ class PublishAnnouncementFlowTest {
     private DeleteAnnouncementUseCase deleteAnnouncementUseCase;
     private PublishAnnouncementUseCase publishAnnouncementUseCase;
     private ScheduleAnnouncementUseCase scheduleAnnouncementUseCase;
-    private UpdateAnnouncementUseCase updateAnnouncementUseCase;
     private MockMvc mockMvc;
 
     @BeforeEach
@@ -85,16 +93,15 @@ class PublishAnnouncementFlowTest {
         listAnnouncementsUseCase = mock(ListAnnouncementsUseCase.class);
         getAnnouncementByIdUseCase = mock(GetAnnouncementByIdUseCase.class);
         deleteAnnouncementUseCase = mock(DeleteAnnouncementUseCase.class);
-        updateAnnouncementUseCase = mock(UpdateAnnouncementUseCase.class);
+        publishAnnouncementUseCase = mock(PublishAnnouncementUseCase.class);
 
-        publishAnnouncementUseCase = new PublishAnnouncementUseCase(
+        scheduleAnnouncementUseCase = new ScheduleAnnouncementUseCase(
                 announcementRepository,
                 announcementDestinationRepository,
                 announcementHistoryRepository,
                 requestContextProvider,
                 new AnnouncementPermissionValidator(hubClassPort)
         );
-        scheduleAnnouncementUseCase = mock(ScheduleAnnouncementUseCase.class);
 
         AnnouncementController controller = new AnnouncementController(
                 publishAnnouncementUseCase,
@@ -102,8 +109,7 @@ class PublishAnnouncementFlowTest {
                 listAnnouncementsUseCase,
                 getAnnouncementByIdUseCase,
                 deleteAnnouncementUseCase,
-                requestContextProvider,
-                updateAnnouncementUseCase
+                requestContextProvider
         );
 
         mockMvc = MockMvcBuilders.standaloneSetup(controller)
@@ -120,27 +126,27 @@ class PublishAnnouncementFlowTest {
     }
 
     @Test
-    void shouldCreateAndPublishAnnouncement() throws Exception {
+    void shouldCreateAndScheduleAnnouncement() throws Exception {
         UUID userId = UUID.randomUUID();
-        UUID studentId = UUID.randomUUID();
+        UUID classId = UUID.randomUUID();
+        Instant scheduledFor = Instant.now().plus(1, ChronoUnit.DAYS);
 
         when(requestContextProvider.getRequestContext())
                 .thenReturn(createContext(userId, UserType.SENAI));
 
-        perform(publishRequest(userDestination(studentId)))
+        perform(scheduleRequest(scheduledFor, classDestination(classId)))
                 .andExpect(status().isCreated())
                 .andExpect(jsonPath("$.id").exists())
-                .andExpect(jsonPath("$.status").value(AnnouncementStatus.PUBLISHED.name()))
-                .andExpect(jsonPath("$.publishedByUserId").value(userId.toString()));
+                .andExpect(jsonPath("$.status").value(AnnouncementStatus.SCHEDULED.name()))
+                .andExpect(jsonPath("$.scheduledFor").exists());
 
         ArgumentCaptor<Announcement> announcementCaptor = ArgumentCaptor.forClass(Announcement.class);
         verify(announcementRepository).save(announcementCaptor.capture());
 
         Announcement saved = announcementCaptor.getValue();
-        assertEquals(AnnouncementStatus.PUBLISHED, saved.getStatus());
+        assertEquals(AnnouncementStatus.SCHEDULED, saved.getStatus());
         assertEquals(userId, saved.getCreatedByUserId());
-        assertEquals(userId, saved.getPublishedByUserId());
-        assertNotNull(saved.getPublishedAt());
+        assertNotNull(saved.getScheduledFor());
 
         verify(announcementDestinationRepository).saveAll(any());
 
@@ -149,122 +155,102 @@ class PublishAnnouncementFlowTest {
 
         List<AnnouncementHistory> histories = historyCaptor.getAllValues();
         assertEquals(AnnouncementHistoryAction.CREATION, histories.get(0).getAction());
-        assertEquals(AnnouncementHistoryAction.PUBLICATION, histories.get(1).getAction());
-    }
-
-    @Test
-    void shouldPublishToMultipleUserDestinations() throws Exception {
-        UUID userId = UUID.randomUUID();
-
-        when(requestContextProvider.getRequestContext())
-                .thenReturn(createContext(userId, UserType.WEG));
-
-        perform(publishRequest(userDestination(UUID.randomUUID()), userDestination(UUID.randomUUID())))
-                .andExpect(status().isCreated())
-                .andExpect(jsonPath("$.status").value(AnnouncementStatus.PUBLISHED.name()));
-
-        verify(announcementRepository).save(any());
-        verify(announcementDestinationRepository).saveAll(any());
+        assertEquals(AnnouncementHistoryAction.SCHEDULED, histories.get(1).getAction());
     }
 
     @Test
     void shouldReturnForbiddenForStudent() throws Exception {
         UUID userId = UUID.randomUUID();
+        Instant scheduledFor = Instant.now().plus(1, ChronoUnit.DAYS);
 
         when(requestContextProvider.getRequestContext())
                 .thenReturn(createContext(userId, UserType.STUDENT));
 
-        perform(publishRequest(userDestination(UUID.randomUUID())))
+        perform(scheduleRequest(scheduledFor, classDestination(UUID.randomUUID())))
                 .andExpect(status().isForbidden());
 
         verify(announcementRepository, never()).save(any());
-        verify(announcementHistoryRepository, never()).save(any());
     }
 
     @Test
-    void shouldPublishWhenTeacherOwnsClassDestination() throws Exception {
+    void shouldScheduleWhenTeacherOwnsClassDestination() throws Exception {
         UUID userId = UUID.randomUUID();
         UUID classId = UUID.randomUUID();
+        Instant scheduledFor = Instant.now().plus(1, ChronoUnit.DAYS);
 
         when(requestContextProvider.getRequestContext())
                 .thenReturn(createContext(userId, UserType.TEACHER, new ContextClass(classId, ClassRole.TEACHER)));
 
-        perform(publishRequest(classDestination(classId)))
+        perform(scheduleRequest(scheduledFor, classDestination(classId)))
                 .andExpect(status().isCreated())
-                .andExpect(jsonPath("$.status").value(AnnouncementStatus.PUBLISHED.name()));
+                .andExpect(jsonPath("$.status").value(AnnouncementStatus.SCHEDULED.name()));
 
         verify(announcementRepository).save(any());
     }
 
     @Test
-    void shouldReturnForbiddenWhenTeacherClassIsOutOfScope() throws Exception {
+    void shouldReturnForbiddenWhenRepresentativeHasDifferentClass() throws Exception {
         UUID userId = UUID.randomUUID();
-        UUID teacherClassId = UUID.randomUUID();
-        UUID otherClassId = UUID.randomUUID();
+        UUID announcementClassId = UUID.randomUUID();
+        UUID representativeClassId = UUID.randomUUID();
+        Instant scheduledFor = Instant.now().plus(1, ChronoUnit.DAYS);
 
         when(requestContextProvider.getRequestContext())
-                .thenReturn(createContext(userId, UserType.TEACHER, new ContextClass(teacherClassId, ClassRole.TEACHER)));
+                .thenReturn(createContext(
+                        userId,
+                        UserType.REPRESENTATIVE,
+                        new ContextClass(representativeClassId, ClassRole.REPRESENTATIVE)
+                ));
 
-        perform(publishRequest(classDestination(otherClassId)))
+        perform(scheduleRequest(scheduledFor, classDestination(announcementClassId)))
                 .andExpect(status().isForbidden());
 
         verify(announcementRepository, never()).save(any());
     }
 
     @Test
-    void shouldPublishWhenTeacherUserDestinationIsInHisClass() throws Exception {
+    void shouldReturnBadRequestWhenScheduledForIsInThePast() throws Exception {
         UUID userId = UUID.randomUUID();
-        UUID classId = UUID.randomUUID();
-        UUID studentId = UUID.randomUUID();
+        Instant scheduledFor = Instant.now().minus(1, ChronoUnit.HOURS);
 
         when(requestContextProvider.getRequestContext())
-                .thenReturn(createContext(userId, UserType.TEACHER, new ContextClass(classId, ClassRole.TEACHER)));
-        when(hubClassPort.getClassIdForUser(studentId)).thenReturn(classId);
+                .thenReturn(createContext(userId, UserType.SENAI));
 
-        perform(publishRequest(userDestination(studentId)))
-                .andExpect(status().isCreated())
-                .andExpect(jsonPath("$.status").value(AnnouncementStatus.PUBLISHED.name()));
-
-        verify(announcementRepository).save(any());
-    }
-
-    @Test
-    void shouldReturnForbiddenWhenTeacherUserDestinationIsOutOfScope() throws Exception {
-        UUID userId = UUID.randomUUID();
-        UUID classId = UUID.randomUUID();
-        UUID studentId = UUID.randomUUID();
-
-        when(requestContextProvider.getRequestContext())
-                .thenReturn(createContext(userId, UserType.TEACHER, new ContextClass(classId, ClassRole.TEACHER)));
-        when(hubClassPort.getClassIdForUser(studentId)).thenReturn(UUID.randomUUID());
-
-        perform(publishRequest(userDestination(studentId)))
-                .andExpect(status().isForbidden());
+        perform(scheduleRequest(scheduledFor, classDestination(UUID.randomUUID())))
+                .andExpect(status().isBadRequest());
 
         verify(announcementRepository, never()).save(any());
     }
 
     @Test
-    void shouldReturnBadRequestWhenTitleIsBlank() throws Exception {
+    void shouldThrowWhenScheduledForIsInThePastDirectlyInUseCase() {
+        UUID userId = UUID.randomUUID();
+        Instant past = Instant.now().minus(1, ChronoUnit.HOURS);
+
         when(requestContextProvider.getRequestContext())
-                .thenReturn(createContext(UUID.randomUUID(), UserType.SENAI));
+                .thenReturn(createContext(userId, UserType.SENAI));
 
-        PublishAnnouncementRequest request = new PublishAnnouncementRequest(
-                "", "Descricao", AnnouncementOrigin.SENAI, List.of(userDestination(UUID.randomUUID())), null, null);
+        ScheduleAnnouncementCommand command = new ScheduleAnnouncementCommand(
+                "Titulo", "Descricao", AnnouncementOrigin.SENAI, false, past, userId,
+                List.of(classDestination(UUID.randomUUID()))
+        );
 
-        perform(request).andExpect(status().isBadRequest());
+        assertThrows(AnnouncementMustBeInTheFutureException.class, () -> scheduleAnnouncementUseCase.execute(command));
+
         verify(announcementRepository, never()).save(any());
     }
 
     @Test
     void shouldReturnBadRequestWhenThereAreNoDestinations() throws Exception {
+        UUID userId = UUID.randomUUID();
+        Instant scheduledFor = Instant.now().plus(1, ChronoUnit.DAYS);
+
         when(requestContextProvider.getRequestContext())
-                .thenReturn(createContext(UUID.randomUUID(), UserType.SENAI));
+                .thenReturn(createContext(userId, UserType.SENAI));
 
-        PublishAnnouncementRequest request = new PublishAnnouncementRequest(
-                "Titulo", "Descricao", AnnouncementOrigin.SENAI, List.of(), null, null);
+        perform(scheduleRequest(scheduledFor))
+                .andExpect(status().isBadRequest());
 
-        perform(request).andExpect(status().isBadRequest());
         verify(announcementRepository, never()).save(any());
     }
 
@@ -272,37 +258,36 @@ class PublishAnnouncementFlowTest {
         return new RequestContext(userId, userType, List.of(classes));
     }
 
-    private CreateAnnouncementDestinationInput userDestination(UUID referenceId) {
-        return new CreateAnnouncementDestinationInput(AnnouncementDestinationType.USER, referenceId);
-    }
-
     private CreateAnnouncementDestinationInput classDestination(UUID referenceId) {
         return new CreateAnnouncementDestinationInput(AnnouncementDestinationType.CLASS, referenceId);
     }
 
-    private PublishAnnouncementRequest publishRequest(CreateAnnouncementDestinationInput... destinations) {
-        return new PublishAnnouncementRequest(
+    private ScheduleAnnouncementRequest scheduleRequest(Instant scheduledFor, CreateAnnouncementDestinationInput... destinations) {
+        return new ScheduleAnnouncementRequest(
                 "Comunicado de teste",
                 "Descricao do comunicado",
                 AnnouncementOrigin.SENAI,
+                scheduledFor,
                 List.of(destinations),
                 null,
                 null
         );
     }
 
-    private org.springframework.test.web.servlet.ResultActions perform(Object body) throws Exception {
-        return mockMvc.perform(post("/api/posts/publish")
+    private ResultActions perform(ScheduleAnnouncementRequest request) throws Exception {
+        return mockMvc.perform(post("/api/posts/schedule")
                 .contentType(MediaType.APPLICATION_JSON)
-                .content(OBJECT_MAPPER.writeValueAsString(body)));
+                .content(OBJECT_MAPPER.writeValueAsString(request)));
     }
 }
 
 @WebMvcTest(AnnouncementController.class)
 @AutoConfigureMockMvc(addFilters = false)
-class PublishAnnouncementWebMvcTest {
+class ScheduleAnnouncementWebMvcTest {
 
-    private final ObjectMapper objectMapper = new ObjectMapper();
+    private final ObjectMapper objectMapper = new ObjectMapper()
+            .registerModule(new JavaTimeModule())
+            .disable(SerializationFeature.WRITE_DATES_AS_TIMESTAMPS);
 
     @Autowired
     private MockMvc mockMvc;
@@ -331,67 +316,66 @@ class PublishAnnouncementWebMvcTest {
     @MockitoBean
     private SecurityErrorResponseWriter securityErrorResponseWriter;
 
-    @MockitoBean
-    private UpdateAnnouncementUseCase updateAnnouncementUseCase;
-
     @Test
-    void shouldPublishAnnouncementByEndpoint() throws Exception {
+    void shouldScheduleAnnouncementByEndpoint() throws Exception {
         UUID announcementId = UUID.randomUUID();
         UUID userId = UUID.randomUUID();
+        Instant scheduledFor = Instant.now().plus(1, ChronoUnit.DAYS);
 
         when(requestContextProvider.getRequestContext())
                 .thenReturn(new RequestContext(userId, UserType.SENAI, List.of()));
-        when(publishAnnouncementUseCase.execute(any()))
-                .thenReturn(createPublishedAnnouncement(announcementId, userId));
+        when(scheduleAnnouncementUseCase.execute(any()))
+                .thenReturn(createScheduledAnnouncement(announcementId, userId, scheduledFor));
 
-        mockMvc.perform(post("/api/posts/publish")
+        mockMvc.perform(post("/api/posts/schedule")
                         .contentType(MediaType.APPLICATION_JSON)
-                        .content(objectMapper.writeValueAsString(validRequest())))
+                        .content(objectMapper.writeValueAsString(validRequest(scheduledFor))))
                 .andExpect(status().isCreated())
                 .andExpect(jsonPath("$.id").value(announcementId.toString()))
-                .andExpect(jsonPath("$.status").value(AnnouncementStatus.PUBLISHED.name()))
-                .andExpect(jsonPath("$.publishedByUserId").value(userId.toString()));
+                .andExpect(jsonPath("$.status").value(AnnouncementStatus.SCHEDULED.name()))
+                .andExpect(jsonPath("$.scheduledFor").exists());
     }
 
     @Test
     void shouldReturnForbiddenByEndpoint() throws Exception {
         UUID userId = UUID.randomUUID();
+        Instant scheduledFor = Instant.now().plus(1, ChronoUnit.DAYS);
 
         when(requestContextProvider.getRequestContext())
                 .thenReturn(new RequestContext(userId, UserType.TEACHER, List.of()));
-        when(publishAnnouncementUseCase.execute(any()))
+        when(scheduleAnnouncementUseCase.execute(any()))
                 .thenThrow(new ResponseStatusException(HttpStatus.FORBIDDEN, "Usuário sem permissão!"));
 
-        mockMvc.perform(post("/api/posts/publish")
+        mockMvc.perform(post("/api/posts/schedule")
                         .contentType(MediaType.APPLICATION_JSON)
-                        .content(objectMapper.writeValueAsString(validRequest())))
+                        .content(objectMapper.writeValueAsString(validRequest(scheduledFor))))
                 .andExpect(status().isForbidden());
     }
 
-    private PublishAnnouncementRequest validRequest() {
-        return new PublishAnnouncementRequest(
-                "Comunicado publicado",
+    private ScheduleAnnouncementRequest validRequest(Instant scheduledFor) {
+        return new ScheduleAnnouncementRequest(
+                "Comunicado agendado",
                 "Descricao",
                 AnnouncementOrigin.SENAI,
-                List.of(new CreateAnnouncementDestinationInput(AnnouncementDestinationType.USER, UUID.randomUUID())),
+                scheduledFor,
+                List.of(new CreateAnnouncementDestinationInput(AnnouncementDestinationType.CLASS, UUID.randomUUID())),
                 null,
                 null
         );
     }
 
-    private Announcement createPublishedAnnouncement(UUID announcementId, UUID userId) {
+    private Announcement createScheduledAnnouncement(UUID announcementId, UUID userId, Instant scheduledFor) {
         Instant now = Instant.now();
 
         Announcement announcement = new Announcement();
         announcement.setId(announcementId);
-        announcement.setTitle("Comunicado publicado");
-        announcement.setDescription("Descricao do comunicado publicado");
+        announcement.setTitle("Comunicado agendado");
+        announcement.setDescription("Descricao do comunicado agendado");
         announcement.setOrigin(AnnouncementOrigin.SENAI);
-        announcement.setStatus(AnnouncementStatus.PUBLISHED);
+        announcement.setStatus(AnnouncementStatus.SCHEDULED);
         announcement.setPinned(false);
         announcement.setCreatedByUserId(userId);
-        announcement.setPublishedByUserId(userId);
-        announcement.setPublishedAt(now);
+        announcement.setScheduledFor(scheduledFor);
         announcement.setCreatedAt(now);
         announcement.setUpdatedAt(now);
 
