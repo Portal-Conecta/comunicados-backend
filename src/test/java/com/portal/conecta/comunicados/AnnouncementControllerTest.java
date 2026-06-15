@@ -3,6 +3,9 @@ package com.portal.conecta.comunicados;
 import com.portal.conecta.comunicados.module.comunicado.application.usecase.DeleteAnnouncementUseCase;
 import com.portal.conecta.comunicados.module.comunicado.application.usecase.GetAnnouncementByIdUseCase;
 import com.portal.conecta.comunicados.module.comunicado.application.usecase.ListAnnouncementsUseCase;
+import com.portal.conecta.comunicados.module.comunicado.application.usecase.DeleteAnnouncementUseCase;
+import com.portal.conecta.comunicados.module.comunicado.application.usecase.PublishAnnouncementUseCase;
+import com.portal.conecta.comunicados.module.comunicado.application.usecase.UpdateAnnouncementUseCase;
 import com.portal.conecta.comunicados.module.comunicado.application.usecase.PublishAnnouncementUseCase;
 import com.portal.conecta.comunicados.module.comunicado.application.usecase.ScheduleAnnouncementUseCase;
 import com.portal.conecta.comunicados.module.comunicado.domain.exception.AnnouncementNotFoundException;
@@ -63,6 +66,9 @@ class AnnouncementControllerTest {
 
     @MockitoBean
     private RequestContextProvider contextProvider;
+
+    @MockitoBean
+    private UpdateAnnouncementUseCase updateAnnouncementUseCase;
 
     private void stubContext() {
         when(contextProvider.getRequestContext())

@@ -1,4 +1,4 @@
-package com.portal.conecta.comunicados.module.comunicado;
+package com.portal.conecta.comunicados;
 
 import java.time.Instant;
 import java.util.List;
@@ -57,6 +57,7 @@ import com.portal.conecta.comunicados.shared.context.UserType;
 import com.portal.conecta.comunicados.shared.exception.GlobalExceptionHandler;
 import com.portal.conecta.comunicados.shared.security.error.SecurityErrorResponseWriter;
 import com.portal.conecta.comunicados.shared.security.token.JwtExtractToken;
+import com.portal.conecta.comunicados.module.comunicado.application.usecase.UpdateAnnouncementUseCase;
 
 class PublishAnnouncementFlowTest {
 
@@ -73,6 +74,7 @@ class PublishAnnouncementFlowTest {
     private DeleteAnnouncementUseCase deleteAnnouncementUseCase;
     private PublishAnnouncementUseCase publishAnnouncementUseCase;
     private ScheduleAnnouncementUseCase scheduleAnnouncementUseCase;
+    private UpdateAnnouncementUseCase updateAnnouncementUseCase;
     private MockMvc mockMvc;
 
     @BeforeEach
@@ -86,6 +88,7 @@ class PublishAnnouncementFlowTest {
         listAnnouncementsUseCase = mock(ListAnnouncementsUseCase.class);
         getAnnouncementByIdUseCase = mock(GetAnnouncementByIdUseCase.class);
         deleteAnnouncementUseCase = mock(DeleteAnnouncementUseCase.class);
+        updateAnnouncementUseCase = mock(UpdateAnnouncementUseCase.class);
 
         publishAnnouncementUseCase = new PublishAnnouncementUseCase(
                 announcementRepository,
@@ -103,7 +106,8 @@ class PublishAnnouncementFlowTest {
                 listAnnouncementsUseCase,
                 getAnnouncementByIdUseCase,
                 deleteAnnouncementUseCase,
-                requestContextProvider
+                requestContextProvider,
+                updateAnnouncementUseCase
         );
 
         mockMvc = MockMvcBuilders.standaloneSetup(controller)
@@ -331,6 +335,9 @@ class PublishAnnouncementWebMvcTest {
 
     @MockitoBean
     private SecurityErrorResponseWriter securityErrorResponseWriter;
+
+    @MockitoBean
+    private UpdateAnnouncementUseCase updateAnnouncementUseCase;
 
     @Test
     void shouldPublishAnnouncementByEndpoint() throws Exception {

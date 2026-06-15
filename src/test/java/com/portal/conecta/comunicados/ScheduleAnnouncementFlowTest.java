@@ -22,6 +22,7 @@ import com.portal.conecta.comunicados.module.comunicado.application.usecase.GetA
 import com.portal.conecta.comunicados.module.comunicado.application.usecase.ListAnnouncementsUseCase;
 import com.portal.conecta.comunicados.module.comunicado.application.usecase.PublishAnnouncementUseCase;
 import com.portal.conecta.comunicados.module.comunicado.application.usecase.ScheduleAnnouncementUseCase;
+import com.portal.conecta.comunicados.module.comunicado.application.usecase.UpdateAnnouncementUseCase;
 import com.portal.conecta.comunicados.module.comunicado.domain.enums.AnnouncementDestinationType;
 import com.portal.conecta.comunicados.module.comunicado.domain.enums.AnnouncementHistoryAction;
 import com.portal.conecta.comunicados.module.comunicado.domain.enums.AnnouncementOrigin;
@@ -83,6 +84,7 @@ class ScheduleAnnouncementFlowTest {
     private DeleteAnnouncementUseCase deleteAnnouncementUseCase;
     private PublishAnnouncementUseCase publishAnnouncementUseCase;
     private ScheduleAnnouncementUseCase scheduleAnnouncementUseCase;
+    private UpdateAnnouncementUseCase updateAnnouncementUseCase;
     private MockMvc mockMvc;
 
     @BeforeEach
@@ -97,6 +99,7 @@ class ScheduleAnnouncementFlowTest {
         getAnnouncementByIdUseCase = mock(GetAnnouncementByIdUseCase.class);
         deleteAnnouncementUseCase = mock(DeleteAnnouncementUseCase.class);
         publishAnnouncementUseCase = mock(PublishAnnouncementUseCase.class);
+        updateAnnouncementUseCase = mock(UpdateAnnouncementUseCase.class);
 
         scheduleAnnouncementUseCase = new ScheduleAnnouncementUseCase(
                 announcementRepository,
@@ -113,7 +116,8 @@ class ScheduleAnnouncementFlowTest {
                 listAnnouncementsUseCase,
                 getAnnouncementByIdUseCase,
                 deleteAnnouncementUseCase,
-                requestContextProvider
+                requestContextProvider,
+                updateAnnouncementUseCase
         );
 
         mockMvc = MockMvcBuilders.standaloneSetup(controller)
@@ -310,6 +314,9 @@ class ScheduleAnnouncementWebMvcTest {
 
     @MockitoBean
     private DeleteAnnouncementUseCase deleteAnnouncementUseCase;
+
+    @MockitoBean
+    private UpdateAnnouncementUseCase updateAnnouncementUseCase;
 
     @MockitoBean
     private RequestContextProvider requestContextProvider;

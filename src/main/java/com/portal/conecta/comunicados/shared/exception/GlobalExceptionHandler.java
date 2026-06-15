@@ -5,6 +5,7 @@ import com.portal.conecta.comunicados.module.comunicado.domain.exception.Announc
 import com.portal.conecta.comunicados.module.comunicado.domain.exception.AnnouncementPermissionDeniedException;
 import com.portal.conecta.comunicados.module.tag.domain.exception.TagNotFoundException;
 import com.portal.conecta.comunicados.module.tag.domain.exception.TagPermissionDeniedException;
+import com.portal.conecta.comunicados.module.comunicado.domain.exception.AnnouncementConflictException;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.validation.ConstraintViolationException;
 import java.util.List;
@@ -229,6 +230,14 @@ public class GlobalExceptionHandler {
                 "An unexpected error occurred.",
                 request
         );
+    }
+
+    @ExceptionHandler(AnnouncementConflictException.class)
+    public ResponseEntity<ApiError> handleConflict(
+            AnnouncementConflictException exception,
+            HttpServletRequest request
+    ) {
+        return buildResponse(HttpStatus.CONFLICT, exception, request);
     }
 
     private ResponseEntity<ApiError> buildResponse(

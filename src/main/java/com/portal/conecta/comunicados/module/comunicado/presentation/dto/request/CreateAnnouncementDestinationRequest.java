@@ -11,7 +11,6 @@ import jakarta.validation.constraints.NotNull;
 
 public record CreateAnnouncementDestinationRequest(
 
-    @NotNull
     UUID announcementId,
 
     @NotNull

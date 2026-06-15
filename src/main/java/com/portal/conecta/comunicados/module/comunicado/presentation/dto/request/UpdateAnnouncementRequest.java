@@ -1,23 +1,38 @@
 package com.portal.conecta.comunicados.module.comunicado.presentation.dto.request;
 
 import java.time.Instant;
+import java.util.List;
 
 import com.portal.conecta.comunicados.module.comunicado.domain.enums.AnnouncementOrigin;
+import com.portal.conecta.comunicados.module.comunicado.domain.enums.AnnouncementStatus;
 import com.portal.conecta.comunicados.module.comunicado.domain.model.Announcement;
 
+import jakarta.validation.Valid;
 import jakarta.validation.constraints.Min;
+import jakarta.validation.constraints.NotEmpty;
 import jakarta.validation.constraints.Size;
 
 public record UpdateAnnouncementRequest(
 
-    @Size(max = 255)
-    String title,
-    String description,
-    AnnouncementOrigin origin,
-    Boolean pinned,
-    @Min(0)
-    Short pinnedOrder,
-    Instant scheduledFor
+        @Size(max = 255)
+        String title,
+
+        String description,
+
+        AnnouncementOrigin origin,
+
+        AnnouncementStatus status,
+
+        Boolean pinned,
+
+        @Min(0)
+        Short pinnedOrder,
+
+        Instant scheduledFor,
+
+        @NotEmpty
+        @Valid
+        List<CreateAnnouncementDestinationRequest> destinations
 
 ) {
 
@@ -26,9 +41,16 @@ public record UpdateAnnouncementRequest(
                 entity.getTitle(),
                 entity.getDescription(),
                 entity.getOrigin(),
+                entity.getStatus(),
                 entity.isPinned(),
                 entity.getPinnedOrder(),
-                entity.getScheduledFor()
+                entity.getScheduledFor(),
+                entity.getDestinations() == null
+                        ? List.of()
+                        : entity.getDestinations().stream()
+                        .map(CreateAnnouncementDestinationRequest::fromEntity)
+                        .toList()
         );
     }
+
 }
