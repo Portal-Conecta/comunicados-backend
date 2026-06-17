@@ -1,5 +1,10 @@
 package com.portal.conecta.comunicados.module.comunicado.application.usecase;
 
+import java.time.Instant;
+import java.util.List;
+
+import org.springframework.stereotype.Service;
+
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.portal.conecta.comunicados.module.comunicado.application.command.UpdateAnnouncementCommand;
 import com.portal.conecta.comunicados.module.comunicado.domain.enums.AnnouncementStatus;
@@ -14,11 +19,9 @@ import com.portal.conecta.comunicados.module.comunicado.domain.port.announcement
 import com.portal.conecta.comunicados.module.comunicado.domain.validator.AnnouncementPermissionValidator;
 import com.portal.conecta.comunicados.shared.context.RequestContext;
 import com.portal.conecta.comunicados.shared.context.RequestContextProvider;
+
 import jakarta.transaction.Transactional;
-import java.time.Instant;
-import java.util.List;
 import lombok.RequiredArgsConstructor;
-import org.springframework.stereotype.Service;
 
 @Service
 @RequiredArgsConstructor
@@ -38,11 +41,11 @@ public class UpdateAnnouncementUseCase {
                 .orElseThrow(AnnouncementNotFoundException::new);
 
         if (announcement.getRemovedAt() != null || announcement.getStatus() == AnnouncementStatus.REMOVED) {
-            throw new AnnouncementConflictException("Removed announcements cannot be edited.");
+            throw new AnnouncementConflictException("Comunicados removidos não podem ser editados.");
         }
 
         if (!permissionValidator.canUpdate(context.userType(), context.userId(), announcement)) {
-            throw new AnnouncementPermissionDeniedException();
+            throw new AnnouncementPermissionDeniedException("Usuário não tem permissão para editar este comunicado.");
         }
 
         Instant now = Instant.now();

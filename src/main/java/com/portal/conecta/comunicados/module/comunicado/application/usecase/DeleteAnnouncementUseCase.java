@@ -39,7 +39,7 @@ public class DeleteAnnouncementUseCase {
         UserType creatorType = hubUserPort.findUserTypeById(announcement.getCreatedByUserId()).orElse(null);
 
         if (!permissionValidator.canDelete(context.userType(), context.userId(), announcement, creatorType)) {
-            throw new AnnouncementPermissionDeniedException();
+            throw new AnnouncementPermissionDeniedException("Usuário não tem permissão para remover este comunicado.");
         }
 
         Instant now = Instant.now();
