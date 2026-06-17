@@ -41,6 +41,7 @@ public class GetAnnouncementByIdUseCase {
         }
 
         // OSIV desligado: inicializa as coleções do detalhe dentro da transação.
+        announcement.getDestinations().size();
         announcement.getFiles().size();
         announcement.getTags().size();
         announcement.getMentions().size();

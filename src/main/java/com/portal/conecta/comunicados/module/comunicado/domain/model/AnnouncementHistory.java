@@ -35,7 +35,7 @@ public class AnnouncementHistory {
     @Column(name = "action", nullable = false)
     private AnnouncementHistoryAction action;
 
-    @Column(name = "snapshot", nullable = true)
+    @Column(name = "snapshot", nullable = true, columnDefinition = "TEXT")
     private String snapshot;
 
     @Column(name = "created_at", nullable = false)
