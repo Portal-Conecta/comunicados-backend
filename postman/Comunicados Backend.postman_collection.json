@@ -1,0 +1,900 @@
+{
+	"info": {
+		"_postman_id": "2b448477-fded-4155-abc3-61ff054a0628",
+		"name": "Comunicados Backend",
+		"description": "Collection para testes manuais do comunicados-backend.\n\nSetup:\n1. Suba a API: ./mvnw spring-boot:run\n2. Importe o environment comunicados-local.postman_environment.json\n3. Gere JWT no jwt.io (HS256, secret base64 encoded)\n4. Cole o token em {{token}} ou {{tokenSenai}}\n\nGuia completo: docs/postman-testing-guide.md",
+		"schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json",
+		"_exporter_id": "47418472",
+		"_collection_link": "https://jonathan7gb-7001764.postman.co/workspace/Jonathan-Luis-Uber's-Workspace~47ac8a91-3c28-4461-8c06-2069746a0d2b/collection/47418472-2b448477-fded-4155-abc3-61ff054a0628?action=share&source=collection_link&creator=47418472"
+	},
+	"item": [
+		{
+			"name": "00 - Saúde",
+			"item": [
+				{
+					"name": "Health check",
+					"request": {
+						"auth": {
+							"type": "bearer",
+							"bearer": [
+								{
+									"key": "token",
+									"value": "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJzdWIiOiIxMTExMTExMS0xMTExLTExMTEtMTExMS0xMTExMTExMTExMTEiLCJ1c2VyVHlwZSI6IlNFTkFJIiwiY2xhc3NlcyI6W10sImV4cCI6MTg5MzQ1NjAwMH0.Nj1unAad7Pc8G9zJrSH_2vt6KW3RitehElcFhQ6MI8k",
+									"type": "string"
+								}
+							]
+						},
+						"method": "GET",
+						"header": [],
+						"url": {
+							"raw": "{{baseUrl}}/actuator/health",
+							"host": [
+								"{{baseUrl}}"
+							],
+							"path": [
+								"actuator",
+								"health"
+							]
+						},
+						"description": "Não requer autenticação. Esperado: 200 com status UP."
+					},
+					"response": []
+				}
+			]
+		},
+		{
+			"name": "01 - Auth",
+			"item": [
+				{
+					"name": "Listar sem token (401)",
+					"request": {
+						"auth": {
+							"type": "noauth"
+						},
+						"method": "GET",
+						"header": [],
+						"url": {
+							"raw": "{{baseUrl}}/api/posts",
+							"host": [
+								"{{baseUrl}}"
+							],
+							"path": [
+								"api",
+								"posts"
+							]
+						},
+						"description": "Esperado: 401 Authentication is required."
+					},
+					"response": []
+				},
+				{
+					"name": "Listar com token (200)",
+					"request": {
+						"auth": {
+							"type": "bearer",
+							"bearer": [
+								{
+									"key": "token",
+									"value": "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJzdWIiOiIxMTExMTExMS0xMTExLTExMTEtMTExMS0xMTExMTExMTExMTEiLCJ1c2VyVHlwZSI6IlNFTkFJIiwiY2xhc3NlcyI6W10sImV4cCI6MTg5MzQ1NjAwMH0.Nj1unAad7Pc8G9zJrSH_2vt6KW3RitehElcFhQ6MI8k",
+									"type": "string"
+								}
+							]
+						},
+						"method": "GET",
+						"header": [],
+						"url": {
+							"raw": "{{baseUrl}}/api/posts?page=0&size=20",
+							"host": [
+								"{{baseUrl}}"
+							],
+							"path": [
+								"api",
+								"posts"
+							],
+							"query": [
+								{
+									"key": "page",
+									"value": "0"
+								},
+								{
+									"key": "size",
+									"value": "20"
+								}
+							]
+						},
+						"description": "Usa Bearer {{token}} da collection. Esperado: 200."
+					},
+					"response": []
+				}
+			]
+		},
+		{
+			"name": "02 - Comunicados",
+			"item": [
+				{
+					"name": "Publicar (GENERAL)",
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"exec": [
+									"if (pm.response.code === 201) {",
+									"    const body = pm.response.json();",
+									"    pm.environment.set('postId', body.id);",
+									"    pm.test('Status 201', () => pm.response.to.have.status(201));",
+									"    pm.test('Status PUBLISHED', () => pm.expect(body.status).to.eql('PUBLISHED'));",
+									"}"
+								],
+								"type": "text/javascript",
+								"packages": {}
+							}
+						}
+					],
+					"request": {
+						"auth": {
+							"type": "bearer",
+							"bearer": [
+								{
+									"key": "token",
+									"value": "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJzdWIiOiIzMzMzMzMzMy0zMzMzLTMzMzMtMzMzMy0zMzMzMzMzMzMzMzMiLCJ1c2VyVHlwZSI6IlNUVURFTlQiLCJjbGFzc2VzIjpbeyJjbGFzc0lkIjoiYWFhYWFhYWEtYWFhYS1hYWFhLWFhYWEtYWFhYWFhYWFhYWFhIiwicm9sZSI6IlNUVURFTlQifV0sImV4cCI6MTg5MzQ1NjAwMH0.NccjWP4A8uKicIN5faFpKKdlTBTm9EQVnLX1NxulCPE",
+									"type": "string"
+								}
+							]
+						},
+						"method": "POST",
+						"header": [
+							{
+								"key": "Content-Type",
+								"value": "application/json"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n  \"title\": \"Retirada de documentos\",\n  \"description\": \"Comparecer na secretaria até sexta-feira.\",\n  \"origin\": \"SENAI\",\n  \"destinations\": [\n    { \"type\": \"GENERAL\", \"referenceId\": null }\n  ],\n  \"pinned\": false,\n  \"tagIds\": []\n}"
+						},
+						"url": {
+							"raw": "{{baseUrl}}/api/posts/publish",
+							"host": [
+								"{{baseUrl}}"
+							],
+							"path": [
+								"api",
+								"posts",
+								"publish"
+							]
+						},
+						"description": "Cria e publica em uma transação (#107). Salva postId no environment."
+					},
+					"response": []
+				},
+				{
+					"name": "Listar todos",
+					"request": {
+						"auth": {
+							"type": "bearer",
+							"bearer": [
+								{
+									"key": "token",
+									"value": "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJzdWIiOiIyMjIyMjIyMi0yMjIyLTIyMjItMjIyMi0yMjIyMjIyMjIyMjIiLCJ1c2VyVHlwZSI6IlRFQUNIRVIiLCJjbGFzc2VzIjpbeyJjbGFzc0lkIjoiYWFhYWFhYWEtYWFhYS1hYWFhLWFhYWEtYWFhYWFhYWFhYWFhIiwicm9sZSI6IlRFQUNIRVIifSx7ImNsYXNzSWQiOiJiYmJiYmJiYi1hYWFhLWJiYmItYWFhYS1iYmJiYmJiYmFhYWEiLCJyb2xlIjoiVEVBQ0hFUiJ9XSwiZXhwIjoxODkzNDU2MDAwfQ.8vDFLrdV6KqpvKHm-ILCchc8wZh6DDFbS88A-jCZy0E",
+									"type": "string"
+								}
+							]
+						},
+						"method": "GET",
+						"header": [],
+						"url": {
+							"raw": "{{baseUrl}}/api/posts?page=0&size=20",
+							"host": [
+								"{{baseUrl}}"
+							],
+							"path": [
+								"api",
+								"posts"
+							],
+							"query": [
+								{
+									"key": "page",
+									"value": "0"
+								},
+								{
+									"key": "size",
+									"value": "20"
+								}
+							]
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "Buscar por termo (search)",
+					"request": {
+						"auth": {
+							"type": "bearer",
+							"bearer": [
+								{
+									"key": "token",
+									"value": "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJzdWIiOiIxMTExMTExMS0xMTExLTExMTEtMTExMS0xMTExMTExMTExMTEiLCJ1c2VyVHlwZSI6IlNFTkFJIiwiY2xhc3NlcyI6W10sImV4cCI6MTg5MzQ1NjAwMH0.Nj1unAad7Pc8G9zJrSH_2vt6KW3RitehElcFhQ6MI8k",
+									"type": "string"
+								}
+							]
+						},
+						"method": "GET",
+						"header": [],
+						"url": {
+							"raw": "{{baseUrl}}/api/posts?search=retirada",
+							"host": [
+								"{{baseUrl}}"
+							],
+							"path": [
+								"api",
+								"posts"
+							],
+							"query": [
+								{
+									"key": "search",
+									"value": "retirada"
+								}
+							]
+						},
+						"description": "Busca textual #117 em título, descrição, tag e destinatário."
+					},
+					"response": []
+				},
+				{
+					"name": "Buscar por ID",
+					"request": {
+						"auth": {
+							"type": "bearer",
+							"bearer": [
+								{
+									"key": "token",
+									"value": "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJzdWIiOiIxMTExMTExMS0xMTExLTExMTEtMTExMS0xMTExMTExMTExMTEiLCJ1c2VyVHlwZSI6IlNFTkFJIiwiY2xhc3NlcyI6W10sImV4cCI6MTg5MzQ1NjAwMH0.Nj1unAad7Pc8G9zJrSH_2vt6KW3RitehElcFhQ6MI8k",
+									"type": "string"
+								}
+							]
+						},
+						"method": "GET",
+						"header": [],
+						"url": {
+							"raw": "{{baseUrl}}/api/posts/14503e18-3eff-4130-88a7-44533b0f090a",
+							"host": [
+								"{{baseUrl}}"
+							],
+							"path": [
+								"api",
+								"posts",
+								"14503e18-3eff-4130-88a7-44533b0f090a"
+							]
+						},
+						"description": "Requer postId preenchido (rode Publicar antes)."
+					},
+					"response": []
+				},
+				{
+					"name": "Atualizar (PUT)",
+					"request": {
+						"auth": {
+							"type": "bearer",
+							"bearer": [
+								{
+									"key": "token",
+									"value": "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJzdWIiOiIzMzMzMzMzMy0zMzMzLTMzMzMtMzMzMy0zMzMzMzMzMzMzMzMiLCJ1c2VyVHlwZSI6IlNUVURFTlQiLCJjbGFzc2VzIjpbeyJjbGFzc0lkIjoiYWFhYWFhYWEtYWFhYS1hYWFhLWFhYWEtYWFhYWFhYWFhYWFhIiwicm9sZSI6IlNUVURFTlQifV0sImV4cCI6MTg5MzQ1NjAwMH0.NccjWP4A8uKicIN5faFpKKdlTBTm9EQVnLX1NxulCPE",
+									"type": "string"
+								}
+							]
+						},
+						"method": "PUT",
+						"header": [
+							{
+								"key": "Content-Type",
+								"value": "application/json"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n  \"title\": \"Retirada de documentos (atualizado)\",\n  \"description\": \"Novo horário: 14h às 17h.\",\n  \"origin\": \"SENAI\",\n  \"status\": \"PUBLISHED\",\n  \"pinned\": false,\n  \"pinnedOrder\": 0,\n  \"scheduledFor\": null,\n  \"destinations\": [\n    {\n      \"announcementId\": \"ecaf15ed-c802-4171-a0f0-b26f41f72c36\",\n      \"type\": \"GENERAL\",\n      \"referenceId\": null\n    }\n  ]\n}"
+						},
+						"url": {
+							"raw": "{{baseUrl}}/api/posts/5fac5b7e-44aa-4351-bd90-b9dd2f218905",
+							"host": [
+								"{{baseUrl}}"
+							],
+							"path": [
+								"api",
+								"posts",
+								"5fac5b7e-44aa-4351-bd90-b9dd2f218905"
+							]
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "Agendar",
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"exec": [
+									"if (pm.response.code === 201) {",
+									"    const body = pm.response.json();",
+									"    pm.environment.set('scheduledPostId', body.id);",
+									"    pm.test('Status SCHEDULED', () => pm.expect(body.status).to.eql('SCHEDULED'));",
+									"}"
+								],
+								"type": "text/javascript",
+								"packages": {}
+							}
+						}
+					],
+					"request": {
+						"auth": {
+							"type": "bearer",
+							"bearer": [
+								{
+									"key": "token",
+									"value": "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJzdWIiOiIxMTExMTExMS0xMTExLTExMTEtMTExMS0xMTExMTExMTExMTEiLCJ1c2VyVHlwZSI6IlNFTkFJIiwiY2xhc3NlcyI6W10sImV4cCI6MTg5MzQ1NjAwMH0.Nj1unAad7Pc8G9zJrSH_2vt6KW3RitehElcFhQ6MI8k",
+									"type": "string"
+								}
+							]
+						},
+						"method": "POST",
+						"header": [
+							{
+								"key": "Content-Type",
+								"value": "application/json"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n  \"title\": \"Comunicado agendado\",\n  \"description\": \"Publicação futura.\",\n  \"origin\": \"SENAI\",\n  \"scheduledFor\": \"2026-12-31T10:00:00Z\",\n  \"destinations\": [\n    { \"type\": \"GENERAL\", \"referenceId\": null }\n  ],\n  \"pinned\": false\n}"
+						},
+						"url": {
+							"raw": "{{baseUrl}}/api/posts/schedule",
+							"host": [
+								"{{baseUrl}}"
+							],
+							"path": [
+								"api",
+								"posts",
+								"schedule"
+							]
+						},
+						"description": "Cria e agenda (#108). scheduledFor deve ser futuro."
+					},
+					"response": []
+				},
+				{
+					"name": "Remover (DELETE)",
+					"request": {
+						"auth": {
+							"type": "bearer",
+							"bearer": [
+								{
+									"key": "token",
+									"value": "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJzdWIiOiIzMzMzMzMzMy0zMzMzLTMzMzMtMzMzMy0zMzMzMzMzMzMzMzMiLCJ1c2VyVHlwZSI6IlNUVURFTlQiLCJjbGFzc2VzIjpbeyJjbGFzc0lkIjoiYWFhYWFhYWEtYWFhYS1hYWFhLWFhYWEtYWFhYWFhYWFhYWFhIiwicm9sZSI6IlNUVURFTlQifV0sImV4cCI6MTg5MzQ1NjAwMH0.NccjWP4A8uKicIN5faFpKKdlTBTm9EQVnLX1NxulCPE",
+									"type": "string"
+								}
+							]
+						},
+						"method": "DELETE",
+						"header": [],
+						"url": {
+							"raw": "{{baseUrl}}/api/posts/ecaf15ed-c802-4171-a0f0-b26f41f72c36",
+							"host": [
+								"{{baseUrl}}"
+							],
+							"path": [
+								"api",
+								"posts",
+								"ecaf15ed-c802-4171-a0f0-b26f41f72c36"
+							]
+						},
+						"description": "Esperado: 204. Depois GET por ID deve retornar 404."
+					},
+					"response": []
+				}
+			]
+		},
+		{
+			"name": "03 - Escopo e permissões",
+			"item": [
+				{
+					"name": "Publicar como TEACHER (turma OK)",
+					"request": {
+						"auth": {
+							"type": "bearer",
+							"bearer": [
+								{
+									"key": "token",
+									"value": "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJzdWIiOiI0NDQ0NDQ0NC00NDQ0LTQ0NDQtNDQ0NC00NDQ0NDQ0NDQ0NDQiLCJ1c2VyVHlwZSI6IlNUVURFTlQiLCJjbGFzc2VzIjpbeyJjbGFzc0lkIjoiYWFhYWFhYWEtYWFhYS1hYWFhLWFhYWEtYWFhYWFhYWFhYWFhIiwicm9sZSI6IlJFUFJFU0VOVEFUSVZFIn1dLCJleHAiOjE4OTM0NTYwMDB9.wJ3DV1JHJphJgurgVMDzYNs-rhb-18lR8ZVxYUlYliE",
+									"type": "string"
+								}
+							]
+						},
+						"method": "POST",
+						"header": [
+							{
+								"key": "Content-Type",
+								"value": "application/json"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n  \"title\": \"Aviso da turma 05\",\n  \"description\": \"Material para próxima aula.\",\n  \"origin\": \"BOTH\",\n  \"destinations\": [\n    {\n      \"type\": \"CLASS\",\n      \"referenceId\": \"aaaaaaaa-aaaa-aaaa-aaaa-aaaaaaaaaaaa\"\n    }\n  ]\n}"
+						},
+						"url": {
+							"raw": "{{baseUrl}}/api/posts/publish",
+							"host": [
+								"{{baseUrl}}"
+							],
+							"path": [
+								"api",
+								"posts",
+								"publish"
+							]
+						},
+						"description": "Token TEACHER com classId no JWT. Esperado: 201."
+					},
+					"response": []
+				},
+				{
+					"name": "Publicar como TEACHER (fora da turma)",
+					"request": {
+						"auth": {
+							"type": "bearer",
+							"bearer": [
+								{
+									"key": "token",
+									"value": "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJzdWIiOiIyMjIyMjIyMi0yMjIyLTIyMjItMjIyMi0yMjIyMjIyMjIyMjIiLCJ1c2VyVHlwZSI6IlRFQUNIRVIiLCJjbGFzc2VzIjpbeyJjbGFzc0lkIjoiYWFhYWFhYWEtYWFhYS1hYWFhLWFhYWEtYWFhYWFhYWFhYWFhIiwicm9sZSI6IlRFQUNIRVIifV0sImV4cCI6MTg5MzQ1NjAwMH0.n5Bkk0KTVQM5brxPvUZtvO5Kx4oYECcC7bGFwbi8aHs",
+									"type": "string"
+								}
+							]
+						},
+						"method": "POST",
+						"header": [
+							{
+								"key": "Content-Type",
+								"value": "application/json"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n  \"title\": \"Aviso bloqueado\",\n  \"description\": \"Fora do escopo.\",\n  \"origin\": \"SENAI\",\n  \"destinations\": [\n    {\n      \"type\": \"CLASS\",\n      \"referenceId\": \"bbbbbbbb-bbbb-bbbb-bbbb-bbbbbbbbbbbb\"\n    }\n  ]\n}"
+						},
+						"url": {
+							"raw": "{{baseUrl}}/api/posts/publish",
+							"host": [
+								"{{baseUrl}}"
+							],
+							"path": [
+								"api",
+								"posts",
+								"publish"
+							]
+						},
+						"description": "Esperado: 403 — turma não está no JWT do professor."
+					},
+					"response": []
+				},
+				{
+					"name": "Publicar como REPRESENTATIVE (turma OK)",
+					"request": {
+						"auth": {
+							"type": "bearer",
+							"bearer": [
+								{
+									"key": "token",
+									"value": "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJzdWIiOiI0NDQ0NDQ0NC00NDQ0LTQ0NDQtNDQ0NC00NDQ0NDQ0NDQ0NDQiLCJ1c2VyVHlwZSI6IlJFUFJFU0VOVEFUSVZFIiwiY2xhc3NlcyI6W3siY2xhc3NJZCI6ImFhYWFhYWFhLWFhYWEtYWFhYS1hYWFhLWFhYWFhYWFhYWFhYSIsInJvbGUiOiJSRVBSRVNFTlRBVElWRSJ9XSwiZXhwIjoxODkzNDU2MDAwfQ.aKhO30HKOq1SKI0RSojbM6VMvhl8xcg3KbrgcQ2VROc",
+									"type": "string"
+								}
+							]
+						},
+						"method": "POST",
+						"header": [
+							{
+								"key": "Content-Type",
+								"value": "application/json"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n  \"title\": \"Aviso da turma 04\",\n  \"description\": \"Material para próxima aula.\",\n  \"origin\": \"BOTH\",\n  \"destinations\": [\n    {\n      \"type\": \"CLASS\",\n      \"referenceId\": \"aaaaaaaa-aaaa-aaaa-aaaa-aaaaaaaaaaaa\"\n    }\n  ]\n}"
+						},
+						"url": {
+							"raw": "{{baseUrl}}/api/posts/publish",
+							"host": [
+								"{{baseUrl}}"
+							],
+							"path": [
+								"api",
+								"posts",
+								"publish"
+							]
+						},
+						"description": "Token TEACHER com classId no JWT. Esperado: 201."
+					},
+					"response": []
+				},
+				{
+					"name": "Publicar como REPRESENTATIVE (fora da turma)",
+					"request": {
+						"auth": {
+							"type": "bearer",
+							"bearer": [
+								{
+									"key": "token",
+									"value": "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJzdWIiOiIyMjIyMjIyMi0yMjIyLTIyMjItMjIyMi0yMjIyMjIyMjIyMjIiLCJ1c2VyVHlwZSI6IlRFQUNIRVIiLCJjbGFzc2VzIjpbeyJjbGFzc0lkIjoiYWFhYWFhYWEtYWFhYS1hYWFhLWFhYWEtYWFhYWFhYWFhYWFhIiwicm9sZSI6IlRFQUNIRVIifSx7ImNsYXNzSWQiOiJiYmJiYmJiYi1hYWFhLWJiYmItYWFhYS1iYmJiYmJiYmFhYWEiLCJyb2xlIjoiVEVBQ0hFUiJ9XSwiZXhwIjoxODkzNDU2MDAwfQ.8vDFLrdV6KqpvKHm-ILCchc8wZh6DDFbS88A-jCZy0E",
+									"type": "string"
+								}
+							]
+						},
+						"method": "POST",
+						"header": [
+							{
+								"key": "Content-Type",
+								"value": "application/json"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n  \"title\": \"Aviso da turma 4\",\n  \"description\": \"Material para próxima aula.\",\n  \"origin\": \"BOTH\",\n  \"destinations\": [\n    {\n      \"type\": \"CLASS\",\n      \"referenceId\": \"bbbbbbbb-aaaa-bbbb-aaaa-bbbbbbbbaaaa\"\n    }\n  ]\n}"
+						},
+						"url": {
+							"raw": "{{baseUrl}}/api/posts/publish",
+							"host": [
+								"{{baseUrl}}"
+							],
+							"path": [
+								"api",
+								"posts",
+								"publish"
+							]
+						},
+						"description": "Token TEACHER com classId no JWT. Esperado: 201."
+					},
+					"response": []
+				},
+				{
+					"name": "Listar como STUDENT",
+					"request": {
+						"auth": {
+							"type": "bearer",
+							"bearer": [
+								{
+									"key": "token",
+									"value": "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJzdWIiOiIzMzMzMzMzMy0zMzMzLTMzMzMtMzMzMy0zMzMzMzMzMzMzMzMiLCJ1c2VyVHlwZSI6IlNUVURFTlQiLCJjbGFzc2VzIjpbeyJjbGFzc0lkIjoiYWFhYWFhYWEtYWFhYS1hYWFhLWFhYWEtYWFhYWFhYWFhYWFhIiwicm9sZSI6IlNUVURFTlQifV0sImV4cCI6MTg5MzQ1NjAwMH0.NccjWP4A8uKicIN5faFpKKdlTBTm9EQVnLX1NxulCPE",
+									"type": "string"
+								}
+							]
+						},
+						"method": "GET",
+						"header": [],
+						"url": {
+							"raw": "{{baseUrl}}/api/posts",
+							"host": [
+								"{{baseUrl}}"
+							],
+							"path": [
+								"api",
+								"posts"
+							]
+						},
+						"description": "Valida escopo de visibilidade do estudante."
+					},
+					"response": []
+				}
+			]
+		},
+		{
+			"name": "04 - Busca (#117)",
+			"item": [
+				{
+					"name": "Busca por título",
+					"request": {
+						"auth": {
+							"type": "bearer",
+							"bearer": [
+								{
+									"key": "token",
+									"value": "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJzdWIiOiIzMzMzMzMzMy0zMzMzLTMzMzMtMzMzMy0zMzMzMzMzMzMzMzMiLCJ1c2VyVHlwZSI6IlNUVURFTlQiLCJjbGFzc2VzIjpbeyJjbGFzc0lkIjoiYWFhYWFhYWEtYWFhYS1hYWFhLWFhYWEtYWFhYWFhYWFhYWFhIiwicm9sZSI6IlNUVURFTlQifV0sImV4cCI6MTg5MzQ1NjAwMH0.NccjWP4A8uKicIN5faFpKKdlTBTm9EQVnLX1NxulCPE",
+									"type": "string"
+								}
+							]
+						},
+						"method": "GET",
+						"header": [],
+						"url": {
+							"raw": "{{baseUrl}}/api/posts?search=turma",
+							"host": [
+								"{{baseUrl}}"
+							],
+							"path": [
+								"api",
+								"posts"
+							],
+							"query": [
+								{
+									"key": "search",
+									"value": "turma"
+								}
+							]
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "Busca + filtro origem",
+					"request": {
+						"auth": {
+							"type": "bearer",
+							"bearer": [
+								{
+									"key": "token",
+									"value": "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJzdWIiOiIzMzMzMzMzMy0zMzMzLTMzMzMtMzMzMy0zMzMzMzMzMzMzMzMiLCJ1c2VyVHlwZSI6IlNUVURFTlQiLCJjbGFzc2VzIjpbeyJjbGFzc0lkIjoiYWFhYWFhYWEtYWFhYS1hYWFhLWFhYWEtYWFhYWFhYWFhYWFhIiwicm9sZSI6IlNUVURFTlQifV0sImV4cCI6MTg5MzQ1NjAwMH0.NccjWP4A8uKicIN5faFpKKdlTBTm9EQVnLX1NxulCPE",
+									"type": "string"
+								}
+							]
+						},
+						"method": "GET",
+						"header": [],
+						"url": {
+							"raw": "{{baseUrl}}/api/posts?origin=BOTH&search=turma",
+							"host": [
+								"{{baseUrl}}"
+							],
+							"path": [
+								"api",
+								"posts"
+							],
+							"query": [
+								{
+									"key": "origin",
+									"value": "BOTH"
+								},
+								{
+									"key": "search",
+									"value": "turma"
+								}
+							]
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "Filtro por turma",
+					"request": {
+						"auth": {
+							"type": "bearer",
+							"bearer": [
+								{
+									"key": "token",
+									"value": "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJzdWIiOiIyMjIyMjIyMi0yMjIyLTIyMjItMjIyMi0yMjIyMjIyMjIyMjIiLCJ1c2VyVHlwZSI6IlRFQUNIRVIiLCJjbGFzc2VzIjpbeyJjbGFzc0lkIjoiYWFhYWFhYWEtYWFhYS1hYWFhLWFhYWEtYWFhYWFhYWFhYWFhIiwicm9sZSI6IlRFQUNIRVIifSx7ImNsYXNzSWQiOiJiYmJiYmJiYi1hYWFhLWJiYmItYWFhYS1iYmJiYmJiYmFhYWEiLCJyb2xlIjoiVEVBQ0hFUiJ9XSwiZXhwIjoxODkzNDU2MDAwfQ.8vDFLrdV6KqpvKHm-ILCchc8wZh6DDFbS88A-jCZy0E",
+									"type": "string"
+								}
+							]
+						},
+						"method": "GET",
+						"header": [],
+						"url": {
+							"raw": "{{baseUrl}}/api/posts?classId=bbbbbbbb-aaaa-bbbb-aaaa-bbbbbbbbaaaa",
+							"host": [
+								"{{baseUrl}}"
+							],
+							"path": [
+								"api",
+								"posts"
+							],
+							"query": [
+								{
+									"key": "classId",
+									"value": "bbbbbbbb-aaaa-bbbb-aaaa-bbbbbbbbaaaa"
+								}
+							]
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "Busca vazia (ignora search)",
+					"request": {
+						"auth": {
+							"type": "bearer",
+							"bearer": [
+								{
+									"key": "token",
+									"value": "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJzdWIiOiIyMjIyMjIyMi0yMjIyLTIyMjItMjIyMi0yMjIyMjIyMjIyMjIiLCJ1c2VyVHlwZSI6IlRFQUNIRVIiLCJjbGFzc2VzIjpbeyJjbGFzc0lkIjoiYWFhYWFhYWEtYWFhYS1hYWFhLWFhYWEtYWFhYWFhYWFhYWFhIiwicm9sZSI6IlRFQUNIRVIifSx7ImNsYXNzSWQiOiJiYmJiYmJiYi1hYWFhLWJiYmItYWFhYS1iYmJiYmJiYmFhYWEiLCJyb2xlIjoiVEVBQ0hFUiJ9XSwiZXhwIjoxODkzNDU2MDAwfQ.8vDFLrdV6KqpvKHm-ILCchc8wZh6DDFbS88A-jCZy0E",
+									"type": "string"
+								}
+							]
+						},
+						"method": "GET",
+						"header": [],
+						"url": {
+							"raw": "{{baseUrl}}/api/posts?search=   ",
+							"host": [
+								"{{baseUrl}}"
+							],
+							"path": [
+								"api",
+								"posts"
+							],
+							"query": [
+								{
+									"key": "search",
+									"value": "   "
+								}
+							]
+						},
+						"description": "Termo em branco não deve aplicar filtro textual."
+					},
+					"response": []
+				}
+			]
+		},
+		{
+			"name": "05 - Tags",
+			"item": [
+				{
+					"name": "Listar tags",
+					"request": {
+						"auth": {
+							"type": "bearer",
+							"bearer": [
+								{
+									"key": "token",
+									"value": "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJzdWIiOiIyMjIyMjIyMi0yMjIyLTIyMjItMjIyMi0yMjIyMjIyMjIyMjIiLCJ1c2VyVHlwZSI6IlRFQUNIRVIiLCJjbGFzc2VzIjpbeyJjbGFzc0lkIjoiYWFhYWFhYWEtYWFhYS1hYWFhLWFhYWEtYWFhYWFhYWFhYWFhIiwicm9sZSI6IlRFQUNIRVIifSx7ImNsYXNzSWQiOiJiYmJiYmJiYi1hYWFhLWJiYmItYWFhYS1iYmJiYmJiYmFhYWEiLCJyb2xlIjoiVEVBQ0hFUiJ9XSwiZXhwIjoxODkzNDU2MDAwfQ.8vDFLrdV6KqpvKHm-ILCchc8wZh6DDFbS88A-jCZy0E",
+									"type": "string"
+								}
+							]
+						},
+						"method": "GET",
+						"header": [],
+						"url": {
+							"raw": "{{baseUrl}}/api/tags",
+							"host": [
+								"{{baseUrl}}"
+							],
+							"path": [
+								"api",
+								"tags"
+							]
+						},
+						"description": "Insira tags no H2 ou via RabbitMQ antes de testar vínculo."
+					},
+					"response": []
+				},
+				{
+					"name": "Listar tags CLASS",
+					"request": {
+						"auth": {
+							"type": "bearer",
+							"bearer": [
+								{
+									"key": "token",
+									"value": "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJzdWIiOiIyMjIyMjIyMi0yMjIyLTIyMjItMjIyMi0yMjIyMjIyMjIyMjIiLCJ1c2VyVHlwZSI6IlRFQUNIRVIiLCJjbGFzc2VzIjpbeyJjbGFzc0lkIjoiYWFhYWFhYWEtYWFhYS1hYWFhLWFhYWEtYWFhYWFhYWFhYWFhIiwicm9sZSI6IlRFQUNIRVIifSx7ImNsYXNzSWQiOiJiYmJiYmJiYi1hYWFhLWJiYmItYWFhYS1iYmJiYmJiYmFhYWEiLCJyb2xlIjoiVEVBQ0hFUiJ9XSwiZXhwIjoxODkzNDU2MDAwfQ.8vDFLrdV6KqpvKHm-ILCchc8wZh6DDFbS88A-jCZy0E",
+									"type": "string"
+								}
+							]
+						},
+						"method": "GET",
+						"header": [],
+						"url": {
+							"raw": "{{baseUrl}}/api/tags?entityType=CLASS",
+							"host": [
+								"{{baseUrl}}"
+							],
+							"path": [
+								"api",
+								"tags"
+							],
+							"query": [
+								{
+									"key": "entityType",
+									"value": "CLASS"
+								}
+							]
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "Vincular tag ao post",
+					"request": {
+						"auth": {
+							"type": "bearer",
+							"bearer": [
+								{
+									"key": "token",
+									"value": "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJzdWIiOiIxMTExMTExMS0xMTExLTExMTEtMTExMS0xMTExMTExMTExMTEiLCJ1c2VyVHlwZSI6IlNFTkFJIiwiY2xhc3NlcyI6W10sImV4cCI6MTg5MzQ1NjAwMH0.Nj1unAad7Pc8G9zJrSH_2vt6KW3RitehElcFhQ6MI8k",
+									"type": "string"
+								}
+							]
+						},
+						"method": "POST",
+						"header": [
+							{
+								"key": "Content-Type",
+								"value": "application/json"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n  \"tagIds\": [\"{{tagId}}\"]\n}"
+						},
+						"url": {
+							"raw": "{{baseUrl}}/api/posts/ecaf15ed-c802-4171-a0f0-b26f41f72c36/tags",
+							"host": [
+								"{{baseUrl}}"
+							],
+							"path": [
+								"api",
+								"posts",
+								"ecaf15ed-c802-4171-a0f0-b26f41f72c36",
+								"tags"
+							]
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "Listar tags do post",
+					"request": {
+						"method": "GET",
+						"header": [],
+						"url": {
+							"raw": "{{baseUrl}}/api/posts/{{postId}}/tags",
+							"host": [
+								"{{baseUrl}}"
+							],
+							"path": [
+								"api",
+								"posts",
+								"{{postId}}",
+								"tags"
+							]
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "Desvincular tag",
+					"request": {
+						"method": "DELETE",
+						"header": [],
+						"url": {
+							"raw": "{{baseUrl}}/api/posts/{{postId}}/tags/{{tagId}}",
+							"host": [
+								"{{baseUrl}}"
+							],
+							"path": [
+								"api",
+								"posts",
+								"{{postId}}",
+								"tags",
+								"{{tagId}}"
+							]
+						},
+						"description": "Esperado: 204."
+					},
+					"response": []
+				}
+			]
+		}
+	],
+	"auth": {
+		"type": "bearer",
+		"bearer": [
+			{
+				"key": "token",
+				"value": "{{token}}",
+				"type": "string"
+			}
+		]
+	},
+	"variable": [
+		{
+			"key": "baseUrl",
+			"value": "http://localhost:8083"
+		}
+	]
+}

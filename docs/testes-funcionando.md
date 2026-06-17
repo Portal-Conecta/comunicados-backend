@@ -43,3 +43,15 @@
 - Remover comunicado (APENAS PUBLICADAS/AGENDADAS POR ELE MESMO) -> ```DELETE /api/posts/{{postId}}```
 - Buscar por Filtro -> ```GET /api/posts?page=0&size=20&origin=WEG&search=retirada```
 - Buscar por Turma -> ```GET /api/posts?page=0&size=20&classId=aaaaaaaa-aaaa-aaaa-aaaa-aaaaaaaaaaaa```
+
+
+## Perfil REPRESENTATIVE
+- Publicar comunicado (APENAS PARA TURMAS ASSOCIADAS) -> ```POST /api/posts/publish```
+- Listar comunicados -> ```GET /api/posts?page=0&size=20```
+- Buscar por termo -> ```GET /api/posts?search=retirada```
+- Buscar por ID -> ```GET /api/posts/{{postId}}```
+- Atualizar comunicado (APENAS PUBLICADAS/AGENDADAS POR ELE MESMO) -> ```PUT /api/posts/{{postId}}```
+- Agendar comunicado (APENAS PARA SUA TURMA) -> ```POST /api/posts/schedule```
+- Remover comunicado (APENAS PUBLICADAS/AGENDADAS POR ELE MESMO) -> ```DELETE /api/posts/{{postId}}```
+- Buscar por Filtro -> ```GET /api/posts?page=0&size=20&origin=WEG&search=retirada```
+- Buscar por Turma -> ```GET /api/posts?page=0&size=20&classId=aaaaaaaa-aaaa-aaaa-aaaa-aaaaaaaaaaaa```
