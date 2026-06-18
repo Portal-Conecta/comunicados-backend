@@ -309,6 +309,111 @@
 					"response": []
 				},
 				{
+					"name": "Fixar comunicado (PATCH pin)",
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"exec": [
+									"pm.test('Status 200', () => pm.response.to.have.status(200));",
+									"if (pm.response.code === 200) {",
+									"    const body = pm.response.json();",
+									"    pm.test('Comunicado fixado', () => pm.expect(body.pinned).to.eql(true));",
+									"    pm.test('Ordem de fixação', () => pm.expect(body.pinnedOrder).to.eql(1));",
+									"}"
+								],
+								"type": "text/javascript",
+								"packages": {}
+							}
+						}
+					],
+					"request": {
+						"auth": {
+							"type": "bearer",
+							"bearer": [
+								{
+									"key": "token",
+									"value": "{{tokenSenai}}",
+									"type": "string"
+								}
+							]
+						},
+						"method": "PATCH",
+						"header": [
+							{
+								"key": "Content-Type",
+								"value": "application/json"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n  \"pinnedOrder\": 1\n}"
+						},
+						"url": {
+							"raw": "{{baseUrl}}/api/posts/{{postId}}/pin",
+							"host": [
+								"{{baseUrl}}"
+							],
+							"path": [
+								"api",
+								"posts",
+								"{{postId}}",
+								"pin"
+							]
+						},
+						"description": "Fixa comunicado publicado (#89). Requer perfil SENAI, WEG ou ADMIN.\n\nPré-requisito: rodar **Publicar (GENERAL)** para preencher `{{postId}}`.\n\nEsperado: 200 com `pinned: true` e `pinnedOrder: 1`."
+					},
+					"response": []
+				},
+				{
+					"name": "Desafixar comunicado (PATCH unpin)",
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"exec": [
+									"pm.test('Status 200', () => pm.response.to.have.status(200));",
+									"if (pm.response.code === 200) {",
+									"    const body = pm.response.json();",
+									"    pm.test('Comunicado desfixado', () => pm.expect(body.pinned).to.eql(false));",
+									"    pm.test('Ordem removida', () => pm.expect(body.pinnedOrder).to.eql(null));",
+									"}"
+								],
+								"type": "text/javascript",
+								"packages": {}
+							}
+						}
+					],
+					"request": {
+						"auth": {
+							"type": "bearer",
+							"bearer": [
+								{
+									"key": "token",
+									"value": "{{tokenSenai}}",
+									"type": "string"
+								}
+							]
+						},
+						"method": "PATCH",
+						"header": [],
+						"url": {
+							"raw": "{{baseUrl}}/api/posts/{{postId}}/unpin",
+							"host": [
+								"{{baseUrl}}"
+							],
+							"path": [
+								"api",
+								"posts",
+								"{{postId}}",
+								"unpin"
+							]
+						},
+						"description": "Remove fixação do comunicado (#89). Requer perfil SENAI, WEG ou ADMIN.\n\nPré-requisito: `{{postId}}` preenchido (idealmente após **Fixar**).\n\nEsperado: 200 com `pinned: false` e `pinnedOrder: null`."
+					},
+					"response": []
+				},
+				{
 					"name": "Agendar",
 					"event": [
 						{

@@ -5,5 +5,7 @@ public enum AnnouncementHistoryAction {
     EDIT,
     SCHEDULED,
     PUBLICATION,
-    REMOVAL
+    REMOVAL,
+    PINNED,
+    UNPINNED
 }
