@@ -265,35 +265,4 @@ public class AnnouncementController {
     public ResponseEntity<List<Object>> listPinned() {
         return ResponseEntity.ok(null);
     }
-
-    @Operation(summary = "Listar tags do comunicado")
-    @ApiResponses({
-            @ApiResponse(responseCode = "200", description = "Tags retornadas"),
-            @ApiResponse(responseCode = "404", description = "Comunicado não encontrado")
-    })
-    @GetMapping("/{postId}/tags")
-    public ResponseEntity<Object> listAnnouncementTag(@PathVariable UUID postId) {
-        return ResponseEntity.ok(null);
-    }
-
-    @Operation(summary = "Vincular tag ao comunicado")
-    @ApiResponses({
-            @ApiResponse(responseCode = "201", description = "Tag vinculada"),
-            @ApiResponse(responseCode = "403", description = "Sem permissão"),
-            @ApiResponse(responseCode = "422", description = "TAG03 — tag inativa")
-    })
-    @PostMapping("/{postId}/tags")
-    public ResponseEntity<Object> linkAnnouncementTag(@PathVariable UUID postId, @Valid @RequestBody Object request) {
-        return ResponseEntity.created(URI.create("/api/posts/" + postId + "/tags")).body(null);
-    }
-
-    @Operation(summary = "Desvincular tag do comunicado")
-    @ApiResponses({
-            @ApiResponse(responseCode = "204", description = "Tag desvinculada"),
-            @ApiResponse(responseCode = "404", description = "Não encontrado")
-    })
-    @DeleteMapping("/{postId}/tags/{tagId}")
-    public ResponseEntity<Void> unlinkAnnouncementTag(@PathVariable UUID postId, @PathVariable UUID tagId) {
-        return ResponseEntity.noContent().build();
-    }
 }
