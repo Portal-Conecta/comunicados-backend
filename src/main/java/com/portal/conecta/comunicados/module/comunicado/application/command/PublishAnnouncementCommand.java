@@ -13,6 +13,7 @@ import com.portal.conecta.comunicados.module.comunicado.domain.model.Announcemen
 import com.portal.conecta.comunicados.module.comunicado.presentation.dto.request.CreateAnnouncementDestinationInput;
 import com.portal.conecta.comunicados.module.comunicado.presentation.dto.request.PublishAnnouncementRequest;
 import com.portal.conecta.comunicados.shared.context.RequestContext;
+import com.portal.conecta.comunicados.shared.context.UserType;
 
 /**
  * Dados de criação + publicação atômica (#107). O autor e o publicador são o usuário autenticado.
@@ -24,6 +25,7 @@ public record PublishAnnouncementCommand(
     AnnouncementOrigin origin,
     boolean pinned,
     UUID authorUserId,
+    UserType authorUserType,
     List<CreateAnnouncementDestinationInput> destinations
 
 ) {
@@ -35,6 +37,7 @@ public record PublishAnnouncementCommand(
                 request.origin(),
                 request.isPinned(),
                 context.userId(),
+                context.userType(),
                 request.destinations()
         );
     }
@@ -47,6 +50,7 @@ public record PublishAnnouncementCommand(
                 .status(AnnouncementStatus.PUBLISHED)
                 .pinned(pinned)
                 .createdByUserId(authorUserId)
+                .createdByUserType(authorUserType)
                 .publishedByUserId(authorUserId)
                 .publishedAt(now)
                 .createdAt(now)

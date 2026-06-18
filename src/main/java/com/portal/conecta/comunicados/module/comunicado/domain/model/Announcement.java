@@ -6,6 +6,7 @@ import java.util.UUID;
 
 import com.portal.conecta.comunicados.module.comunicado.domain.enums.AnnouncementOrigin;
 import com.portal.conecta.comunicados.module.comunicado.domain.enums.AnnouncementStatus;
+import com.portal.conecta.comunicados.shared.context.UserType;
 
 import jakarta.persistence.*;
 import lombok.AllArgsConstructor;
@@ -47,6 +48,10 @@ public class Announcement {
 
     @Column(name = "created_by_user_id", nullable = false)
     private UUID createdByUserId;
+
+    @Enumerated(EnumType.STRING)
+    @Column(name = "created_by_user_type")
+    private UserType createdByUserType;
 
     @Column(name = "published_by_user_id", nullable = true)
     private UUID publishedByUserId;
