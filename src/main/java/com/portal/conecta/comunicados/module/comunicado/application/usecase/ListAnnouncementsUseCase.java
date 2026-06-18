@@ -36,6 +36,7 @@ public class ListAnnouncementsUseCase {
         PostFilterRequest filter = query.filter();
 
         Specification<Announcement> spec = AnnouncementSpecifications.notRemoved()
+                .and(AnnouncementSpecifications.isPublished())
                 .and(AnnouncementSpecifications.hasOrigin(filter.origin()))
                 .and(AnnouncementSpecifications.publishedBetween(filter.publishedFrom(), filter.publishedTo()))
                 .and(AnnouncementSpecifications.hasDestinationClass(filter.classId()));
