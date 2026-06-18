@@ -7,7 +7,8 @@ import java.time.Instant;
 
 public record RescheduleAnnouncementRequest(
 
-    @NotNull(message = "A data de agendamento é obrigatória.")
-    @Future(message = "A data de agendamento deve ser fatura.")
-    Instant scheduledFor
-){}
+        @NotNull(message = "A data de agendamento é obrigatória.")
+        @Future(message = "A data de agendamento deve ser futura.")
+        Instant scheduledFor
+
+) {}
