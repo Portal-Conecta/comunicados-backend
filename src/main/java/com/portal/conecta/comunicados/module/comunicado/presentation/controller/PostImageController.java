@@ -1,69 +1,112 @@
 package com.portal.conecta.comunicados.module.comunicado.presentation.controller;
 
+import java.util.List;
+import java.util.UUID;
+
+import org.springframework.http.HttpStatus;
+import org.springframework.http.MediaType;
+import org.springframework.http.ResponseEntity;
+import org.springframework.web.bind.annotation.DeleteMapping;
+import org.springframework.web.bind.annotation.GetMapping;
+import org.springframework.web.bind.annotation.PatchMapping;
+import org.springframework.web.bind.annotation.PathVariable;
+import org.springframework.web.bind.annotation.PostMapping;
+import org.springframework.web.bind.annotation.RequestMapping;
+import org.springframework.web.bind.annotation.RequestParam;
+import org.springframework.web.bind.annotation.RequestPart;
+import org.springframework.web.bind.annotation.RestController;
+import org.springframework.web.multipart.MultipartFile;
+
+import com.portal.conecta.comunicados.module.comunicado.application.command.AttachAnnouncementFileCommand;
+import com.portal.conecta.comunicados.module.comunicado.application.command.RemoveAnnouncementFileCommand;
+import com.portal.conecta.comunicados.module.comunicado.application.command.SetAnnouncementThumbnailCommand;
+import com.portal.conecta.comunicados.module.comunicado.application.usecase.AttachAnnouncementFileUseCase;
+import com.portal.conecta.comunicados.module.comunicado.application.usecase.ListAnnouncementFilesUseCase;
+import com.portal.conecta.comunicados.module.comunicado.application.usecase.RemoveAnnouncementFileUseCase;
+import com.portal.conecta.comunicados.module.comunicado.application.usecase.SetAnnouncementThumbnailUseCase;
+import com.portal.conecta.comunicados.module.comunicado.domain.model.AnnouncementFile;
+import com.portal.conecta.comunicados.module.comunicado.presentation.dto.response.AnnouncementFileResponse;
+import com.portal.conecta.comunicados.shared.context.RequestContextProvider;
+
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.responses.ApiResponse;
 import io.swagger.v3.oas.annotations.responses.ApiResponses;
 import io.swagger.v3.oas.annotations.tags.Tag;
-import org.springframework.http.MediaType;
-import org.springframework.http.ResponseEntity;
-import org.springframework.web.bind.annotation.*;
-import org.springframework.web.multipart.MultipartFile;
-
-import java.util.UUID;
+import lombok.RequiredArgsConstructor;
 
 @RestController
 @RequestMapping("/api/posts/{postId}/images")
 @Tag(name = "Imagens", description = "Endpoints de imagens do comunicado")
+@RequiredArgsConstructor
 public class PostImageController {
 
-    @Operation(summary = "Anexar imagem ao comunicado")
-    @ApiResponses({
-            @ApiResponse(responseCode = "201", description = "Imagem anexada"),
-            @ApiResponse(responseCode = "403", description = "Sem permissão"),
-            @ApiResponse(responseCode = "413", description = "ARQ06 — arquivo maior que 10MB"),
-            @ApiResponse(responseCode = "422", description = "ARQ02 — mais de 5 arquivos")
-    })
-    @PostMapping(consumes = MediaType.MULTIPART_FORM_DATA_VALUE)
-    public ResponseEntity<Object> upload(
-            @PathVariable UUID postId,
-            @RequestPart("file") MultipartFile file,
-            @RequestPart Object meta) {
-        return ResponseEntity.status(201).body(null);
-    }
+    private final AttachAnnouncementFileUseCase attachFileUseCase;
+    private final RemoveAnnouncementFileUseCase removeFileUseCase;
+    private final SetAnnouncementThumbnailUseCase setThumbnailUseCase;
+    private final ListAnnouncementFilesUseCase listFilesUseCase;
+    private final RequestContextProvider contextProvider;
 
-    @Operation(summary = "Listar imagens do comunicado")
+    @Operation(summary = "Listar arquivos do comunicado")
     @ApiResponses({
             @ApiResponse(responseCode = "200", description = "Lista retornada"),
             @ApiResponse(responseCode = "404", description = "Comunicado não encontrado")
     })
     @GetMapping
-    public ResponseEntity<Object> list(@PathVariable UUID postId) {
-        return ResponseEntity.ok(null);
+    public ResponseEntity<List<AnnouncementFileResponse>> list(@PathVariable UUID postId) {
+        List<AnnouncementFile> files = listFilesUseCase.execute(postId);
+        return ResponseEntity.ok(AnnouncementFileResponse.fromEntities(files));
     }
 
-    @Operation(summary = "Remover imagem do comunicado")
+    @Operation(summary = "Anexar arquivo ao comunicado")
     @ApiResponses({
-            @ApiResponse(responseCode = "204", description = "Removida"),
-            @ApiResponse(responseCode = "403", description = "Sem permissão"),
-            @ApiResponse(responseCode = "404", description = "Não encontrada")
+            @ApiResponse(responseCode = "201", description = "Arquivo anexado"),
+            @ApiResponse(responseCode = "400", description = "ARQ02 — limite de 5 arquivos atingido ou tipo inválido"),
+            @ApiResponse(responseCode = "403", description = "Sem permissão de edição"),
+            @ApiResponse(responseCode = "404", description = "Comunicado não encontrado"),
+            @ApiResponse(responseCode = "413", description = "ARQ06 — arquivo maior que 10MB")
+    })
+    @PostMapping(consumes = MediaType.MULTIPART_FORM_DATA_VALUE)
+    public ResponseEntity<AnnouncementFileResponse> upload(
+            @PathVariable UUID postId,
+            @RequestPart("file") MultipartFile file,
+            @RequestParam(required = false, defaultValue = "false") boolean thumbnail
+    ) {
+        UUID userId = contextProvider.getRequestContext().userId();
+        AttachAnnouncementFileCommand command = AttachAnnouncementFileCommand.from(postId, file, thumbnail, userId);
+        AnnouncementFile saved = attachFileUseCase.execute(command);
+        return ResponseEntity.status(HttpStatus.CREATED).body(AnnouncementFileResponse.fromEntity(saved));
+    }
+
+    @Operation(summary = "Remover arquivo do comunicado")
+    @ApiResponses({
+            @ApiResponse(responseCode = "204", description = "Arquivo removido"),
+            @ApiResponse(responseCode = "403", description = "Sem permissão de edição"),
+            @ApiResponse(responseCode = "404", description = "Arquivo não encontrado")
     })
     @DeleteMapping("/{imageId}")
     public ResponseEntity<Void> delete(
             @PathVariable UUID postId,
-            @PathVariable UUID imageId) {
+            @PathVariable UUID imageId
+    ) {
+        UUID userId = contextProvider.getRequestContext().userId();
+        removeFileUseCase.execute(RemoveAnnouncementFileCommand.of(imageId, userId));
         return ResponseEntity.noContent().build();
     }
 
     @Operation(summary = "Definir miniatura do comunicado")
     @ApiResponses({
             @ApiResponse(responseCode = "200", description = "Miniatura definida"),
-            @ApiResponse(responseCode = "403", description = "Sem permissão"),
-            @ApiResponse(responseCode = "422", description = "IM04 — já existe miniatura")
+            @ApiResponse(responseCode = "403", description = "Sem permissão de edição"),
+            @ApiResponse(responseCode = "404", description = "Arquivo não encontrado no comunicado")
     })
     @PatchMapping("/{imageId}/thumbnail")
-    public ResponseEntity<Object> setThumbnail(
+    public ResponseEntity<AnnouncementFileResponse> setThumbnail(
             @PathVariable UUID postId,
-            @PathVariable UUID imageId) {
-        return ResponseEntity.ok(null);
+            @PathVariable UUID imageId
+    ) {
+        UUID userId = contextProvider.getRequestContext().userId();
+        SetAnnouncementThumbnailCommand command = SetAnnouncementThumbnailCommand.of(postId, imageId, userId);
+        AnnouncementFile updated = setThumbnailUseCase.execute(command);
+        return ResponseEntity.ok(AnnouncementFileResponse.fromEntity(updated));
     }
 }

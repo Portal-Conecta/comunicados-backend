@@ -1,8 +1,5 @@
 package com.portal.conecta.comunicados.module.comunicado.presentation.dto.response;
 
-import com.portal.conecta.comunicados.module.comunicado.domain.enums.AnnouncementFileType;
-import com.portal.conecta.comunicados.module.comunicado.domain.model.AnnouncementFile;
-
 import java.time.Instant;
 import java.util.List;
 import java.util.UUID;

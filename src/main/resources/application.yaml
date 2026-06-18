@@ -1,6 +1,10 @@
 spring:
   application:
     name: comunicados
+  servlet:
+    multipart:
+      max-file-size: ${STORAGE_MAX_FILE_SIZE_MB:10}MB
+      max-request-size: ${STORAGE_MAX_FILE_SIZE_MB:10}MB
   profiles:
     active: dev
   jpa:
@@ -42,6 +46,11 @@ management:
   health:
     db:
       enabled: true
+
+storage:
+  mock-enabled: ${STORAGE_MOCK_ENABLED:true}
+  max-files-per-announcement: ${STORAGE_MAX_FILES:5}
+  max-file-size-mb: ${STORAGE_MAX_FILE_SIZE_MB:10}
 
 hub:
   api:
