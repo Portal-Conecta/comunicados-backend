@@ -2,6 +2,11 @@ import com.portal.conecta.comunicados.module.comunicado.domain.exception.Announc
 import com.portal.conecta.comunicados.module.comunicado.domain.exception.AnnouncementMustBeInTheFutureException;
 import com.portal.conecta.comunicados.module.comunicado.domain.exception.AnnouncementNotScheduledException;
 import com.portal.conecta.comunicados.module.comunicado.domain.exception.AnnouncementPermissionDeniedException;
+import com.portal.conecta.comunicados.shared.exception.ApiError;
+import jakarta.servlet.http.HttpServletRequest;
+import org.springframework.http.HttpStatus;
+import org.springframework.http.ResponseEntity;
+import org.springframework.web.bind.annotation.ExceptionHandler;
 
 @ExceptionHandler(AnnouncementNotFoundException.class)
 public ResponseEntity<ApiError> handleAnnouncementNotFound(
