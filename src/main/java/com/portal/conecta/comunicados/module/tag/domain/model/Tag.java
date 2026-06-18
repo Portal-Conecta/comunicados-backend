@@ -13,6 +13,7 @@ import jakarta.persistence.GeneratedValue;
 import jakarta.persistence.GenerationType;
 import jakarta.persistence.Id;
 import jakarta.persistence.Table;
+import jakarta.persistence.UniqueConstraint;
 import lombok.AllArgsConstructor;
 import lombok.Builder;
 import lombok.Data;
@@ -20,7 +21,13 @@ import lombok.NoArgsConstructor;
 
 @Entity
 @Data
-@Table(name = "tag")
+@Table(
+        name = "tag",
+        uniqueConstraints = @UniqueConstraint(
+                name = "uk_tag_entity_hub",
+                columnNames = {"entity_type", "hub_entity_id"}
+        )
+)
 @NoArgsConstructor
 @AllArgsConstructor
 @Builder
@@ -37,10 +44,15 @@ public class Tag {
     @Column(name = "entity_type", nullable = false)
     private TagEntityType entityType;
 
+    @Column(name = "hub_entity_id", nullable = false)
+    private UUID hubEntityId;
+
     @Column(name = "active", nullable = false)
     private boolean active;
 
     @Column(name = "created_at", nullable = false)
     private Instant createdAt;
-    
+
+    @Column(name = "updated_at", nullable = false)
+    private Instant updatedAt;
 }

@@ -4,6 +4,9 @@ import com.portal.conecta.comunicados.module.comunicado.domain.enums.Announcemen
 import com.portal.conecta.comunicados.module.comunicado.domain.enums.AnnouncementOrigin;
 import com.portal.conecta.comunicados.module.comunicado.domain.model.Announcement;
 import com.portal.conecta.comunicados.module.comunicado.domain.model.AnnouncementDestination;
+import com.portal.conecta.comunicados.module.comunicado.domain.model.AnnouncementTag;
+import com.portal.conecta.comunicados.module.tag.domain.model.Tag;
+import jakarta.persistence.criteria.Join;
 import jakarta.persistence.criteria.Predicate;
 import jakarta.persistence.criteria.Root;
 import jakarta.persistence.criteria.Subquery;
@@ -21,6 +24,10 @@ public class AnnouncementSpecifications {
 
     public static Specification<Announcement> notRemoved() {
         return (root, query, cb) -> cb.isNull(root.get("removedAt"));
+    }
+
+    public static Specification<Announcement> isPublished() {
+        return (root, query, cb) -> cb.isNotNull(root.get("publishedAt"));
     }
 
     public static Specification<Announcement> hasOrigin(AnnouncementOrigin origin) {
@@ -63,6 +70,61 @@ public class AnnouncementSpecifications {
             ));
             return cb.exists(subquery);
         };
+    }
+
+    public static Specification<Announcement> matchesSearch(String search, List<UUID> matchingUserIds) {
+        return (root, query, cb) -> {
+            if (search == null || search.isBlank()) {
+                return cb.conjunction();
+            }
+
+            String pattern = "%" + search.trim().toLowerCase() + "%";
+
+            List<Predicate> matches = new ArrayList<>();
+            matches.add(cb.like(cb.lower(root.get("title")), pattern));
+            matches.add(cb.like(cb.lower(root.get("description")), pattern));
+            matches.add(tagNameMatches(root, query, cb, pattern));
+
+            if (matchingUserIds != null && !matchingUserIds.isEmpty()) {
+                matches.add(userDestinationMatches(root, query, cb, matchingUserIds));
+            }
+
+            return cb.or(matches.toArray(new Predicate[0]));
+        };
+    }
+
+    private static Predicate tagNameMatches(
+            Root<Announcement> root,
+            jakarta.persistence.criteria.CriteriaQuery<?> query,
+            jakarta.persistence.criteria.CriteriaBuilder cb,
+            String pattern
+    ) {
+        Subquery<UUID> subquery = query.subquery(UUID.class);
+        Root<AnnouncementTag> announcementTag = subquery.from(AnnouncementTag.class);
+        Join<AnnouncementTag, Tag> tag = announcementTag.join("tag");
+        subquery.select(announcementTag.get("id"));
+        subquery.where(cb.and(
+                cb.equal(announcementTag.get("announcement"), root),
+                cb.like(cb.lower(tag.get("name")), pattern)
+        ));
+        return cb.exists(subquery);
+    }
+
+    private static Predicate userDestinationMatches(
+            Root<Announcement> root,
+            jakarta.persistence.criteria.CriteriaQuery<?> query,
+            jakarta.persistence.criteria.CriteriaBuilder cb,
+            List<UUID> matchingUserIds
+    ) {
+        Subquery<UUID> subquery = query.subquery(UUID.class);
+        Root<AnnouncementDestination> destination = subquery.from(AnnouncementDestination.class);
+        subquery.select(destination.get("id"));
+        subquery.where(cb.and(
+                cb.equal(destination.get("announcement"), root),
+                cb.equal(destination.get("type"), AnnouncementDestinationType.USER),
+                destination.get("referenceId").in(matchingUserIds)
+        ));
+        return cb.exists(subquery);
     }
 
     public static Specification<Announcement> visibleTo(List<UUID> classIds, List<UUID> courseIds, UUID viewerUserId) {

@@ -10,7 +10,7 @@ import com.portal.conecta.comunicados.module.comunicado.domain.model.Announcemen
 import com.portal.conecta.comunicados.module.comunicado.domain.model.AnnouncementHistory;
 import com.portal.conecta.comunicados.module.comunicado.domain.port.announcement.AnnouncementHistoryRepository;
 import com.portal.conecta.comunicados.module.comunicado.domain.port.announcement.AnnouncementRepository;
-import com.portal.conecta.comunicados.module.comunicado.domain.port.support.HubUserPort;
+import com.portal.conecta.comunicados.module.comunicado.domain.port.support.HubClassPort;
 import com.portal.conecta.comunicados.module.comunicado.domain.validator.AnnouncementPermissionValidator;
 import com.portal.conecta.comunicados.shared.context.RequestContext;
 import com.portal.conecta.comunicados.shared.context.RequestContextProvider;
@@ -48,11 +48,9 @@ class DeleteAnnouncementUseCaseTest {
     @Mock
     private RequestContextProvider contextProvider;
 
-    @Mock
-    private HubUserPort hubUserPort;
-
     @Spy
-    private AnnouncementPermissionValidator permissionValidator = new AnnouncementPermissionValidator();
+    private AnnouncementPermissionValidator permissionValidator =
+            new AnnouncementPermissionValidator(org.mockito.Mockito.mock(HubClassPort.class));
 
     @InjectMocks
     private DeleteAnnouncementUseCase useCase;
@@ -75,6 +73,7 @@ class DeleteAnnouncementUseCaseTest {
                 .status(AnnouncementStatus.PUBLISHED)
                 .pinned(false)
                 .createdByUserId(creatorId)
+                .createdByUserType(UserType.TEACHER)
                 .createdAt(Instant.now())
                 .updatedAt(Instant.now())
                 .build();
@@ -82,9 +81,9 @@ class DeleteAnnouncementUseCaseTest {
 
     @Test
     void shouldSoftDeleteWhenAdminDeletesAnyAnnouncement() {
+        announcement.setCreatedByUserType(UserType.WEG);
         mockContext(UserType.ADMIN, actorId);
         when(announcementRepository.findByIdAndRemovedAtIsNull(announcementId)).thenReturn(Optional.of(announcement));
-        when(hubUserPort.findUserTypeById(creatorId)).thenReturn(Optional.of(UserType.WEG));
         when(announcementRepository.save(any(Announcement.class))).thenAnswer(invocation -> invocation.getArgument(0));
         when(historyRepository.save(any(AnnouncementHistory.class))).thenAnswer(invocation -> invocation.getArgument(0));
 
@@ -109,7 +108,6 @@ class DeleteAnnouncementUseCaseTest {
     void shouldSoftDeleteWhenSenaiDeletesTeacherAnnouncement() {
         mockContext(UserType.SENAI, actorId);
         when(announcementRepository.findByIdAndRemovedAtIsNull(announcementId)).thenReturn(Optional.of(announcement));
-        when(hubUserPort.findUserTypeById(creatorId)).thenReturn(Optional.of(UserType.TEACHER));
         when(announcementRepository.save(any(Announcement.class))).thenAnswer(invocation -> invocation.getArgument(0));
         when(historyRepository.save(any(AnnouncementHistory.class))).thenAnswer(invocation -> invocation.getArgument(0));
 
@@ -121,9 +119,9 @@ class DeleteAnnouncementUseCaseTest {
 
     @Test
     void shouldThrowPermissionDeniedWhenSenaiDeletesWegAnnouncement() {
+        announcement.setCreatedByUserType(UserType.WEG);
         mockContext(UserType.SENAI, actorId);
         when(announcementRepository.findByIdAndRemovedAtIsNull(announcementId)).thenReturn(Optional.of(announcement));
-        when(hubUserPort.findUserTypeById(creatorId)).thenReturn(Optional.of(UserType.WEG));
 
         assertThatThrownBy(() -> useCase.execute(announcementId))
                 .isInstanceOf(AnnouncementPermissionDeniedException.class);
@@ -134,9 +132,9 @@ class DeleteAnnouncementUseCaseTest {
 
     @Test
     void shouldThrowPermissionDeniedWhenWegDeletesSenaiAnnouncement() {
+        announcement.setCreatedByUserType(UserType.SENAI);
         mockContext(UserType.WEG, actorId);
         when(announcementRepository.findByIdAndRemovedAtIsNull(announcementId)).thenReturn(Optional.of(announcement));
-        when(hubUserPort.findUserTypeById(creatorId)).thenReturn(Optional.of(UserType.SENAI));
 
         assertThatThrownBy(() -> useCase.execute(announcementId))
                 .isInstanceOf(AnnouncementPermissionDeniedException.class);
@@ -147,7 +145,6 @@ class DeleteAnnouncementUseCaseTest {
         announcement.setCreatedByUserId(actorId);
         mockContext(UserType.TEACHER, actorId);
         when(announcementRepository.findByIdAndRemovedAtIsNull(announcementId)).thenReturn(Optional.of(announcement));
-        when(hubUserPort.findUserTypeById(actorId)).thenReturn(Optional.of(UserType.TEACHER));
         when(announcementRepository.save(any(Announcement.class))).thenAnswer(invocation -> invocation.getArgument(0));
         when(historyRepository.save(any(AnnouncementHistory.class))).thenAnswer(invocation -> invocation.getArgument(0));
 
@@ -160,7 +157,6 @@ class DeleteAnnouncementUseCaseTest {
     void shouldThrowPermissionDeniedWhenTeacherDeletesOthersAnnouncement() {
         mockContext(UserType.TEACHER, actorId);
         when(announcementRepository.findByIdAndRemovedAtIsNull(announcementId)).thenReturn(Optional.of(announcement));
-        when(hubUserPort.findUserTypeById(creatorId)).thenReturn(Optional.of(UserType.TEACHER));
 
         assertThatThrownBy(() -> useCase.execute(announcementId))
                 .isInstanceOf(AnnouncementPermissionDeniedException.class);
@@ -176,16 +172,16 @@ class DeleteAnnouncementUseCaseTest {
     }
 
     @Test
-    void shouldResolveCreatorTypeFromHubBeforeValidatingPermission() {
+    void shouldResolvePermissionFromPersistedCreatorTypeWithoutHub() {
+        announcement.setCreatedByUserType(UserType.REPRESENTATIVE);
         mockContext(UserType.SENAI, actorId);
         when(announcementRepository.findByIdAndRemovedAtIsNull(announcementId)).thenReturn(Optional.of(announcement));
-        when(hubUserPort.findUserTypeById(creatorId)).thenReturn(Optional.of(UserType.REPRESENTATIVE));
         when(announcementRepository.save(any(Announcement.class))).thenAnswer(invocation -> invocation.getArgument(0));
         when(historyRepository.save(any(AnnouncementHistory.class))).thenAnswer(invocation -> invocation.getArgument(0));
 
         useCase.execute(announcementId);
 
-        verify(hubUserPort).findUserTypeById(creatorId);
+        verify(announcementRepository).save(any(Announcement.class));
     }
 
     private void mockContext(UserType userType, UUID userId) {

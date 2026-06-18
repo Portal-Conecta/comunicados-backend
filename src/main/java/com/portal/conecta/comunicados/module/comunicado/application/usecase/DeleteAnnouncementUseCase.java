@@ -11,11 +11,9 @@ import com.portal.conecta.comunicados.module.comunicado.domain.exception.Announc
 import com.portal.conecta.comunicados.module.comunicado.domain.model.Announcement;
 import com.portal.conecta.comunicados.module.comunicado.domain.port.announcement.AnnouncementHistoryRepository;
 import com.portal.conecta.comunicados.module.comunicado.domain.port.announcement.AnnouncementRepository;
-import com.portal.conecta.comunicados.module.comunicado.domain.port.support.HubUserPort;
 import com.portal.conecta.comunicados.module.comunicado.domain.validator.AnnouncementPermissionValidator;
 import com.portal.conecta.comunicados.shared.context.RequestContext;
 import com.portal.conecta.comunicados.shared.context.RequestContextProvider;
-import com.portal.conecta.comunicados.shared.context.UserType;
 
 import jakarta.transaction.Transactional;
 import lombok.RequiredArgsConstructor;
@@ -28,7 +26,6 @@ public class DeleteAnnouncementUseCase {
     private final AnnouncementHistoryRepository historyRepository;
     private final RequestContextProvider contextProvider;
     private final AnnouncementPermissionValidator permissionValidator;
-    private final HubUserPort hubUserPort;
 
     @Transactional
     public void execute(UUID id) {
@@ -36,10 +33,8 @@ public class DeleteAnnouncementUseCase {
         Announcement announcement = announcementRepository.findByIdAndRemovedAtIsNull(id)
                 .orElseThrow(AnnouncementNotFoundException::new);
 
-        UserType creatorType = hubUserPort.findUserTypeById(announcement.getCreatedByUserId()).orElse(null);
-
-        if (!permissionValidator.canDelete(context.userType(), context.userId(), announcement, creatorType)) {
-            throw new AnnouncementPermissionDeniedException();
+        if (!permissionValidator.canDelete(context.userType(), context.userId(), announcement)) {
+            throw new AnnouncementPermissionDeniedException("Usuário não tem permissão para remover este comunicado.");
         }
 
         Instant now = Instant.now();

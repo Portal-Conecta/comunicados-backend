@@ -9,6 +9,11 @@ import com.portal.conecta.comunicados.module.comunicado.application.command.Unpi
 import com.portal.conecta.comunicados.module.comunicado.application.usecase.*;
 import com.portal.conecta.comunicados.module.comunicado.presentation.dto.request.PinAnnouncementRequest;
 import com.portal.conecta.comunicados.shared.context.RequestContext;
+import com.portal.conecta.comunicados.module.comunicado.application.query.ListAnnouncementHistoryQuery;
+import com.portal.conecta.comunicados.module.comunicado.application.usecase.*;
+import com.portal.conecta.comunicados.module.comunicado.domain.model.AnnouncementHistory;
+import com.portal.conecta.comunicados.module.comunicado.presentation.dto.request.*;
+import com.portal.conecta.comunicados.module.comunicado.presentation.dto.response.ListAnnouncementHistoryResponse;
 import org.springframework.data.domain.Page;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.DeleteMapping;
@@ -27,12 +32,12 @@ import com.portal.conecta.comunicados.module.comunicado.application.command.Sche
 import com.portal.conecta.comunicados.module.comunicado.application.query.GetAnnouncementByIdQuery;
 import com.portal.conecta.comunicados.module.comunicado.application.query.ListAnnouncementsQuery;
 import com.portal.conecta.comunicados.module.comunicado.domain.model.Announcement;
-import com.portal.conecta.comunicados.module.comunicado.presentation.dto.request.PostFilterRequest;
-import com.portal.conecta.comunicados.module.comunicado.presentation.dto.request.ScheduleAnnouncementRequest;
 import com.portal.conecta.comunicados.module.comunicado.presentation.dto.response.AnnouncementDetailResponse;
 import com.portal.conecta.comunicados.module.comunicado.presentation.dto.response.AnnouncementResponse;
 import com.portal.conecta.comunicados.module.comunicado.presentation.dto.response.ListAnnouncementsResponse;
+import com.portal.conecta.comunicados.shared.context.RequestContext;
 import com.portal.conecta.comunicados.shared.context.RequestContextProvider;
+import com.portal.conecta.comunicados.module.comunicado.application.command.UpdateAnnouncementCommand;
 
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.responses.ApiResponse;
@@ -55,12 +60,15 @@ public class AnnouncementController {
     private final RequestContextProvider contextProvider;
     private final PinAnnouncementUseCase pinAnnouncementUseCase;
     private final UnpinAnnouncementUseCase unpinAnnouncementUseCase;
+    private final UpdateAnnouncementUseCase updateAnnouncementUseCase;
+    private final ListAnnouncementHistoryUseCase listAnnouncementHistoryUseCase;
 
     @Operation(
             summary = "Listar comunicados",
             description = "Lista paginada de comunicados visíveis ao perfil autenticado, em ordem "
                     + "cronológica decrescente. Comunicados removidos nunca aparecem. Aceita filtros "
-                    + "por origem (WEG/SENAI/BOTH), turma e intervalo de publicação."
+                    + "por origem (WEG/SENAI/BOTH), turma, intervalo de publicação e termo de busca "
+                    + "textual (`search`) em título, descrição, tags e destinatários."
     )
     @ApiResponses({
             @ApiResponse(responseCode = "200", description = "Lista retornada"),
@@ -93,16 +101,47 @@ public class AnnouncementController {
         return ResponseEntity.ok(AnnouncementDetailResponse.fromEntity(announcement));
     }
 
+    @Operation(
+            summary = "Consultar histórico do comunicado",
+            description = "Lista o histórico de auditoria do comunicado, respeitando a mesma regra de visibilidade da consulta por ID."
+    )
+    @ApiResponses({
+            @ApiResponse(responseCode = "200", description = "Histórico retornado"),
+            @ApiResponse(responseCode = "400", description = "Parâmetros de paginação inválidos"),
+            @ApiResponse(responseCode = "401", description = "Não autenticado"),
+            @ApiResponse(responseCode = "404", description = "Não encontrado ou fora do escopo")
+    })
+    @GetMapping("/{id}/history")
+    public ResponseEntity<ListAnnouncementHistoryResponse> history(
+            @PathVariable UUID id,
+            @Valid @ModelAttribute AnnouncementHistoryFilterRequest filter
+    ) {
+        UUID userId = contextProvider.getRequestContext().userId();
+
+        ListAnnouncementHistoryQuery query = new ListAnnouncementHistoryQuery(id, userId, filter);
+        Page<AnnouncementHistory> page = listAnnouncementHistoryUseCase.execute(query);
+
+        return ResponseEntity.ok(ListAnnouncementHistoryResponse.fromPage(page));
+    }
+
     @Operation(summary = "Atualizar comunicado completo")
     @ApiResponses({
             @ApiResponse(responseCode = "200", description = "Atualizado"),
-            @ApiResponse(responseCode = "403", description = "Sem permissão"),
-            @ApiResponse(responseCode = "404", description = "Não encontrado"),
-            @ApiResponse(responseCode = "422", description = "Regra de negócio violada")
+            @ApiResponse(responseCode = "403", description = "Sem permissao"),
+            @ApiResponse(responseCode = "404", description = "Nao encontrado"),
+            @ApiResponse(responseCode = "409", description = "Comunicado removido nao pode ser editado")
     })
     @PutMapping("/{id}")
-    public ResponseEntity<Object> update(@PathVariable UUID id, @Valid @RequestBody Object request) {
-        return ResponseEntity.ok(null);
+    public ResponseEntity<AnnouncementResponse> update(
+            @PathVariable UUID id,
+            @Valid @RequestBody UpdateAnnouncementRequest request
+    ) {
+        UUID userId = contextProvider.getRequestContext().userId();
+        UpdateAnnouncementCommand command = UpdateAnnouncementCommand.fromRequest(id, request, userId);
+
+        Announcement updated = updateAnnouncementUseCase.execute(command);
+
+        return ResponseEntity.ok(AnnouncementResponse.fromEntity(updated));
     }
 
     @Operation(summary = "Atualizar comunicado parcialmente")
@@ -128,52 +167,52 @@ public class AnnouncementController {
         return ResponseEntity.noContent().build();
     }
 
-    @Deprecated
     @Operation(
-            summary = "Publicar comunicado agendado (legado)",
-            description = "Transiciona SCHEDULED → PUBLISHED. Preferir POST /api/posts/publish (#107) para "
-                    + "criação + publicação atômica. Este endpoint permanece para o job de agendamento."
+            summary = "Publicar comunicado",
+            description = "Cria e publica o comunicado numa única transação (#107): nasce PUBLISHED, com "
+                    + "destinos e histórico (CREATION + PUBLICATION). O autor/publicador é o usuário autenticado."
     )
     @ApiResponses({
-            @ApiResponse(responseCode = "200", description = "Publicado"),
-            @ApiResponse(responseCode = "400", description = "Dados obrigatórios ausentes"),
-            @ApiResponse(responseCode = "401", description = "Token de autenticação ausente ou inválido"),
-            @ApiResponse(responseCode = "403", description = "Sem permissão"),
-            @ApiResponse(responseCode = "404", description = "Comunicado não encontrado"),
-            @ApiResponse(responseCode = "409", description = "Comunicado não pode ser publicado nesse status")
+            @ApiResponse(responseCode = "201", description = "Comunicado criado e publicado"),
+            @ApiResponse(responseCode = "400", description = "Dados obrigatórios ausentes ou inválidos"),
+            @ApiResponse(responseCode = "401", description = "Não autenticado"),
+            @ApiResponse(responseCode = "403", description = "Sem permissão / fora do escopo (PA02/PA03)")
     })
-    @PatchMapping("/{id}/publish")
-    public ResponseEntity<AnnouncementResponse> publish(@PathVariable UUID id) {
-        var command = PublishAnnouncementCommand.from(id);
-        var announcement = publishAnnouncementUseCase.execute(command);
-        var response = AnnouncementResponse.fromEntity(announcement);
+    @PostMapping("/publish")
+    public ResponseEntity<AnnouncementResponse> publish(@Valid @RequestBody PublishAnnouncementRequest request) {
+        RequestContext context = contextProvider.getRequestContext();
 
-        return ResponseEntity.ok(response);
+        PublishAnnouncementCommand command = PublishAnnouncementCommand.from(request, context);
+        Announcement published = publishAnnouncementUseCase.execute(command);
+
+        return created(published);
     }
 
-    @Deprecated
     @Operation(
-            summary = "Reagendar comunicado (legado)",
-            description = "Atualiza a data de um comunicado SCHEDULED. Preferir POST /api/posts/schedule (#108) "
-                    + "para criação + agendamento atômico."
+            summary = "Agendar comunicado",
+            description = "Cria e agenda o comunicado numa única transação (#108): nasce SCHEDULED, com "
+                    + "destinos e histórico (CREATION + SCHEDULED). scheduledFor precisa ser futuro."
     )
     @ApiResponses({
-            @ApiResponse(responseCode = "200", description = "Agendado"),
-            @ApiResponse(responseCode = "400", description = "Data de agendamento no passado ou dados obrigatórios ausentes"),
+            @ApiResponse(responseCode = "201", description = "Comunicado criado e agendado"),
+            @ApiResponse(responseCode = "400", description = "Data no passado ou dados obrigatórios ausentes"),
             @ApiResponse(responseCode = "401", description = "Não autenticado"),
-            @ApiResponse(responseCode = "403", description = "Sem permissão — APRENDIZ"),
-            @ApiResponse(responseCode = "404", description = "Comunicado não encontrado"),
-            @ApiResponse(responseCode = "409", description = "Comunicado não pode ser agendado nesse status")
+            @ApiResponse(responseCode = "403", description = "Sem permissão / fora do escopo")
     })
-    @PatchMapping("/{id}/schedule")
-    public ResponseEntity<AnnouncementResponse> schedule(
-            @PathVariable UUID id,
-            @Valid @RequestBody ScheduleAnnouncementRequest request
-    ) {
-        ScheduleAnnouncementCommand command = ScheduleAnnouncementCommand.fromRequest(id, request);
+    @PostMapping("/schedule")
+    public ResponseEntity<AnnouncementResponse> schedule(@Valid @RequestBody ScheduleAnnouncementRequest request) {
+        RequestContext context = contextProvider.getRequestContext();
+
+        ScheduleAnnouncementCommand command = ScheduleAnnouncementCommand.from(request, context);
         Announcement scheduled = scheduleAnnouncementUseCase.execute(command);
 
-        return ResponseEntity.ok(AnnouncementResponse.fromEntity(scheduled));
+        return created(scheduled);
+    }
+
+    private ResponseEntity<AnnouncementResponse> created(Announcement announcement) {
+        return ResponseEntity
+                .created(URI.create("/api/posts/" + announcement.getId()))
+                .body(AnnouncementResponse.fromEntity(announcement));
     }
 
     @Operation(summary = "Cancelar agendamento")

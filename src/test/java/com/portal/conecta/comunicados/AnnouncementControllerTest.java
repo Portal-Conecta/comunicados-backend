@@ -4,15 +4,20 @@ import com.portal.conecta.comunicados.module.comunicado.application.usecase.Dele
 import com.portal.conecta.comunicados.module.comunicado.application.usecase.GetAnnouncementByIdUseCase;
 import com.portal.conecta.comunicados.module.comunicado.application.usecase.ListAnnouncementsUseCase;
 import com.portal.conecta.comunicados.module.comunicado.application.usecase.PublishAnnouncementUseCase;
+import com.portal.conecta.comunicados.module.comunicado.application.usecase.UpdateAnnouncementUseCase;
 import com.portal.conecta.comunicados.module.comunicado.application.usecase.ScheduleAnnouncementUseCase;
 import com.portal.conecta.comunicados.module.comunicado.domain.exception.AnnouncementNotFoundException;
+import com.portal.conecta.comunicados.module.comunicado.application.usecase.ListAnnouncementHistoryUseCase;
 import com.portal.conecta.comunicados.module.comunicado.domain.model.Announcement;
 import com.portal.conecta.comunicados.module.comunicado.presentation.controller.AnnouncementController;
+import com.portal.conecta.comunicados.module.comunicado.domain.enums.AnnouncementHistoryAction;
+import com.portal.conecta.comunicados.module.comunicado.domain.model.AnnouncementHistory;
 import com.portal.conecta.comunicados.shared.context.RequestContext;
 import com.portal.conecta.comunicados.shared.context.RequestContextProvider;
 import com.portal.conecta.comunicados.shared.context.UserType;
 import com.portal.conecta.comunicados.shared.security.config.SecurityConfig;
 import com.portal.conecta.comunicados.shared.security.filter.JwtAuthenticationFilter;
+
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.webmvc.test.autoconfigure.AutoConfigureMockMvc;
@@ -22,9 +27,11 @@ import org.springframework.context.annotation.FilterType;
 import org.springframework.data.domain.PageImpl;
 import org.springframework.test.context.bean.override.mockito.MockitoBean;
 import org.springframework.test.web.servlet.MockMvc;
+import org.springframework.data.domain.PageRequest;
 
 import java.util.List;
 import java.util.UUID;
+import java.time.Instant;
 
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.Mockito.when;
@@ -63,6 +70,12 @@ class AnnouncementControllerTest {
 
     @MockitoBean
     private RequestContextProvider contextProvider;
+
+    @MockitoBean
+    private UpdateAnnouncementUseCase updateAnnouncementUseCase;
+
+    @MockitoBean
+    private ListAnnouncementHistoryUseCase listAnnouncementHistoryUseCase;
 
     private void stubContext() {
         when(contextProvider.getRequestContext())
@@ -127,6 +140,18 @@ class AnnouncementControllerTest {
     }
 
     @Test
+    void shouldReturn200AndItems_WhenListingWithSearch() throws Exception {
+        stubContext();
+
+        when(listAnnouncementsUseCase.execute(any()))
+                .thenReturn(new PageImpl<>(List.of()));
+
+        mockMvc.perform(get("/api/posts").param("search", "retirada"))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.items").isArray());
+    }
+
+    @Test
     void shouldReturn404_WhenNotFound() throws Exception {
         stubContext();
 
@@ -134,6 +159,53 @@ class AnnouncementControllerTest {
                 .thenThrow(new AnnouncementNotFoundException());
 
         mockMvc.perform(get("/api/posts/{id}", UUID.randomUUID()))
+                .andExpect(status().isNotFound());
+    }
+    @Test
+    void shouldReturn200AndHistoryItems_WhenListingHistory() throws Exception {
+        stubContext();
+
+        UUID announcementId = UUID.randomUUID();
+        UUID userId = UUID.randomUUID();
+
+        Announcement announcement = Announcement.builder()
+                .id(announcementId)
+                .build();
+
+        AnnouncementHistory history = AnnouncementHistory.builder()
+                .id(UUID.randomUUID())
+                .announcement(announcement)
+                .userId(userId)
+                .action(AnnouncementHistoryAction.EDIT)
+                .snapshot("{\"title\":\"Anterior\"}")
+                .createdAt(Instant.parse("2026-06-18T10:00:00Z"))
+                .build();
+
+        when(listAnnouncementHistoryUseCase.execute(any()))
+                .thenReturn(new PageImpl<>(List.of(history), PageRequest.of(0, 5), 1));
+
+        mockMvc.perform(get("/api/posts/{id}/history", announcementId)
+                        .param("page", "0")
+                        .param("size", "5"))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.items").isArray())
+                .andExpect(jsonPath("$.items[0].announcementId").value(announcementId.toString()))
+                .andExpect(jsonPath("$.items[0].userId").value(userId.toString()))
+                .andExpect(jsonPath("$.items[0].action").value(AnnouncementHistoryAction.EDIT.name()))
+                .andExpect(jsonPath("$.items[0].snapshot").value("{\"title\":\"Anterior\"}"))
+                .andExpect(jsonPath("$.page").value(0))
+                .andExpect(jsonPath("$.size").value(5))
+                .andExpect(jsonPath("$.totalElements").value(1));
+    }
+
+    @Test
+    void shouldReturn404_WhenHistoryAnnouncementIsNotVisible() throws Exception {
+        stubContext();
+
+        when(listAnnouncementHistoryUseCase.execute(any()))
+                .thenThrow(new AnnouncementNotFoundException());
+
+        mockMvc.perform(get("/api/posts/{id}/history", UUID.randomUUID()))
                 .andExpect(status().isNotFound());
     }
 }

@@ -4,6 +4,7 @@ import com.portal.conecta.comunicados.module.comunicado.application.query.ListAn
 import com.portal.conecta.comunicados.module.comunicado.domain.model.Announcement;
 import com.portal.conecta.comunicados.module.comunicado.domain.port.announcement.AnnouncementRepository;
 import com.portal.conecta.comunicados.module.comunicado.domain.port.hub.HubCoursePort;
+import com.portal.conecta.comunicados.module.comunicado.domain.port.support.HubUserPort;
 import com.portal.conecta.comunicados.module.comunicado.domain.specification.AnnouncementSpecifications;
 import com.portal.conecta.comunicados.module.comunicado.domain.validator.AnnouncementPermissionValidator;
 import com.portal.conecta.comunicados.module.comunicado.presentation.dto.request.PostFilterRequest;
@@ -27,6 +28,7 @@ public class ListAnnouncementsUseCase {
     private final RequestContextProvider contextProvider;
     private final AnnouncementPermissionValidator permissionValidator;
     private final HubCoursePort hubCoursePort;
+    private final HubUserPort hubUserPort;
 
     @Transactional(readOnly = true)
     public Page<Announcement> execute(ListAnnouncementsQuery query) {
@@ -34,9 +36,16 @@ public class ListAnnouncementsUseCase {
         PostFilterRequest filter = query.filter();
 
         Specification<Announcement> spec = AnnouncementSpecifications.notRemoved()
+                .and(AnnouncementSpecifications.isPublished())
                 .and(AnnouncementSpecifications.hasOrigin(filter.origin()))
                 .and(AnnouncementSpecifications.publishedBetween(filter.publishedFrom(), filter.publishedTo()))
                 .and(AnnouncementSpecifications.hasDestinationClass(filter.classId()));
+
+        if (hasSearch(filter)) {
+            String searchTerm = filter.search().trim();
+            List<UUID> matchingUserIds = hubUserPort.findUserIdsByNameContaining(searchTerm, context);
+            spec = spec.and(AnnouncementSpecifications.matchesSearch(searchTerm, matchingUserIds));
+        }
 
         if (!permissionValidator.canViewAll(context.userType())) {
             spec = spec.and(AnnouncementSpecifications.visibleTo(
@@ -57,5 +66,9 @@ public class ListAnnouncementsUseCase {
                 .stream()
                 .map(ContextClass::classId)
                 .toList();
+    }
+
+    private boolean hasSearch(PostFilterRequest filter) {
+        return filter.search() != null && !filter.search().isBlank();
     }
 }

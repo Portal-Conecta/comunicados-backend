@@ -1,13 +1,22 @@
 package com.portal.conecta.comunicados.shared.exception;
 
+import com.portal.conecta.comunicados.module.comunicado.domain.exception.AnnouncementConflictException;
+import com.portal.conecta.comunicados.module.comunicado.domain.exception.AnnouncementFileContentTypeNotAllowedException;
+import com.portal.conecta.comunicados.module.comunicado.domain.exception.AnnouncementFileLimitExceededException;
+import com.portal.conecta.comunicados.module.comunicado.domain.exception.AnnouncementFileNotFoundException;
+import com.portal.conecta.comunicados.module.comunicado.domain.exception.AnnouncementFileTooLargeException;
+import com.portal.conecta.comunicados.module.comunicado.domain.enums.AnnouncementOrigin;
+import com.portal.conecta.comunicados.module.comunicado.domain.exception.AnnouncementMustBeInTheFutureException;
 import com.portal.conecta.comunicados.module.comunicado.domain.exception.AnnouncementNotFoundException;
 import com.portal.conecta.comunicados.module.comunicado.domain.exception.AnnouncementPermissionDeniedException;
 import com.portal.conecta.comunicados.module.tag.domain.exception.TagNotFoundException;
 import com.portal.conecta.comunicados.module.tag.domain.exception.TagPermissionDeniedException;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.validation.ConstraintViolationException;
+import java.util.Arrays;
 import java.util.List;
 import java.util.Objects;
+import java.util.stream.Collectors;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.dao.DataIntegrityViolationException;
 import org.springframework.http.HttpStatus;
@@ -68,6 +77,14 @@ public class GlobalExceptionHandler {
         return buildResponse(HttpStatus.NOT_FOUND, exception, request);
     }
 
+    @ExceptionHandler(AnnouncementMustBeInTheFutureException.class)
+    public ResponseEntity<ApiError> handleAnnouncementMustBeInTheFuture(
+            AnnouncementMustBeInTheFutureException exception,
+            HttpServletRequest request
+    ) {
+        return buildResponse(HttpStatus.BAD_REQUEST, exception, request);
+    }
+
     @ExceptionHandler(DataIntegrityViolationException.class)
     public ResponseEntity<ApiError> handleDataIntegrityViolationException(
             DataIntegrityViolationException exception,
@@ -125,7 +142,7 @@ public class GlobalExceptionHandler {
                 .map(ApiError.FieldErrorDetail::message)
                 .filter(Objects::nonNull)
                 .findFirst()
-                .orElse("Invalid request.");
+                .orElse("Requisição inválida.");
 
         return ResponseEntity
                 .badRequest()
@@ -142,9 +159,17 @@ public class GlobalExceptionHandler {
             MethodArgumentTypeMismatchException exception,
             HttpServletRequest request
     ) {
-        String message = "Invalid value for parameter '%s'.".formatted(exception.getName());
+        String field = exception.getName();
+        Class<?> requiredType = exception.getRequiredType();
+        String message = isEnumType(requiredType)
+                ? enumConversionMessage(field, requiredType)
+                : "Parâmetro '%s' inválido.".formatted(field);
 
-        return buildResponse(HttpStatus.BAD_REQUEST, message, request);
+        List<ApiError.FieldErrorDetail> errors = List.of(new ApiError.FieldErrorDetail(field, message));
+
+        return ResponseEntity
+                .badRequest()
+                .body(ApiError.validation(HttpStatus.BAD_REQUEST, message, path(request), errors));
     }
 
     @ExceptionHandler(MissingServletRequestParameterException.class)
@@ -222,6 +247,46 @@ public class GlobalExceptionHandler {
         );
     }
 
+    @ExceptionHandler(AnnouncementFileNotFoundException.class)
+    public ResponseEntity<ApiError> handleAnnouncementFileNotFound(
+            AnnouncementFileNotFoundException exception,
+            HttpServletRequest request
+    ) {
+        return buildResponse(HttpStatus.NOT_FOUND, exception, request);
+    }
+
+    @ExceptionHandler(AnnouncementFileLimitExceededException.class)
+    public ResponseEntity<ApiError> handleAnnouncementFileLimitExceeded(
+            AnnouncementFileLimitExceededException exception,
+            HttpServletRequest request
+    ) {
+        return buildResponse(HttpStatus.BAD_REQUEST, exception, request);
+    }
+
+    @ExceptionHandler(AnnouncementFileContentTypeNotAllowedException.class)
+    public ResponseEntity<ApiError> handleAnnouncementFileContentTypeNotAllowed(
+            AnnouncementFileContentTypeNotAllowedException exception,
+            HttpServletRequest request
+    ) {
+        return buildResponse(HttpStatus.UNSUPPORTED_MEDIA_TYPE, exception, request);
+    }
+
+    @ExceptionHandler(AnnouncementFileTooLargeException.class)
+    public ResponseEntity<ApiError> handleAnnouncementFileTooLarge(
+            AnnouncementFileTooLargeException exception,
+            HttpServletRequest request
+    ) {
+        return buildResponse(HttpStatus.PAYLOAD_TOO_LARGE, exception, request);
+    }
+
+    @ExceptionHandler(AnnouncementConflictException.class)
+    public ResponseEntity<ApiError> handleConflict(
+            AnnouncementConflictException exception,
+            HttpServletRequest request
+    ) {
+        return buildResponse(HttpStatus.CONFLICT, exception, request);
+    }
+
     private ResponseEntity<ApiError> buildResponse(
             HttpStatus status,
             RuntimeException exception,
@@ -247,7 +312,7 @@ public class GlobalExceptionHandler {
         List<ApiError.FieldErrorDetail> errors = fieldErrors.stream()
                 .map(fieldError -> new ApiError.FieldErrorDetail(
                         fieldError.getField(),
-                        Objects.requireNonNullElse(fieldError.getDefaultMessage(), "Invalid value.")
+                        resolveFieldMessage(fieldError)
                 ))
                 .toList();
 
@@ -255,7 +320,7 @@ public class GlobalExceptionHandler {
                 .map(ApiError.FieldErrorDetail::message)
                 .filter(Objects::nonNull)
                 .findFirst()
-                .orElse("Invalid request.");
+                .orElse("Requisição inválida.");
 
         return ResponseEntity
                 .badRequest()
@@ -279,6 +344,48 @@ public class GlobalExceptionHandler {
         }
 
         return null;
+    }
+
+    private String resolveFieldMessage(FieldError fieldError) {
+        String defaultMessage = fieldError.getDefaultMessage();
+
+        if (isTypeConversionMessage(defaultMessage)) {
+            return queryParameterConversionMessage(fieldError.getField());
+        }
+
+        return Objects.requireNonNullElse(defaultMessage, "Valor inválido.");
+    }
+
+    private boolean isTypeConversionMessage(String message) {
+        return message != null && message.contains("Failed to convert");
+    }
+
+    private String queryParameterConversionMessage(String field) {
+        return switch (field) {
+            case "origin" -> enumConversionMessage(field, AnnouncementOrigin.class);
+            case "classId" -> "Identificador de turma inválido. Informe um UUID válido.";
+            case "publishedFrom", "publishedTo" ->
+                    "Data inválida. Use o formato ISO-8601 (ex.: 2026-06-12T10:00:00Z).";
+            case "page" -> "Página inválida. Informe um número inteiro maior ou igual a 0.";
+            case "size" -> "Tamanho da página inválido. Informe um número entre 1 e 100.";
+            default -> "Valor inválido para o parâmetro '%s'.".formatted(field);
+        };
+    }
+
+    private boolean isEnumType(Class<?> type) {
+        return type != null && type.isEnum();
+    }
+
+    private String enumConversionMessage(String field, Class<?> enumType) {
+        if (AnnouncementOrigin.class.equals(enumType) || "origin".equals(field)) {
+            return "Origem inválida. Valores aceitos: WEG, SENAI, BOTH.";
+        }
+
+        String allowedValues = Arrays.stream(enumType.getEnumConstants())
+                .map(Object::toString)
+                .collect(Collectors.joining(", "));
+
+        return "Valor inválido para '%s'. Valores aceitos: %s.".formatted(field, allowedValues);
     }
 
     private String path(HttpServletRequest request) {
