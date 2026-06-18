@@ -1,11 +1,15 @@
 package com.portal.conecta.comunicados.shared.exception;
 
+import com.portal.conecta.comunicados.module.comunicado.domain.exception.AnnouncementConflictException;
+import com.portal.conecta.comunicados.module.comunicado.domain.exception.AnnouncementFileContentTypeNotAllowedException;
+import com.portal.conecta.comunicados.module.comunicado.domain.exception.AnnouncementFileLimitExceededException;
+import com.portal.conecta.comunicados.module.comunicado.domain.exception.AnnouncementFileNotFoundException;
+import com.portal.conecta.comunicados.module.comunicado.domain.exception.AnnouncementFileTooLargeException;
 import com.portal.conecta.comunicados.module.comunicado.domain.exception.AnnouncementMustBeInTheFutureException;
 import com.portal.conecta.comunicados.module.comunicado.domain.exception.AnnouncementNotFoundException;
 import com.portal.conecta.comunicados.module.comunicado.domain.exception.AnnouncementPermissionDeniedException;
 import com.portal.conecta.comunicados.module.tag.domain.exception.TagNotFoundException;
 import com.portal.conecta.comunicados.module.tag.domain.exception.TagPermissionDeniedException;
-import com.portal.conecta.comunicados.module.comunicado.domain.exception.AnnouncementConflictException;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.validation.ConstraintViolationException;
 import java.util.List;
@@ -230,6 +234,38 @@ public class GlobalExceptionHandler {
                 "An unexpected error occurred.",
                 request
         );
+    }
+
+    @ExceptionHandler(AnnouncementFileNotFoundException.class)
+    public ResponseEntity<ApiError> handleAnnouncementFileNotFound(
+            AnnouncementFileNotFoundException exception,
+            HttpServletRequest request
+    ) {
+        return buildResponse(HttpStatus.NOT_FOUND, exception, request);
+    }
+
+    @ExceptionHandler(AnnouncementFileLimitExceededException.class)
+    public ResponseEntity<ApiError> handleAnnouncementFileLimitExceeded(
+            AnnouncementFileLimitExceededException exception,
+            HttpServletRequest request
+    ) {
+        return buildResponse(HttpStatus.BAD_REQUEST, exception, request);
+    }
+
+    @ExceptionHandler(AnnouncementFileContentTypeNotAllowedException.class)
+    public ResponseEntity<ApiError> handleAnnouncementFileContentTypeNotAllowed(
+            AnnouncementFileContentTypeNotAllowedException exception,
+            HttpServletRequest request
+    ) {
+        return buildResponse(HttpStatus.UNSUPPORTED_MEDIA_TYPE, exception, request);
+    }
+
+    @ExceptionHandler(AnnouncementFileTooLargeException.class)
+    public ResponseEntity<ApiError> handleAnnouncementFileTooLarge(
+            AnnouncementFileTooLargeException exception,
+            HttpServletRequest request
+    ) {
+        return buildResponse(HttpStatus.PAYLOAD_TOO_LARGE, exception, request);
     }
 
     @ExceptionHandler(AnnouncementConflictException.class)
