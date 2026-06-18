@@ -8,6 +8,8 @@ import com.portal.conecta.comunicados.module.comunicado.application.usecase.Upda
 import com.portal.conecta.comunicados.module.comunicado.application.usecase.ScheduleAnnouncementUseCase;
 import com.portal.conecta.comunicados.module.comunicado.domain.exception.AnnouncementNotFoundException;
 import com.portal.conecta.comunicados.module.comunicado.application.usecase.ListAnnouncementHistoryUseCase;
+import com.portal.conecta.comunicados.module.comunicado.application.usecase.PinAnnouncementUseCase;
+import com.portal.conecta.comunicados.module.comunicado.application.usecase.UnpinAnnouncementUseCase;
 import com.portal.conecta.comunicados.module.comunicado.domain.model.Announcement;
 import com.portal.conecta.comunicados.module.comunicado.presentation.controller.AnnouncementController;
 import com.portal.conecta.comunicados.module.comunicado.domain.enums.AnnouncementHistoryAction;
@@ -76,6 +78,12 @@ class AnnouncementControllerTest {
 
     @MockitoBean
     private ListAnnouncementHistoryUseCase listAnnouncementHistoryUseCase;
+
+    @MockitoBean
+    private PinAnnouncementUseCase pinAnnouncementUseCase;
+
+    @MockitoBean
+    private UnpinAnnouncementUseCase unpinAnnouncementUseCase;
 
     private void stubContext() {
         when(contextProvider.getRequestContext())

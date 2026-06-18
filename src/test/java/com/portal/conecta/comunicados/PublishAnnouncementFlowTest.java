@@ -34,6 +34,8 @@ import com.portal.conecta.comunicados.module.comunicado.application.usecase.GetA
 import com.portal.conecta.comunicados.module.comunicado.application.usecase.ListAnnouncementsUseCase;
 import com.portal.conecta.comunicados.module.comunicado.application.usecase.PublishAnnouncementUseCase;
 import com.portal.conecta.comunicados.module.comunicado.application.usecase.ScheduleAnnouncementUseCase;
+import com.portal.conecta.comunicados.module.comunicado.application.usecase.PinAnnouncementUseCase;
+import com.portal.conecta.comunicados.module.comunicado.application.usecase.UnpinAnnouncementUseCase;
 import com.portal.conecta.comunicados.module.comunicado.domain.enums.AnnouncementDestinationType;
 import com.portal.conecta.comunicados.module.comunicado.domain.enums.AnnouncementHistoryAction;
 import com.portal.conecta.comunicados.module.comunicado.domain.enums.AnnouncementOrigin;
@@ -75,6 +77,8 @@ class PublishAnnouncementFlowTest {
     private DeleteAnnouncementUseCase deleteAnnouncementUseCase;
     private PublishAnnouncementUseCase publishAnnouncementUseCase;
     private ScheduleAnnouncementUseCase scheduleAnnouncementUseCase;
+    private PinAnnouncementUseCase pinAnnouncementUseCase;
+    private UnpinAnnouncementUseCase unpinAnnouncementUseCase;
     private UpdateAnnouncementUseCase updateAnnouncementUseCase;
     private ListAnnouncementHistoryUseCase listAnnouncementHistoryUseCase;
     private MockMvc mockMvc;
@@ -102,6 +106,8 @@ class PublishAnnouncementFlowTest {
                 autoLinkTagsUseCase
         );
         scheduleAnnouncementUseCase = mock(ScheduleAnnouncementUseCase.class);
+        pinAnnouncementUseCase = mock(PinAnnouncementUseCase.class);
+        unpinAnnouncementUseCase = mock(UnpinAnnouncementUseCase.class);
 
         AnnouncementController controller = new AnnouncementController(
                 publishAnnouncementUseCase,
@@ -110,6 +116,8 @@ class PublishAnnouncementFlowTest {
                 getAnnouncementByIdUseCase,
                 deleteAnnouncementUseCase,
                 requestContextProvider,
+                pinAnnouncementUseCase,
+                unpinAnnouncementUseCase,
                 updateAnnouncementUseCase,
                 listAnnouncementHistoryUseCase
         );
@@ -345,6 +353,12 @@ class PublishAnnouncementWebMvcTest {
 
     @MockitoBean
     private ListAnnouncementHistoryUseCase listAnnouncementHistoryUseCase;
+
+    @MockitoBean
+    private PinAnnouncementUseCase pinAnnouncementUseCase;
+
+    @MockitoBean
+    private UnpinAnnouncementUseCase unpinAnnouncementUseCase;
 
     @Test
     void shouldPublishAnnouncementByEndpoint() throws Exception {
