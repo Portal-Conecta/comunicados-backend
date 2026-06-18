@@ -4,6 +4,11 @@ import java.net.URI;
 import java.util.List;
 import java.util.UUID;
 
+import com.portal.conecta.comunicados.module.comunicado.application.command.PinAnnouncementCommand;
+import com.portal.conecta.comunicados.module.comunicado.application.command.UnpinAnnouncementCommand;
+import com.portal.conecta.comunicados.module.comunicado.application.usecase.*;
+import com.portal.conecta.comunicados.module.comunicado.presentation.dto.request.PinAnnouncementRequest;
+import com.portal.conecta.comunicados.shared.context.RequestContext;
 import com.portal.conecta.comunicados.module.comunicado.application.query.ListAnnouncementHistoryQuery;
 import com.portal.conecta.comunicados.module.comunicado.application.usecase.*;
 import com.portal.conecta.comunicados.module.comunicado.domain.model.AnnouncementHistory;
@@ -53,6 +58,8 @@ public class AnnouncementController {
     private final GetAnnouncementByIdUseCase getAnnouncementByIdUseCase;
     private final DeleteAnnouncementUseCase deleteAnnouncementUseCase;
     private final RequestContextProvider contextProvider;
+    private final PinAnnouncementUseCase pinAnnouncementUseCase;
+    private final UnpinAnnouncementUseCase unpinAnnouncementUseCase;
     private final UpdateAnnouncementUseCase updateAnnouncementUseCase;
     private final ListAnnouncementHistoryUseCase listAnnouncementHistoryUseCase;
 
@@ -224,8 +231,14 @@ public class AnnouncementController {
             @ApiResponse(responseCode = "403", description = "Sem permissão — DOCENTE/APRENDIZ")
     })
     @PatchMapping("/{id}/pin")
-    public ResponseEntity<Object> pin(@PathVariable UUID id, @RequestBody(required = false) Object request) {
-        return ResponseEntity.ok(null);
+    public ResponseEntity<AnnouncementResponse> pin(@PathVariable UUID id, @Valid @RequestBody PinAnnouncementRequest request) {
+        UUID pinnedByUserId = contextProvider.getRequestContext().userId();
+
+        PinAnnouncementCommand pinAnnouncementCommand = PinAnnouncementCommand.from(request, pinnedByUserId, id);
+
+        Announcement announcement = pinAnnouncementUseCase.execute(pinAnnouncementCommand);
+
+        return ResponseEntity.ok(AnnouncementResponse.fromEntity(announcement));
     }
 
     @Operation(summary = "Desafixar comunicado")
@@ -234,8 +247,14 @@ public class AnnouncementController {
             @ApiResponse(responseCode = "403", description = "Sem permissão")
     })
     @PatchMapping("/{id}/unpin")
-    public ResponseEntity<Object> unpin(@PathVariable UUID id) {
-        return ResponseEntity.ok(null);
+    public ResponseEntity<AnnouncementResponse> unpin(@PathVariable UUID id) {
+        UUID unpinnedByUserId = contextProvider.getRequestContext().userId();
+
+        UnpinAnnouncementCommand unpinAnnouncementCommand = UnpinAnnouncementCommand.from(id, unpinnedByUserId);
+
+        Announcement announcement = unpinAnnouncementUseCase.execute(unpinAnnouncementCommand);
+
+        return ResponseEntity.ok(AnnouncementResponse.fromEntity(announcement));
     }
 
     @Operation(summary = "Listar comunicados fixados")

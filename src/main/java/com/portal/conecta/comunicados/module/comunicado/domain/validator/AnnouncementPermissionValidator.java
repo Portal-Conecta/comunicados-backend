@@ -36,10 +36,46 @@ public class AnnouncementPermissionValidator {
             UserType.TEACHER, UserType.REPRESENTATIVE
     );
 
+    private static final EnumSet<UserType> PIN_USER_TYPE = EnumSet.of(
+            UserType.ADMIN,
+            UserType.SENAI,
+            UserType.WEG
+    );
+
     public boolean canCreate(UserType userType) {
         return userType != null && (PRIVILEGED.contains(userType) || SCOPED.contains(userType));
     }
 
+    public boolean canPin(UserType userType) {
+        if (userType == null) {
+            return false;
+        }
+        return PIN_USER_TYPE.contains(userType);
+    }
+
+    /**
+     * Permissão compartilhada por publicar, agendar e futuros fluxos unificados (#107 / #108).
+     */
+    public boolean canPublishOrSchedule(Announcement announcement, RequestContext context) {
+        if (context == null || context.userType() == null || announcement == null) {
+            return false;
+        }
+        if (!canCreate(context.userType())) {
+            return false;
+        }
+        if (canManageAnyScope(context.userType())) {
+            return true;
+        }
+        if (context.userType() == UserType.TEACHER) {
+            return canManageLinkedClasses(announcement, context, ClassRole.TEACHER);
+        }
+        if (context.userType() == UserType.REPRESENTATIVE) {
+            return canManageLinkedClasses(announcement, context, ClassRole.REPRESENTATIVE);
+        }
+        return false;
+      
+    }
+  
     public boolean canViewAll(UserType userType) {
         return canCreate(userType);
     }
