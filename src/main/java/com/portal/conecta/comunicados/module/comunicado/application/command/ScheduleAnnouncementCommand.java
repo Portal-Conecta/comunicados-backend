@@ -13,6 +13,7 @@ import com.portal.conecta.comunicados.module.comunicado.domain.model.Announcemen
 import com.portal.conecta.comunicados.module.comunicado.presentation.dto.request.CreateAnnouncementDestinationInput;
 import com.portal.conecta.comunicados.module.comunicado.presentation.dto.request.ScheduleAnnouncementRequest;
 import com.portal.conecta.comunicados.shared.context.RequestContext;
+import com.portal.conecta.comunicados.shared.context.UserType;
 
 /**
  * Dados de criação + agendamento atômico (#108). O comunicado nasce {@code SCHEDULED} com
@@ -26,6 +27,7 @@ public record ScheduleAnnouncementCommand(
     boolean pinned,
     Instant scheduledFor,
     UUID authorUserId,
+    UserType authorUserType,
     List<CreateAnnouncementDestinationInput> destinations
 
 ) {
@@ -38,6 +40,7 @@ public record ScheduleAnnouncementCommand(
                 request.isPinned(),
                 request.scheduledFor(),
                 context.userId(),
+                context.userType(),
                 request.destinations()
         );
     }
@@ -50,6 +53,7 @@ public record ScheduleAnnouncementCommand(
                 .status(AnnouncementStatus.SCHEDULED)
                 .pinned(pinned)
                 .createdByUserId(authorUserId)
+                .createdByUserType(authorUserType)
                 .scheduledFor(scheduledFor)
                 .createdAt(now)
                 .updatedAt(now)

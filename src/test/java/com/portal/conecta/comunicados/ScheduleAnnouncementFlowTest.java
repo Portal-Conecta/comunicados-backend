@@ -242,7 +242,7 @@ class ScheduleAnnouncementFlowTest {
                 .thenReturn(createContext(userId, UserType.SENAI));
 
         ScheduleAnnouncementCommand command = new ScheduleAnnouncementCommand(
-                "Titulo", "Descricao", AnnouncementOrigin.SENAI, false, past, userId,
+                "Titulo", "Descricao", AnnouncementOrigin.SENAI, false, past, userId, UserType.SENAI,
                 List.of(classDestination(UUID.randomUUID()))
         );
 

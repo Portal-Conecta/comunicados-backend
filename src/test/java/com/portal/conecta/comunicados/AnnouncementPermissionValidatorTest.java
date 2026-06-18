@@ -40,97 +40,160 @@ class AnnouncementPermissionValidatorTest {
         validator = new AnnouncementPermissionValidator(hubClassPort);
         actorId = UUID.randomUUID();
         creatorId = UUID.randomUUID();
-        announcement = activeAnnouncement(creatorId);
+        announcement = activeAnnouncement(creatorId, UserType.TEACHER);
     }
 
     @Test
     void shouldAllowAdminToDeleteAnyAnnouncement() {
-        assertThat(validator.canDelete(UserType.ADMIN, actorId, announcement, UserType.WEG)).isTrue();
+        announcement.setCreatedByUserType(UserType.WEG);
+        assertThat(validator.canDelete(UserType.ADMIN, actorId, announcement)).isTrue();
     }
 
     @Test
     void shouldAllowSenaiToDeleteTeacherAnnouncement() {
-        assertThat(validator.canDelete(UserType.SENAI, actorId, announcement, UserType.TEACHER)).isTrue();
+        announcement.setCreatedByUserType(UserType.TEACHER);
+        assertThat(validator.canDelete(UserType.SENAI, actorId, announcement)).isTrue();
     }
 
     @Test
     void shouldAllowSenaiToDeleteRepresentativeAnnouncement() {
-        assertThat(validator.canDelete(UserType.SENAI, actorId, announcement, UserType.REPRESENTATIVE)).isTrue();
+        announcement.setCreatedByUserType(UserType.REPRESENTATIVE);
+        assertThat(validator.canDelete(UserType.SENAI, actorId, announcement)).isTrue();
     }
 
     @Test
     void shouldDenySenaiDeletingWegAnnouncement() {
-        assertThat(validator.canDelete(UserType.SENAI, actorId, announcement, UserType.WEG)).isFalse();
+        announcement.setCreatedByUserType(UserType.WEG);
+        assertThat(validator.canDelete(UserType.SENAI, actorId, announcement)).isFalse();
     }
 
     @Test
     void shouldDenySenaiDeletingAnotherSenaiAnnouncement() {
-        assertThat(validator.canDelete(UserType.SENAI, actorId, announcement, UserType.SENAI)).isFalse();
+        announcement.setCreatedByUserType(UserType.SENAI);
+        assertThat(validator.canDelete(UserType.SENAI, actorId, announcement)).isFalse();
     }
 
     @Test
     void shouldAllowWegToDeleteTeacherAnnouncement() {
-        assertThat(validator.canDelete(UserType.WEG, actorId, announcement, UserType.TEACHER)).isTrue();
+        announcement.setCreatedByUserType(UserType.TEACHER);
+        assertThat(validator.canDelete(UserType.WEG, actorId, announcement)).isTrue();
     }
 
     @Test
     void shouldDenyWegDeletingSenaiAnnouncement() {
-        assertThat(validator.canDelete(UserType.WEG, actorId, announcement, UserType.SENAI)).isFalse();
+        announcement.setCreatedByUserType(UserType.SENAI);
+        assertThat(validator.canDelete(UserType.WEG, actorId, announcement)).isFalse();
     }
 
     @Test
     void shouldDenyWegDeletingAnotherWegAnnouncement() {
-        assertThat(validator.canDelete(UserType.WEG, actorId, announcement, UserType.WEG)).isFalse();
+        announcement.setCreatedByUserType(UserType.WEG);
+        assertThat(validator.canDelete(UserType.WEG, actorId, announcement)).isFalse();
     }
 
     @Test
     void shouldAllowTeacherToDeleteOwnAnnouncement() {
-        Announcement own = activeAnnouncement(actorId);
-        assertThat(validator.canDelete(UserType.TEACHER, actorId, own, UserType.TEACHER)).isTrue();
+        Announcement own = activeAnnouncement(actorId, UserType.TEACHER);
+        assertThat(validator.canDelete(UserType.TEACHER, actorId, own)).isTrue();
     }
 
     @Test
     void shouldDenyTeacherDeletingOthersAnnouncement() {
-        assertThat(validator.canDelete(UserType.TEACHER, actorId, announcement, UserType.TEACHER)).isFalse();
+        announcement.setCreatedByUserType(UserType.TEACHER);
+        assertThat(validator.canDelete(UserType.TEACHER, actorId, announcement)).isFalse();
     }
 
     @Test
     void shouldAllowRepresentativeToDeleteOwnAnnouncement() {
-        Announcement own = activeAnnouncement(actorId);
-        assertThat(validator.canDelete(UserType.REPRESENTATIVE, actorId, own, UserType.REPRESENTATIVE)).isTrue();
+        Announcement own = activeAnnouncement(actorId, UserType.REPRESENTATIVE);
+        assertThat(validator.canDelete(UserType.REPRESENTATIVE, actorId, own)).isTrue();
     }
 
     @Test
     void shouldDenyRepresentativeDeletingOthersAnnouncement() {
-        assertThat(validator.canDelete(UserType.REPRESENTATIVE, actorId, announcement, UserType.REPRESENTATIVE)).isFalse();
+        announcement.setCreatedByUserType(UserType.REPRESENTATIVE);
+        assertThat(validator.canDelete(UserType.REPRESENTATIVE, actorId, announcement)).isFalse();
     }
 
     @Test
-    void shouldAllowSenaiToDeleteOwnAnnouncementEvenWithoutCreatorTypeFromHub() {
-        Announcement own = activeAnnouncement(actorId);
-        assertThat(validator.canDelete(UserType.SENAI, actorId, own, null)).isTrue();
+    void shouldAllowSenaiToDeleteOwnAnnouncementEvenWithoutCreatorType() {
+        Announcement own = activeAnnouncement(actorId, null);
+        assertThat(validator.canDelete(UserType.SENAI, actorId, own)).isTrue();
     }
 
     @Test
     void shouldDenySenaiDeletingOthersWhenCreatorTypeIsUnknown() {
-        assertThat(validator.canDelete(UserType.SENAI, actorId, announcement, null)).isFalse();
+        announcement.setCreatedByUserType(null);
+        assertThat(validator.canDelete(UserType.SENAI, actorId, announcement)).isFalse();
     }
 
     @Test
     void shouldDenyStudentDeletingAnnouncement() {
-        assertThat(validator.canDelete(UserType.STUDENT, actorId, announcement, UserType.TEACHER)).isFalse();
+        announcement.setCreatedByUserType(UserType.TEACHER);
+        assertThat(validator.canDelete(UserType.STUDENT, actorId, announcement)).isFalse();
     }
 
     @Test
     void shouldDenyDeletingAlreadyRemovedAnnouncement() {
         announcement.setStatus(AnnouncementStatus.REMOVED);
-        assertThat(validator.canDelete(UserType.ADMIN, actorId, announcement, UserType.TEACHER)).isFalse();
+        assertThat(validator.canDelete(UserType.ADMIN, actorId, announcement)).isFalse();
     }
 
     @ParameterizedTest
     @EnumSource(value = UserType.class, names = {"ADMIN", "SENAI", "WEG", "TEACHER", "REPRESENTATIVE"})
     void shouldDenyDeleteWhenActorIdIsNull(UserType userType) {
-        assertThat(validator.canDelete(userType, null, announcement, UserType.TEACHER)).isFalse();
+        assertThat(validator.canDelete(userType, null, announcement)).isFalse();
+    }
+
+    // --- canUpdate (#125): mesma matriz da remoção, baseada no perfil do autor ---
+
+    @Test
+    void shouldAllowSenaiToUpdateOwnAnnouncement() {
+        Announcement own = activeAnnouncement(actorId, UserType.SENAI);
+        assertThat(validator.canUpdate(UserType.SENAI, actorId, own)).isTrue();
+    }
+
+    @Test
+    void shouldDenySenaiUpdatingAnotherSenaiAnnouncement() {
+        announcement.setCreatedByUserType(UserType.SENAI);
+        assertThat(validator.canUpdate(UserType.SENAI, actorId, announcement)).isFalse();
+    }
+
+    @Test
+    void shouldDenyWegUpdatingSenaiAnnouncement() {
+        announcement.setCreatedByUserType(UserType.SENAI);
+        assertThat(validator.canUpdate(UserType.WEG, actorId, announcement)).isFalse();
+    }
+
+    @Test
+    void shouldAllowSenaiToUpdateTeacherAnnouncement() {
+        announcement.setCreatedByUserType(UserType.TEACHER);
+        assertThat(validator.canUpdate(UserType.SENAI, actorId, announcement)).isTrue();
+    }
+
+    @Test
+    void shouldAllowAdminToUpdateAnyAnnouncement() {
+        announcement.setCreatedByUserType(UserType.SENAI);
+        assertThat(validator.canUpdate(UserType.ADMIN, actorId, announcement)).isTrue();
+    }
+
+    @Test
+    void shouldAllowTeacherToUpdateOwnAnnouncement() {
+        Announcement own = activeAnnouncement(actorId, UserType.TEACHER);
+        assertThat(validator.canUpdate(UserType.TEACHER, actorId, own)).isTrue();
+    }
+
+    @Test
+    void shouldDenyTeacherUpdatingOthersAnnouncement() {
+        announcement.setCreatedByUserType(UserType.TEACHER);
+        assertThat(validator.canUpdate(UserType.TEACHER, actorId, announcement)).isFalse();
+    }
+
+    @Test
+    void shouldDenyUpdatingRemovedAnnouncement() {
+        announcement.setCreatedByUserType(UserType.TEACHER);
+        announcement.setRemovedAt(Instant.now());
+        assertThat(validator.canUpdate(UserType.ADMIN, actorId, announcement)).isFalse();
     }
 
     // --- canCreateForDestinations ---
@@ -273,7 +336,7 @@ class AnnouncementPermissionValidatorTest {
         return new CreateAnnouncementDestinationInput(AnnouncementDestinationType.USER, referenceId);
     }
 
-    private Announcement activeAnnouncement(UUID createdByUserId) {
+    private Announcement activeAnnouncement(UUID createdByUserId, UserType createdByUserType) {
         return Announcement.builder()
                 .id(UUID.randomUUID())
                 .title("Comunicado")
@@ -281,6 +344,7 @@ class AnnouncementPermissionValidatorTest {
                 .origin(AnnouncementOrigin.SENAI)
                 .status(AnnouncementStatus.PUBLISHED)
                 .createdByUserId(createdByUserId)
+                .createdByUserType(createdByUserType)
                 .createdAt(Instant.now())
                 .updatedAt(Instant.now())
                 .build();

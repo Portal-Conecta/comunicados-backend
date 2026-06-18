@@ -40,10 +40,6 @@ public class AnnouncementPermissionValidator {
         return userType != null && (PRIVILEGED.contains(userType) || SCOPED.contains(userType));
     }
 
-    public boolean canUpdate(UserType userType) {
-        return canCreate(userType);
-    }
-
     public boolean canViewAll(UserType userType) {
         return canCreate(userType);
     }
@@ -59,18 +55,8 @@ public class AnnouncementPermissionValidator {
         };
     }
 
-    public boolean canDelete(UserType userType, UUID userId, Announcement announcement, UserType creatorType) {
-        if (userType == null || userId == null || announcement == null) return false;
-        if (announcement.getStatus() == AnnouncementStatus.REMOVED) return false;
-        if (userType == UserType.ADMIN) return true;
-
-        boolean isOwner = userId.equals(announcement.getCreatedByUserId());
-
-        return switch (userType) {
-            case TEACHER, REPRESENTATIVE -> isOwner;
-            case SENAI, WEG -> isOwner || (creatorType != null && CREATOR_TEACHER_OR_REPRESENTATIVE.contains(creatorType));
-            default -> false;
-        };
+    public boolean canDelete(UserType userType, UUID userId, Announcement announcement) {
+        return canModify(userType, userId, announcement);
     }
 
     private boolean allDestinationsWithinClasses(
@@ -106,6 +92,22 @@ public class AnnouncementPermissionValidator {
     }
 
     public boolean canUpdate(UserType userType, UUID userId, Announcement announcement) {
+        return canModify(userType, userId, announcement);
+    }
+
+    /**
+     * Regra única de edição/remoção (#125/#126): a permissão depende do perfil de quem
+     * <b>publicou</b> o comunicado ({@code createdByUserType}), não da origem institucional.
+     *
+     * <ul>
+     *   <li>Autor SENAI/WEG: somente o próprio criador ou ADMIN.</li>
+     *   <li>Autor TEACHER/REPRESENTATIVE: qualquer SENAI, WEG ou ADMIN (e o próprio autor).</li>
+     * </ul>
+     *
+     * O perfil do autor é persistido na criação para não depender do Hub a cada operação;
+     * quando ausente (comunicados legados), trata-se de forma conservadora (nega não-donos).
+     */
+    private boolean canModify(UserType userType, UUID userId, Announcement announcement) {
         if (userType == null || userId == null || announcement == null) {
             return false;
         }
@@ -114,14 +116,17 @@ public class AnnouncementPermissionValidator {
             return false;
         }
 
-        if (userType == UserType.ADMIN || userType == UserType.SENAI || userType == UserType.WEG) {
+        if (userType == UserType.ADMIN) {
             return true;
         }
 
-        if (userType == UserType.TEACHER || userType == UserType.REPRESENTATIVE) {
-            return userId.equals(announcement.getCreatedByUserId());
-        }
+        boolean isOwner = userId.equals(announcement.getCreatedByUserId());
+        UserType creatorType = announcement.getCreatedByUserType();
 
-        return false;
+        return switch (userType) {
+            case TEACHER, REPRESENTATIVE -> isOwner;
+            case SENAI, WEG -> isOwner || (creatorType != null && CREATOR_TEACHER_OR_REPRESENTATIVE.contains(creatorType));
+            default -> false;
+        };
     }
 }

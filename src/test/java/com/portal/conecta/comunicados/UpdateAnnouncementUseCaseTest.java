@@ -92,6 +92,7 @@ class UpdateAnnouncementUseCaseTest {
                 .status(AnnouncementStatus.SCHEDULED)
                 .pinned(false)
                 .createdByUserId(creatorId)
+                .createdByUserType(UserType.TEACHER)
                 .createdAt(Instant.now().minusSeconds(120))
                 .updatedAt(Instant.now().minusSeconds(60))
                 .build();
@@ -155,6 +156,18 @@ class UpdateAnnouncementUseCaseTest {
 
         verify(announcementRepository).save(any(Announcement.class));
         verify(historyRepository).save(any(AnnouncementHistory.class));
+    }
+
+    @Test
+    void shouldThrowForbiddenWhenWegEditsAnotherSenaiAnnouncement() {
+        announcement.setCreatedByUserType(UserType.SENAI);
+        mockContext(UserType.WEG, actorId);
+        mockFoundAnnouncementWithoutPersistence();
+
+        assertThatThrownBy(() -> useCase.execute(command()))
+                .isInstanceOf(AnnouncementPermissionDeniedException.class);
+
+        verifyNoMutation();
     }
 
     @Test
