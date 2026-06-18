@@ -6,7 +6,6 @@ import java.util.UUID;
 
 import org.springframework.stereotype.Component;
 
-import com.portal.conecta.comunicados.module.comunicado.domain.enums.AnnouncementDestinationType;
 import com.portal.conecta.comunicados.module.comunicado.domain.enums.AnnouncementStatus;
 import com.portal.conecta.comunicados.module.comunicado.domain.model.Announcement;
 import com.portal.conecta.comunicados.module.comunicado.domain.port.support.HubClassPort;
@@ -51,29 +50,6 @@ public class AnnouncementPermissionValidator {
             return false;
         }
         return PIN_USER_TYPE.contains(userType);
-    }
-
-    /**
-     * Permissão compartilhada por publicar, agendar e futuros fluxos unificados (#107 / #108).
-     */
-    public boolean canPublishOrSchedule(Announcement announcement, RequestContext context) {
-        if (context == null || context.userType() == null || announcement == null) {
-            return false;
-        }
-        if (!canCreate(context.userType())) {
-            return false;
-        }
-        if (canManageAnyScope(context.userType())) {
-            return true;
-        }
-        if (context.userType() == UserType.TEACHER) {
-            return canManageLinkedClasses(announcement, context, ClassRole.TEACHER);
-        }
-        if (context.userType() == UserType.REPRESENTATIVE) {
-            return canManageLinkedClasses(announcement, context, ClassRole.REPRESENTATIVE);
-        }
-        return false;
-      
     }
   
     public boolean canViewAll(UserType userType) {
