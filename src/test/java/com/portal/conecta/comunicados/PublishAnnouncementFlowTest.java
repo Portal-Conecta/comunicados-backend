@@ -58,6 +58,7 @@ import com.portal.conecta.comunicados.shared.exception.GlobalExceptionHandler;
 import com.portal.conecta.comunicados.shared.security.error.SecurityErrorResponseWriter;
 import com.portal.conecta.comunicados.shared.security.token.JwtExtractToken;
 import com.portal.conecta.comunicados.module.comunicado.application.usecase.UpdateAnnouncementUseCase;
+import com.portal.conecta.comunicados.module.comunicado.application.usecase.ListAnnouncementHistoryUseCase;
 
 class PublishAnnouncementFlowTest {
 
@@ -75,6 +76,7 @@ class PublishAnnouncementFlowTest {
     private PublishAnnouncementUseCase publishAnnouncementUseCase;
     private ScheduleAnnouncementUseCase scheduleAnnouncementUseCase;
     private UpdateAnnouncementUseCase updateAnnouncementUseCase;
+    private ListAnnouncementHistoryUseCase listAnnouncementHistoryUseCase;
     private MockMvc mockMvc;
 
     @BeforeEach
@@ -89,6 +91,7 @@ class PublishAnnouncementFlowTest {
         getAnnouncementByIdUseCase = mock(GetAnnouncementByIdUseCase.class);
         deleteAnnouncementUseCase = mock(DeleteAnnouncementUseCase.class);
         updateAnnouncementUseCase = mock(UpdateAnnouncementUseCase.class);
+        listAnnouncementHistoryUseCase = mock(ListAnnouncementHistoryUseCase.class);
 
         publishAnnouncementUseCase = new PublishAnnouncementUseCase(
                 announcementRepository,
@@ -107,7 +110,8 @@ class PublishAnnouncementFlowTest {
                 getAnnouncementByIdUseCase,
                 deleteAnnouncementUseCase,
                 requestContextProvider,
-                updateAnnouncementUseCase
+                updateAnnouncementUseCase,
+                listAnnouncementHistoryUseCase
         );
 
         mockMvc = MockMvcBuilders.standaloneSetup(controller)
@@ -338,6 +342,9 @@ class PublishAnnouncementWebMvcTest {
 
     @MockitoBean
     private UpdateAnnouncementUseCase updateAnnouncementUseCase;
+
+    @MockitoBean
+    private ListAnnouncementHistoryUseCase listAnnouncementHistoryUseCase;
 
     @Test
     void shouldPublishAnnouncementByEndpoint() throws Exception {
