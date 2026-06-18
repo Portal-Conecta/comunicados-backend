@@ -12,6 +12,11 @@ import java.util.UUID;
 @ParameterObject
 public record PostFilterRequest(
 
+    @Schema(
+            description = "Filtra por origem do comunicado",
+            allowableValues = {"WEG", "SENAI", "BOTH"},
+            example = "SENAI"
+    )
     AnnouncementOrigin origin,
     String filterType,
     UUID classId,

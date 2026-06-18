@@ -65,7 +65,7 @@ public class PublishAnnouncementUseCase {
 
     private void validatePermission(PublishAnnouncementCommand command, RequestContext context) {
         if (!permissionValidator.canCreateForDestinations(context, command.destinations())) {
-            throw new AnnouncementPermissionDeniedException();
+            throw new AnnouncementPermissionDeniedException("Usuário não tem permissão para publicar comunicados (Validar permissões).");
         }
     }
 
