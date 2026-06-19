@@ -19,11 +19,11 @@ jobs:
       - name: Checkout do repositório
         uses: actions/checkout@v4
 
-      - name: Configurar JDK 21
+      - name: Configurar JDK 22
         uses: actions/setup-java@v4
         with:
-          java-version: '21'
           distribution: 'temurin'
+          java-version: '22'
 
       - name: Cache de dependências Maven
         uses: actions/cache@v4
