@@ -235,16 +235,6 @@ public class AnnouncementController {
                 .body(AnnouncementResponse.fromEntity(announcement));
     }
 
-    @Operation(summary = "Cancelar agendamento")
-    @ApiResponses({
-            @ApiResponse(responseCode = "200", description = "Agendamento cancelado"),
-            @ApiResponse(responseCode = "404", description = "Não encontrado")
-    })
-    @PatchMapping("/{id}/cancel-schedule")
-    public ResponseEntity<Object> cancelSchedule(@PathVariable UUID id) {
-        return ResponseEntity.ok(null);
-    }
-
     @Operation(summary = "Fixar comunicado")
     @ApiResponses({
             @ApiResponse(responseCode = "200", description = "Fixado"),
