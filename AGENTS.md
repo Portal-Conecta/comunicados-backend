@@ -3,7 +3,6 @@
 Guia de referência para quem implementa, revisa ou debuga este repositório com assistentes de IA. Leia antes de alterar código.
 
 **Stack:** Java 21 · Spring Boot 4.0.6 · Maven · JPA/H2 (dev) / PostgreSQL (prod) · JWT · RabbitMQ (opcional) · springdoc OpenAPI
-
 ---
 
 ## 1. Visão geral do produto
