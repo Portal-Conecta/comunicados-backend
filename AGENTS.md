@@ -141,7 +141,7 @@ Campos comuns: `createdAt`, `updatedAt`, `publishedAt`, `scheduledFor`, `removed
 |---------|-----|----------|--------|-----------|
 | `dev` (default) | H2 in-memory | `update` | off | `MESSAGING_ENABLED=false` (default) |
 | `test` | H2 | `create-drop` | off | off + Rabbit auto-config excluído |
-| `prod` | PostgreSQL | `validate` | off (base) | via env |
+| `prod` | PostgreSQL | `validate` | **on** (`db/migration`) | via env |
 
 - `spring.jpa.open-in-view: false` — inicializar coleções lazy explicitamente nos use cases quando necessário.
 - Migrations em `db/migration/` quando Flyway for habilitado (`V###__descricao.sql`).
