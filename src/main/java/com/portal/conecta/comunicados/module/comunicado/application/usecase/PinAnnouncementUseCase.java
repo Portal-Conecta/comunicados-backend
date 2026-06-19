@@ -2,6 +2,7 @@ package com.portal.conecta.comunicados.module.comunicado.application.usecase;
 
 import com.portal.conecta.comunicados.module.comunicado.application.command.PinAnnouncementCommand;
 import com.portal.conecta.comunicados.module.comunicado.domain.enums.AnnouncementHistoryAction;
+import com.portal.conecta.comunicados.module.comunicado.domain.exception.AnnouncementNotFoundException;
 import com.portal.conecta.comunicados.module.comunicado.domain.exception.AnnouncementPermissionDeniedException;
 import com.portal.conecta.comunicados.module.comunicado.domain.model.Announcement;
 import com.portal.conecta.comunicados.module.comunicado.domain.model.AnnouncementHistory;
@@ -35,7 +36,7 @@ public class PinAnnouncementUseCase {
         }
 
         var announcement = announcementRepository.findByIdAndRemovedAtIsNull(command.announcementId())
-                .orElseThrow(() -> new IllegalArgumentException("Comunicado não encontrado"));
+                .orElseThrow(AnnouncementNotFoundException::new);
 
         announcement.setPinned(true);
         if (command.pinnedOrder() != null) {
