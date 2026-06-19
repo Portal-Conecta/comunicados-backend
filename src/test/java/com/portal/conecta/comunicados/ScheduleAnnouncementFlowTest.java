@@ -37,12 +37,14 @@ import com.fasterxml.jackson.datatype.jsr310.JavaTimeModule;
 import com.portal.conecta.comunicados.module.comunicado.application.command.ScheduleAnnouncementCommand;
 import com.portal.conecta.comunicados.module.comunicado.application.usecase.DeleteAnnouncementUseCase;
 import com.portal.conecta.comunicados.module.comunicado.application.usecase.GetAnnouncementByIdUseCase;
+import com.portal.conecta.comunicados.module.comunicado.application.usecase.ListAnnouncementHistoryUseCase;
 import com.portal.conecta.comunicados.module.comunicado.application.usecase.ListAnnouncementsUseCase;
-import com.portal.conecta.comunicados.module.comunicado.application.usecase.PublishAnnouncementUseCase;
-import com.portal.conecta.comunicados.module.comunicado.application.usecase.ScheduleAnnouncementUseCase;
-import com.portal.conecta.comunicados.module.comunicado.application.usecase.UpdateAnnouncementUseCase;
 import com.portal.conecta.comunicados.module.comunicado.application.usecase.PinAnnouncementUseCase;
+import com.portal.conecta.comunicados.module.comunicado.application.usecase.PublishAnnouncementUseCase;
+import com.portal.conecta.comunicados.module.comunicado.application.usecase.RescheduleAnnouncementUseCase;
+import com.portal.conecta.comunicados.module.comunicado.application.usecase.ScheduleAnnouncementUseCase;
 import com.portal.conecta.comunicados.module.comunicado.application.usecase.UnpinAnnouncementUseCase;
+import com.portal.conecta.comunicados.module.comunicado.application.usecase.UpdateAnnouncementUseCase;
 import com.portal.conecta.comunicados.module.comunicado.domain.enums.AnnouncementDestinationType;
 import com.portal.conecta.comunicados.module.comunicado.domain.enums.AnnouncementHistoryAction;
 import com.portal.conecta.comunicados.module.comunicado.domain.enums.AnnouncementOrigin;
@@ -67,7 +69,6 @@ import com.portal.conecta.comunicados.shared.context.UserType;
 import com.portal.conecta.comunicados.shared.exception.GlobalExceptionHandler;
 import com.portal.conecta.comunicados.shared.security.error.SecurityErrorResponseWriter;
 import com.portal.conecta.comunicados.shared.security.token.JwtExtractToken;
-import com.portal.conecta.comunicados.module.comunicado.application.usecase.ListAnnouncementHistoryUseCase;
 
 class ScheduleAnnouncementFlowTest {
 
@@ -90,6 +91,7 @@ class ScheduleAnnouncementFlowTest {
     private UnpinAnnouncementUseCase unpinAnnouncementUseCase;
     private UpdateAnnouncementUseCase updateAnnouncementUseCase;
     private ListAnnouncementHistoryUseCase listAnnouncementHistoryUseCase;
+    private RescheduleAnnouncementUseCase rescheduleAnnouncementUseCase;
     private MockMvc mockMvc;
 
     @BeforeEach
@@ -108,6 +110,7 @@ class ScheduleAnnouncementFlowTest {
         listAnnouncementHistoryUseCase = mock(ListAnnouncementHistoryUseCase.class);
         pinAnnouncementUseCase = mock(PinAnnouncementUseCase.class);
         unpinAnnouncementUseCase = mock(UnpinAnnouncementUseCase.class);
+        rescheduleAnnouncementUseCase = mock(RescheduleAnnouncementUseCase.class);
 
         scheduleAnnouncementUseCase = new ScheduleAnnouncementUseCase(
                 announcementRepository,
@@ -128,7 +131,8 @@ class ScheduleAnnouncementFlowTest {
                 pinAnnouncementUseCase,
                 unpinAnnouncementUseCase,
                 updateAnnouncementUseCase,
-                listAnnouncementHistoryUseCase
+                listAnnouncementHistoryUseCase,
+                rescheduleAnnouncementUseCase
         );
 
         mockMvc = MockMvcBuilders.standaloneSetup(controller)

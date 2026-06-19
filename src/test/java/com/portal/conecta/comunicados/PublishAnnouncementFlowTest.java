@@ -31,11 +31,14 @@ import org.springframework.web.server.ResponseStatusException;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.portal.conecta.comunicados.module.comunicado.application.usecase.DeleteAnnouncementUseCase;
 import com.portal.conecta.comunicados.module.comunicado.application.usecase.GetAnnouncementByIdUseCase;
+import com.portal.conecta.comunicados.module.comunicado.application.usecase.ListAnnouncementHistoryUseCase;
 import com.portal.conecta.comunicados.module.comunicado.application.usecase.ListAnnouncementsUseCase;
-import com.portal.conecta.comunicados.module.comunicado.application.usecase.PublishAnnouncementUseCase;
-import com.portal.conecta.comunicados.module.comunicado.application.usecase.ScheduleAnnouncementUseCase;
 import com.portal.conecta.comunicados.module.comunicado.application.usecase.PinAnnouncementUseCase;
+import com.portal.conecta.comunicados.module.comunicado.application.usecase.PublishAnnouncementUseCase;
+import com.portal.conecta.comunicados.module.comunicado.application.usecase.RescheduleAnnouncementUseCase;
+import com.portal.conecta.comunicados.module.comunicado.application.usecase.ScheduleAnnouncementUseCase;
 import com.portal.conecta.comunicados.module.comunicado.application.usecase.UnpinAnnouncementUseCase;
+import com.portal.conecta.comunicados.module.comunicado.application.usecase.UpdateAnnouncementUseCase;
 import com.portal.conecta.comunicados.module.comunicado.domain.enums.AnnouncementDestinationType;
 import com.portal.conecta.comunicados.module.comunicado.domain.enums.AnnouncementHistoryAction;
 import com.portal.conecta.comunicados.module.comunicado.domain.enums.AnnouncementOrigin;
@@ -47,10 +50,10 @@ import com.portal.conecta.comunicados.module.comunicado.domain.port.announcement
 import com.portal.conecta.comunicados.module.comunicado.domain.port.announcement.AnnouncementRepository;
 import com.portal.conecta.comunicados.module.comunicado.domain.port.support.HubClassPort;
 import com.portal.conecta.comunicados.module.comunicado.domain.validator.AnnouncementPermissionValidator;
-import com.portal.conecta.comunicados.module.tag.application.usecase.AutoLinkTagsByDestinationUseCase;
 import com.portal.conecta.comunicados.module.comunicado.presentation.controller.AnnouncementController;
 import com.portal.conecta.comunicados.module.comunicado.presentation.dto.request.CreateAnnouncementDestinationInput;
 import com.portal.conecta.comunicados.module.comunicado.presentation.dto.request.PublishAnnouncementRequest;
+import com.portal.conecta.comunicados.module.tag.application.usecase.AutoLinkTagsByDestinationUseCase;
 import com.portal.conecta.comunicados.shared.context.ClassRole;
 import com.portal.conecta.comunicados.shared.context.ContextClass;
 import com.portal.conecta.comunicados.shared.context.RequestContext;
@@ -59,8 +62,6 @@ import com.portal.conecta.comunicados.shared.context.UserType;
 import com.portal.conecta.comunicados.shared.exception.GlobalExceptionHandler;
 import com.portal.conecta.comunicados.shared.security.error.SecurityErrorResponseWriter;
 import com.portal.conecta.comunicados.shared.security.token.JwtExtractToken;
-import com.portal.conecta.comunicados.module.comunicado.application.usecase.UpdateAnnouncementUseCase;
-import com.portal.conecta.comunicados.module.comunicado.application.usecase.ListAnnouncementHistoryUseCase;
 
 class PublishAnnouncementFlowTest {
 
@@ -81,6 +82,7 @@ class PublishAnnouncementFlowTest {
     private UnpinAnnouncementUseCase unpinAnnouncementUseCase;
     private UpdateAnnouncementUseCase updateAnnouncementUseCase;
     private ListAnnouncementHistoryUseCase listAnnouncementHistoryUseCase;
+    private RescheduleAnnouncementUseCase rescheduleAnnouncementUseCase;
     private MockMvc mockMvc;
 
     @BeforeEach
@@ -96,6 +98,7 @@ class PublishAnnouncementFlowTest {
         deleteAnnouncementUseCase = mock(DeleteAnnouncementUseCase.class);
         updateAnnouncementUseCase = mock(UpdateAnnouncementUseCase.class);
         listAnnouncementHistoryUseCase = mock(ListAnnouncementHistoryUseCase.class);
+        rescheduleAnnouncementUseCase = mock(RescheduleAnnouncementUseCase.class);
 
         publishAnnouncementUseCase = new PublishAnnouncementUseCase(
                 announcementRepository,
@@ -119,7 +122,8 @@ class PublishAnnouncementFlowTest {
                 pinAnnouncementUseCase,
                 unpinAnnouncementUseCase,
                 updateAnnouncementUseCase,
-                listAnnouncementHistoryUseCase
+                listAnnouncementHistoryUseCase,
+                rescheduleAnnouncementUseCase
         );
 
         mockMvc = MockMvcBuilders.standaloneSetup(controller)

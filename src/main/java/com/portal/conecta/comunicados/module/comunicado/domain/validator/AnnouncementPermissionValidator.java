@@ -141,4 +141,10 @@ public class AnnouncementPermissionValidator {
             default -> false;
         };
     }
+
+    public boolean canReschedule(Announcement announcement, RequestContext context) {
+        if (context == null || context.userType() == null) return false;
+        if (PRIVILEGED.contains(context.userType())) return true;
+        return announcement.getCreatedByUserId().equals(context.userId());
+    }
 }
