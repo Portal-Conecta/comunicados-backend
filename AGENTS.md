@@ -2,8 +2,7 @@
 
 Guia de referência para quem implementa, revisa ou debuga este repositório com assistentes de IA. Leia antes de alterar código.
 
-**Stack:** Java 22 · Spring Boot 4.0.6 · Maven · JPA/H2 (dev) / PostgreSQL (prod) · JWT · RabbitMQ (opcional) · springdoc OpenAPI
-
+**Stack:** Java 21 · Spring Boot 4.0.6 · Maven · JPA/H2 (dev) / PostgreSQL (prod) · JWT · RabbitMQ (opcional) · springdoc OpenAPI
 ---
 
 ## 1. Visão geral do produto
@@ -350,7 +349,7 @@ Ver `CONTRIBUTING.md`. Resumo:
 - Branches: `feature/<issue>-descricao-curta` (de `develop`)
 - Commits: Conventional Commits em **português imperativo** (`feat:`, `fix:`, `refactor:`, `test:`, `chore:`)
 - PR: template em CONTRIBUTING.md, `Closes #<issue>`, review Tech Lead + squad comunicados
-- CI: `.github/workflows/ci.yml` — `mvn clean test` (JDK 22)
+- CI: `.github/workflows/ci.yml` — `mvn clean test` (JDK 21)
 
 ---
 
