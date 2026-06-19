@@ -1,18 +1,14 @@
 package com.portal.conecta.comunicados.module.comunicado.domain.port.announcement;
 
 import com.portal.conecta.comunicados.module.comunicado.domain.model.Announcement;
-import org.springframework.data.jpa.repository.JpaRepository;
-import org.springframework.data.jpa.repository.JpaSpecificationExecutor;
 
-import java.util.List;
+import java.lang.ScopedValue;
 import java.util.Optional;
 import java.util.UUID;
 
-public interface AnnouncementRepository extends JpaRepository<Announcement, UUID>, JpaSpecificationExecutor<Announcement> {
+public interface AnnouncementRepository {
+    Optional<Announcement> findById(UUID id);
+    Announcement save(Announcement announcement);
 
-    Optional<Announcement> findByIdAndRemovedAtIsNull(UUID id);
-
-    List<Announcement> findByRemovedAtIsNullOrderByPublishedAtDesc();
-
-    List<Announcement> findByPinnedTrueAndRemovedAtIsNullOrderByPinnedOrderAsc();
+    ScopedValue<Object> findByIdAndRemovedAtIsNull(UUID uuid);
 }

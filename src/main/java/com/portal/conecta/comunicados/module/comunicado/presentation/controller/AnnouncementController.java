@@ -4,6 +4,10 @@ import java.net.URI;
 import java.util.List;
 import java.util.UUID;
 
+import com.portal.conecta.comunicados.module.comunicado.application.command.RescheduleAnnouncementCommand;
+import com.portal.conecta.comunicados.module.comunicado.application.usecase.*;
+import com.portal.conecta.comunicados.module.comunicado.domain.model.Announcement;
+import com.portal.conecta.comunicados.module.comunicado.presentation.dto.request.*;
 import org.springframework.data.domain.Page;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.DeleteMapping;
@@ -21,23 +25,12 @@ import com.portal.conecta.comunicados.module.comunicado.application.command.Publ
 import com.portal.conecta.comunicados.module.comunicado.application.command.ScheduleAnnouncementCommand;
 import com.portal.conecta.comunicados.module.comunicado.application.query.GetAnnouncementByIdQuery;
 import com.portal.conecta.comunicados.module.comunicado.application.query.ListAnnouncementsQuery;
-import com.portal.conecta.comunicados.module.comunicado.application.usecase.DeleteAnnouncementUseCase;
-import com.portal.conecta.comunicados.module.comunicado.application.usecase.GetAnnouncementByIdUseCase;
-import com.portal.conecta.comunicados.module.comunicado.application.usecase.ListAnnouncementsUseCase;
-import com.portal.conecta.comunicados.module.comunicado.application.usecase.PublishAnnouncementUseCase;
-import com.portal.conecta.comunicados.module.comunicado.application.usecase.ScheduleAnnouncementUseCase;
-import com.portal.conecta.comunicados.module.comunicado.domain.model.Announcement;
-import com.portal.conecta.comunicados.module.comunicado.presentation.dto.request.PostFilterRequest;
-import com.portal.conecta.comunicados.module.comunicado.presentation.dto.request.PublishAnnouncementRequest;
-import com.portal.conecta.comunicados.module.comunicado.presentation.dto.request.ScheduleAnnouncementRequest;
 import com.portal.conecta.comunicados.module.comunicado.presentation.dto.response.AnnouncementDetailResponse;
 import com.portal.conecta.comunicados.module.comunicado.presentation.dto.response.AnnouncementResponse;
 import com.portal.conecta.comunicados.module.comunicado.presentation.dto.response.ListAnnouncementsResponse;
 import com.portal.conecta.comunicados.shared.context.RequestContext;
 import com.portal.conecta.comunicados.shared.context.RequestContextProvider;
 import com.portal.conecta.comunicados.module.comunicado.application.command.UpdateAnnouncementCommand;
-import com.portal.conecta.comunicados.module.comunicado.application.usecase.UpdateAnnouncementUseCase;
-import com.portal.conecta.comunicados.module.comunicado.presentation.dto.request.UpdateAnnouncementRequest;
 
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.responses.ApiResponse;
@@ -59,6 +52,8 @@ public class AnnouncementController {
     private final DeleteAnnouncementUseCase deleteAnnouncementUseCase;
     private final RequestContextProvider contextProvider;
     private final UpdateAnnouncementUseCase updateAnnouncementUseCase;
+    private final RescheduleAnnouncementUseCase rescheduleAnnouncementUseCase;
+
 
     @Operation(
             summary = "Listar comunicados",
@@ -257,5 +252,27 @@ public class AnnouncementController {
     @DeleteMapping("/{postId}/tags/{tagId}")
     public ResponseEntity<Void> unlinkAnnouncementTag(@PathVariable UUID postId, @PathVariable UUID tagId) {
         return ResponseEntity.noContent().build();
+    }
+
+    @Operation(summary = "Reagendar comunicado")
+    @ApiResponses({
+            @ApiResponse(responseCode = "200", description = "Comunicado reagendado com sucesso"),
+            @ApiResponse(responseCode = "400", description = "Data ausente, inválida ou no passado"),
+            @ApiResponse(responseCode = "401", description = "Não autenticado"),
+            @ApiResponse(responseCode = "403", description = "Sem permissão"),
+            @ApiResponse(responseCode = "404", description = "Comunicado inexistente ou removido"),
+            @ApiResponse(responseCode = "409", description = "Comunicado não está em status SCHEDULED")
+    })
+    @PatchMapping("/{id}/schedule")
+    public ResponseEntity<AnnouncementResponse> reschedule(
+            @PathVariable UUID id,
+            @Valid @RequestBody RescheduleAnnouncementRequest request
+    ) {
+        UUID userId = contextProvider.getRequestContext().userId();
+        RescheduleAnnouncementCommand command = RescheduleAnnouncementCommand.from(request, id, userId);
+
+        Announcement rescheduled = rescheduleAnnouncementUseCase.execute(command);
+
+        return ResponseEntity.ok(AnnouncementResponse.fromEntity(rescheduled));
     }
 }
