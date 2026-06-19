@@ -44,19 +44,20 @@ public class PinAnnouncementUseCase {
 
         announcement = announcementRepository.save(announcement);
 
-        recordHistory(announcement, command.pinnedByUserId(), "PINNED");
+        recordHistory(announcement, command.pinnedByUserId(), AnnouncementHistoryAction.PINNED);
 
         return announcement;
     }
 
-    private void recordHistory(Announcement announcement, UUID userId, String action) {
+    private void recordHistory(Announcement announcement, UUID userId, AnnouncementHistoryAction action) {
         AnnouncementHistory history = AnnouncementHistory.builder()
                 .announcement(announcement)
                 .userId(userId)
-                .action(AnnouncementHistoryAction.valueOf(action))
+                .action(action)
                 .createdAt(Instant.now())
                 .build();
 
         historyRepository.save(history);
     }
+
 }
