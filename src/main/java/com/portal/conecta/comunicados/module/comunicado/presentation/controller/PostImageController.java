@@ -31,6 +31,7 @@ import com.portal.conecta.comunicados.shared.context.RequestContextProvider;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.responses.ApiResponse;
 import io.swagger.v3.oas.annotations.responses.ApiResponses;
+import io.swagger.v3.oas.annotations.security.SecurityRequirement;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import lombok.RequiredArgsConstructor;
 
@@ -38,6 +39,7 @@ import lombok.RequiredArgsConstructor;
 @RequestMapping("/api/posts/{postId}/images")
 @Tag(name = "Imagens", description = "Endpoints de imagens do comunicado")
 @RequiredArgsConstructor
+@SecurityRequirement(name = "BearerAuth")
 public class PostImageController {
 
     private final AttachAnnouncementFileUseCase attachFileUseCase;
