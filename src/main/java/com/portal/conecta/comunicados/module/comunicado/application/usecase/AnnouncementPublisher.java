@@ -27,7 +27,8 @@ public class AnnouncementPublisher {
     /**
      * Tenta publicar o comunicado agendado via compare-and-swap. Só grava o histórico
      * ({@code PUBLICATION}) se esta execução tiver vencido a corrida (outra réplica pode ter
-     * publicado antes). O publicador herda o autor do comunicado, já que não há usuário autenticado.
+     * publicado antes). A publicação é atribuída a quem agendou ({@code createdByUserId}): o job
+     * apenas executa, no horário marcado, a decisão que aquele usuário já tomou no {@code POST /schedule}.
      *
      * @return {@code true} se este processo efetuou a publicação; {@code false} caso já estivesse publicado.
      */
