@@ -23,6 +23,10 @@ server:
   port: ${SERVER_PORT:8083}
 
 app:
+  scheduling:
+    auto-publish:
+      enabled: ${AUTO_PUBLISH_ENABLED:true}
+      cron: ${AUTO_PUBLISH_CRON:0 * * * * *}
   messaging:
     enabled: ${MESSAGING_ENABLED:false}
     core:

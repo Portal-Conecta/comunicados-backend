@@ -25,6 +25,9 @@ logging:
     root: WARN
 
 app:
+  scheduling:
+    auto-publish:
+      enabled: false
   messaging:
     enabled: false
   jwt:
