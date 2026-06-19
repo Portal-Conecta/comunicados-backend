@@ -30,6 +30,10 @@ public class AnnouncementSpecifications {
         return (root, query, cb) -> cb.isNotNull(root.get("publishedAt"));
     }
 
+    public static Specification<Announcement> isPinned() {
+        return (root, query, cb) -> cb.isTrue(root.get("pinned"));
+    }
+
     public static Specification<Announcement> hasOrigin(AnnouncementOrigin origin) {
         return (root, query, cb) -> {
             if (origin == null) {

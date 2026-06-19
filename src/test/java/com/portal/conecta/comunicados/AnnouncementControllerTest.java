@@ -3,6 +3,7 @@ package com.portal.conecta.comunicados;
 import com.portal.conecta.comunicados.module.comunicado.application.usecase.DeleteAnnouncementUseCase;
 import com.portal.conecta.comunicados.module.comunicado.application.usecase.GetAnnouncementByIdUseCase;
 import com.portal.conecta.comunicados.module.comunicado.application.usecase.ListAnnouncementsUseCase;
+import com.portal.conecta.comunicados.module.comunicado.application.usecase.ListPinnedAnnouncementsUseCase;
 import com.portal.conecta.comunicados.module.comunicado.application.usecase.PublishAnnouncementUseCase;
 import com.portal.conecta.comunicados.module.comunicado.application.usecase.UpdateAnnouncementUseCase;
 import com.portal.conecta.comunicados.module.comunicado.application.usecase.ScheduleAnnouncementUseCase;
@@ -64,6 +65,9 @@ class AnnouncementControllerTest {
 
     @MockitoBean
     private ListAnnouncementsUseCase listAnnouncementsUseCase;
+
+    @MockitoBean
+    private ListPinnedAnnouncementsUseCase listPinnedAnnouncementsUseCase;
 
     @MockitoBean
     private GetAnnouncementByIdUseCase getAnnouncementByIdUseCase;
@@ -219,5 +223,38 @@ class AnnouncementControllerTest {
 
         mockMvc.perform(get("/api/posts/{id}/history", UUID.randomUUID()))
                 .andExpect(status().isNotFound());
+    }
+
+    @Test
+    void shouldReturn200AndPinnedItems_WhenListingPinned() throws Exception {
+        stubContext();
+
+        Announcement pinned = Announcement.builder()
+                .id(UUID.randomUUID())
+                .title("Fixado")
+                .pinned(true)
+                .pinnedOrder((short) 1)
+                .build();
+
+        when(listPinnedAnnouncementsUseCase.execute()).thenReturn(List.of(pinned));
+
+        mockMvc.perform(get("/api/posts/pinned"))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.items").isArray())
+                .andExpect(jsonPath("$.items[0].title").value("Fixado"))
+                .andExpect(jsonPath("$.items[0].pinned").value(true))
+                .andExpect(jsonPath("$.items[0].pinnedOrder").value(1));
+    }
+
+    @Test
+    void shouldReturn200AndEmptyItems_WhenNoPinnedAnnouncements() throws Exception {
+        stubContext();
+
+        when(listPinnedAnnouncementsUseCase.execute()).thenReturn(List.of());
+
+        mockMvc.perform(get("/api/posts/pinned"))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.items").isArray())
+                .andExpect(jsonPath("$.items").isEmpty());
     }
 }
