@@ -364,6 +364,9 @@ class PublishAnnouncementWebMvcTest {
     @MockitoBean
     private UnpinAnnouncementUseCase unpinAnnouncementUseCase;
 
+    @MockitoBean
+    private RescheduleAnnouncementUseCase rescheduleAnnouncementUseCase;
+
     @Test
     void shouldPublishAnnouncementByEndpoint() throws Exception {
         UUID announcementId = UUID.randomUUID();

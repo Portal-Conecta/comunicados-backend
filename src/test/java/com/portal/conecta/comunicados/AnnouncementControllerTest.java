@@ -9,6 +9,7 @@ import com.portal.conecta.comunicados.module.comunicado.application.usecase.Sche
 import com.portal.conecta.comunicados.module.comunicado.domain.exception.AnnouncementNotFoundException;
 import com.portal.conecta.comunicados.module.comunicado.application.usecase.ListAnnouncementHistoryUseCase;
 import com.portal.conecta.comunicados.module.comunicado.application.usecase.PinAnnouncementUseCase;
+import com.portal.conecta.comunicados.module.comunicado.application.usecase.RescheduleAnnouncementUseCase;
 import com.portal.conecta.comunicados.module.comunicado.application.usecase.UnpinAnnouncementUseCase;
 import com.portal.conecta.comunicados.module.comunicado.domain.model.Announcement;
 import com.portal.conecta.comunicados.module.comunicado.presentation.controller.AnnouncementController;
@@ -84,6 +85,9 @@ class AnnouncementControllerTest {
 
     @MockitoBean
     private UnpinAnnouncementUseCase unpinAnnouncementUseCase;
+
+    @MockitoBean
+    private RescheduleAnnouncementUseCase rescheduleAnnouncementUseCase;
 
     private void stubContext() {
         when(contextProvider.getRequestContext())
