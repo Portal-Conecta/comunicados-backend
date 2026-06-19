@@ -77,7 +77,7 @@ class PinAnnouncementUseCaseTest {
 
         assertThat(result).isNotNull();
         assertThat(result.isPinned()).isTrue();
-        assertThat(result.getPinnedOrder()).isEqualTo(pinnedOrder);
+        assertThat(result.getPinnedOrder()).isEqualTo(pinnedOrder.shortValue());
 
         verify(announcementRepository).save(announcement);
         verify(historyRepository).save(any(AnnouncementHistory.class));
