@@ -1,50 +1,25 @@
 # Guia de testes via Postman — comunicados-backend
 
-Guia prático para testar manualmente a API com **Postman**, usando **JWT local** (sem Hub real de autenticação) e **adapters mock** para integrações com o Hub.
+Guia prático para testar manualmente a API com **Postman**, usando o **core-backend** (Hub real em `localhost:8080`) ou **JWT local** (jwt.io) como fallback.
 
-> **Escopo:** apenas funcionalidades já implementadas até o estado atual do repositório (listagem com busca #117, publicar #107, agendar #108, CRUD parcial de comunicados, tags, remoção, etc.). Endpoints que retornam `null` ou não têm use case estão listados como **não implementados**.
-
----
-
-## 1. Visão geral
-
-| Item | Valor padrão (dev) |
-|------|-------------------|
-| Base URL | `http://localhost:8083` |
-| Profile | `dev` |
-| Banco | H2 em memória |
-| Porta | `8083` (`SERVER_PORT`) |
-| Hub mock | `HUB_MOCK_ENABLED=true` |
-| RabbitMQ | `MESSAGING_ENABLED=false` (app sobe sem broker) |
-| Swagger UI | `http://localhost:8083/swagger-ui.html` |
-| OpenAPI JSON | `http://localhost:8083/v3/api-docs` |
-| Health | `http://localhost:8083/actuator/health` |
+> **Coleções atuais:** `postman/Core - Login.postman_collection.json` + `postman/Comunicados - {PERFIL}.postman_collection.json`. Ver [postman/README.md](../postman/README.md).
 
 ---
 
-## 2. Subir a aplicação
+## Modo recomendado: Core + Postman
 
-```bash
-./mvnw clean spring-boot:run
-```
+1. Suba **Core** (`8080`) e **Comunicados** (`8083`)
+2. Importe environment + coleções de `postman/`
+3. Rode **Core - Login** (Collection Runner) na ordem das pastas
+4. Rode **Comunicados - SENAI** (ou outro perfil)
 
-Variáveis úteis (`.env` ou terminal):
-
-```env
-SPRING_PROFILES_ACTIVE=dev
-SERVER_PORT=8083
-HUB_MOCK_ENABLED=true
-MESSAGING_ENABLED=false
-JWT_SECRET=ZGV2LXNlY3JldC1rZXktMzItYnl0ZXMtbWluaW11bS1mb3ItaHMyNTY=
-```
-
-> Se a aplicação não subir com erro em `*.class` (`ArrayIndexOutOfBoundsException` no ASM), rode `./mvnw clean compile` antes — artefato corrompido em `target/`.
+Admin pré-cadastrado no Core: `admin@portal.test` / `123456`
 
 ---
 
-## 3. Autenticação — mockar o Hub (JWT)
+## Modo legado: JWT manual (jwt.io)
 
-O Comunicados **não emite token**. Ele **valida** o JWT que o Hub entregaria ao usuário. Em dev, você gera o token localmente com o mesmo segredo configurado em `app.jwt.secret`.
+O Comunicados **não emite token**. Ele **valida** o JWT que o Hub entregaria ao usuário. Em dev, você pode gerar o token localmente com o mesmo segredo configurado em `app.jwt.secret`.
 
 ### 3.1 Claims obrigatórios
 

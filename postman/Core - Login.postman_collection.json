@@ -1,0 +1,1076 @@
+{
+	"info": {
+		"_postman_id": "437ce55d-21af-42c1-846c-c8f3d93606c8",
+		"name": "Core - Login",
+		"description": "Autenticação e provisionamento via **core-backend** (Hub) em `{{coreBaseUrl}}`.\n\n**Fluxo recomendado (Runner):**\n1. **00 - Auth** → Login Admin\n2. **01 - Criar usuários** → um por perfil\n3. **02 - Login por perfil** → salva userIds e tokens\n4. **03 - Turma** → curso, turma e vínculos\n5. **04 - Re-login** → TEACHER/REP/STUDENT (JWT com `classes`)\n6. Rode **Comunicados - {PERFIL}**\n\n**Domínios de e-mail:**\n- SENAI: `@sc.senai.br` | WEG: `@weg.net`\n- TEACHER: `@edu.sc.senai.br`\n- STUDENT/REPRESENTATIVE: `@estudante.sesisenai.org.br`",
+		"schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
+	},
+	"item": [
+		{
+			"name": "00 - Auth",
+			"item": [
+				{
+					"name": "01 - Login Admin",
+					"request": {
+						"method": "POST",
+						"header": [
+							{
+								"key": "Content-Type",
+								"value": "application/json"
+							}
+						],
+						"url": {
+							"raw": "{{coreBaseUrl}}/auth/login",
+							"host": [
+								"{{coreBaseUrl}}"
+							],
+							"path": [
+								"auth",
+								"login"
+							]
+						},
+						"description": "Admin pré-cadastrado: admin@portal.test / 123456",
+						"body": {
+							"mode": "raw",
+							"raw": "{\n  \"email\": \"{{adminEmail}}\",\n  \"password\": \"{{adminPassword}}\"\n}"
+						}
+					},
+					"response": [],
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"exec": [
+									"pm.test('Status 200', () => pm.response.to.have.status(200));",
+									"if (pm.response.code === 200) {",
+									"    const body = pm.response.json();",
+									"    pm.environment.set('tokenAdmin', body.accessToken);",
+									"    pm.environment.set('accessToken', body.accessToken);",
+									"    pm.environment.set('refreshToken', body.refreshToken);",
+									"}"
+								],
+								"type": "text/javascript"
+							}
+						}
+					]
+				},
+				{
+					"name": "02 - Refresh Token",
+					"request": {
+						"method": "POST",
+						"header": [
+							{
+								"key": "Content-Type",
+								"value": "application/json"
+							}
+						],
+						"url": {
+							"raw": "{{coreBaseUrl}}/auth/refresh",
+							"host": [
+								"{{coreBaseUrl}}"
+							],
+							"path": [
+								"auth",
+								"refresh"
+							]
+						},
+						"description": "Renova access token usando refreshToken do login.",
+						"body": {
+							"mode": "raw",
+							"raw": "{\n  \"refreshToken\": \"{{refreshToken}}\"\n}"
+						}
+					},
+					"response": [],
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"exec": [
+									"pm.test('Status 200', () => pm.response.to.have.status(200));",
+									"if (pm.response.code === 200) {",
+									"    const body = pm.response.json();",
+									"    pm.environment.set('accessToken', body.accessToken);",
+									"    pm.environment.set('refreshToken', body.refreshToken);",
+									"}"
+								],
+								"type": "text/javascript"
+							}
+						}
+					]
+				}
+			]
+		},
+		{
+			"name": "01 - Criar usuários",
+			"item": [
+				{
+					"name": "Criar usuário SENAI",
+					"request": {
+						"method": "POST",
+						"header": [
+							{
+								"key": "Content-Type",
+								"value": "application/json"
+							}
+						],
+						"url": {
+							"raw": "{{coreBaseUrl}}/users",
+							"host": [
+								"{{coreBaseUrl}}"
+							],
+							"path": [
+								"users"
+							]
+						},
+						"description": "Cria usuário SENAI. Domínio de e-mail obrigatório conforme tipo.\nE-mail padrão: senai.postman@sc.senai.br\nSe já existir, pode retornar 400/409 — siga para o login.",
+						"body": {
+							"mode": "raw",
+							"raw": "{\n  \"name\": \"Postman SENAI\",\n  \"email\": \"{{emailSenai}}\",\n  \"password\": \"{{passwordSenai}}\",\n  \"typeUser\": \"SENAI\"\n}"
+						},
+						"auth": {
+							"type": "bearer",
+							"bearer": [
+								{
+									"key": "token",
+									"value": "{{tokenAdmin}}",
+									"type": "string"
+								}
+							]
+						}
+					},
+					"response": [],
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"exec": [
+									"pm.test('Status 201 ou conflito', () => pm.expect([201, 409, 400]).to.include(pm.response.code));",
+									"if (pm.response.code === 201) {",
+									"    const body = pm.response.json();",
+									"    pm.environment.set('userIdSenai', body.id);",
+									"    pm.test('typeUser', () => pm.expect(body.typeUser).to.exist);",
+									"}"
+								],
+								"type": "text/javascript"
+							}
+						}
+					]
+				},
+				{
+					"name": "Criar usuário WEG",
+					"request": {
+						"method": "POST",
+						"header": [
+							{
+								"key": "Content-Type",
+								"value": "application/json"
+							}
+						],
+						"url": {
+							"raw": "{{coreBaseUrl}}/users",
+							"host": [
+								"{{coreBaseUrl}}"
+							],
+							"path": [
+								"users"
+							]
+						},
+						"description": "Cria usuário WEG. Domínio de e-mail obrigatório conforme tipo.\nE-mail padrão: weg.postman@weg.net\nSe já existir, pode retornar 400/409 — siga para o login.",
+						"body": {
+							"mode": "raw",
+							"raw": "{\n  \"name\": \"Postman WEG\",\n  \"email\": \"{{emailWeg}}\",\n  \"password\": \"{{passwordWeg}}\",\n  \"typeUser\": \"WEG\"\n}"
+						},
+						"auth": {
+							"type": "bearer",
+							"bearer": [
+								{
+									"key": "token",
+									"value": "{{tokenAdmin}}",
+									"type": "string"
+								}
+							]
+						}
+					},
+					"response": [],
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"exec": [
+									"pm.test('Status 201 ou conflito', () => pm.expect([201, 409, 400]).to.include(pm.response.code));",
+									"if (pm.response.code === 201) {",
+									"    const body = pm.response.json();",
+									"    pm.environment.set('userIdWeg', body.id);",
+									"    pm.test('typeUser', () => pm.expect(body.typeUser).to.exist);",
+									"}"
+								],
+								"type": "text/javascript"
+							}
+						}
+					]
+				},
+				{
+					"name": "Criar usuário TEACHER",
+					"request": {
+						"method": "POST",
+						"header": [
+							{
+								"key": "Content-Type",
+								"value": "application/json"
+							}
+						],
+						"url": {
+							"raw": "{{coreBaseUrl}}/users",
+							"host": [
+								"{{coreBaseUrl}}"
+							],
+							"path": [
+								"users"
+							]
+						},
+						"description": "Cria usuário TEACHER. Domínio de e-mail obrigatório conforme tipo.\nE-mail padrão: teacher.postman@edu.sc.senai.br\nSe já existir, pode retornar 400/409 — siga para o login.",
+						"body": {
+							"mode": "raw",
+							"raw": "{\n  \"name\": \"Postman TEACHER\",\n  \"email\": \"{{emailTeacher}}\",\n  \"password\": \"{{passwordTeacher}}\",\n  \"typeUser\": \"TEACHER\"\n}"
+						},
+						"auth": {
+							"type": "bearer",
+							"bearer": [
+								{
+									"key": "token",
+									"value": "{{tokenAdmin}}",
+									"type": "string"
+								}
+							]
+						}
+					},
+					"response": [],
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"exec": [
+									"pm.test('Status 201 ou conflito', () => pm.expect([201, 409, 400]).to.include(pm.response.code));",
+									"if (pm.response.code === 201) {",
+									"    const body = pm.response.json();",
+									"    pm.environment.set('userIdTeacher', body.id);",
+									"    pm.test('typeUser', () => pm.expect(body.typeUser).to.exist);",
+									"}"
+								],
+								"type": "text/javascript"
+							}
+						}
+					]
+				},
+				{
+					"name": "Criar usuário REPRESENTATIVE",
+					"request": {
+						"method": "POST",
+						"header": [
+							{
+								"key": "Content-Type",
+								"value": "application/json"
+							}
+						],
+						"url": {
+							"raw": "{{coreBaseUrl}}/users",
+							"host": [
+								"{{coreBaseUrl}}"
+							],
+							"path": [
+								"users"
+							]
+						},
+						"description": "Cria usuário REPRESENTATIVE. Domínio de e-mail obrigatório conforme tipo.\nE-mail padrão: rep.postman@estudante.sesisenai.org.br\nSe já existir, pode retornar 400/409 — siga para o login.",
+						"body": {
+							"mode": "raw",
+							"raw": "{\n  \"name\": \"Postman REPRESENTATIVE\",\n  \"email\": \"{{emailRepresentative}}\",\n  \"password\": \"{{passwordRepresentative}}\",\n  \"typeUser\": \"REPRESENTATIVE\"\n}"
+						},
+						"auth": {
+							"type": "bearer",
+							"bearer": [
+								{
+									"key": "token",
+									"value": "{{tokenAdmin}}",
+									"type": "string"
+								}
+							]
+						}
+					},
+					"response": [],
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"exec": [
+									"pm.test('Status 201 ou conflito', () => pm.expect([201, 409, 400]).to.include(pm.response.code));",
+									"if (pm.response.code === 201) {",
+									"    const body = pm.response.json();",
+									"    pm.environment.set('userIdRepresentative', body.id);",
+									"    pm.test('typeUser', () => pm.expect(body.typeUser).to.exist);",
+									"}"
+								],
+								"type": "text/javascript"
+							}
+						}
+					]
+				},
+				{
+					"name": "Criar usuário STUDENT",
+					"request": {
+						"method": "POST",
+						"header": [
+							{
+								"key": "Content-Type",
+								"value": "application/json"
+							}
+						],
+						"url": {
+							"raw": "{{coreBaseUrl}}/users",
+							"host": [
+								"{{coreBaseUrl}}"
+							],
+							"path": [
+								"users"
+							]
+						},
+						"description": "Cria usuário STUDENT. Domínio de e-mail obrigatório conforme tipo.\nE-mail padrão: student.postman@estudante.sesisenai.org.br\nSe já existir, pode retornar 400/409 — siga para o login.",
+						"body": {
+							"mode": "raw",
+							"raw": "{\n  \"name\": \"Postman STUDENT\",\n  \"email\": \"{{emailStudent}}\",\n  \"password\": \"{{passwordStudent}}\",\n  \"typeUser\": \"STUDENT\"\n}"
+						},
+						"auth": {
+							"type": "bearer",
+							"bearer": [
+								{
+									"key": "token",
+									"value": "{{tokenAdmin}}",
+									"type": "string"
+								}
+							]
+						}
+					},
+					"response": [],
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"exec": [
+									"pm.test('Status 201 ou conflito', () => pm.expect([201, 409, 400]).to.include(pm.response.code));",
+									"if (pm.response.code === 201) {",
+									"    const body = pm.response.json();",
+									"    pm.environment.set('userIdStudent', body.id);",
+									"    pm.test('typeUser', () => pm.expect(body.typeUser).to.exist);",
+									"}"
+								],
+								"type": "text/javascript"
+							}
+						}
+					]
+				}
+			]
+		},
+		{
+			"name": "02 - Login por perfil",
+			"item": [
+				{
+					"name": "Login SENAI",
+					"request": {
+						"method": "POST",
+						"header": [
+							{
+								"key": "Content-Type",
+								"value": "application/json"
+							}
+						],
+						"url": {
+							"raw": "{{coreBaseUrl}}/auth/login",
+							"host": [
+								"{{coreBaseUrl}}"
+							],
+							"path": [
+								"auth",
+								"login"
+							]
+						},
+						"description": "Login inicial de SENAI. Salva {tokenSenai} e {{userIdSenai}} (claim `sub`).",
+						"body": {
+							"mode": "raw",
+							"raw": "{\n  \"email\": \"{{emailSenai}}\",\n  \"password\": \"{{passwordSenai}}\"\n}"
+						}
+					},
+					"response": [],
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"exec": [
+									"pm.test('Status 200', () => pm.response.to.have.status(200));",
+									"if (pm.response.code === 200) {",
+									"    const body = pm.response.json();",
+									"    pm.environment.set('tokenSenai', body.accessToken);",
+									"    pm.environment.set('accessToken', body.accessToken);",
+									"    pm.environment.set('refreshToken', body.refreshToken);",
+									"    const payload = JSON.parse(atob(body.accessToken.split('.')[1]));",
+									"    pm.environment.set('userIdSenai', payload.sub);",
+									"}"
+								],
+								"type": "text/javascript"
+							}
+						}
+					]
+				},
+				{
+					"name": "Login WEG",
+					"request": {
+						"method": "POST",
+						"header": [
+							{
+								"key": "Content-Type",
+								"value": "application/json"
+							}
+						],
+						"url": {
+							"raw": "{{coreBaseUrl}}/auth/login",
+							"host": [
+								"{{coreBaseUrl}}"
+							],
+							"path": [
+								"auth",
+								"login"
+							]
+						},
+						"description": "Login inicial de WEG. Salva {tokenWeg} e {{userIdWeg}} (claim `sub`).",
+						"body": {
+							"mode": "raw",
+							"raw": "{\n  \"email\": \"{{emailWeg}}\",\n  \"password\": \"{{passwordWeg}}\"\n}"
+						}
+					},
+					"response": [],
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"exec": [
+									"pm.test('Status 200', () => pm.response.to.have.status(200));",
+									"if (pm.response.code === 200) {",
+									"    const body = pm.response.json();",
+									"    pm.environment.set('tokenWeg', body.accessToken);",
+									"    pm.environment.set('accessToken', body.accessToken);",
+									"    pm.environment.set('refreshToken', body.refreshToken);",
+									"    const payload = JSON.parse(atob(body.accessToken.split('.')[1]));",
+									"    pm.environment.set('userIdWeg', payload.sub);",
+									"}"
+								],
+								"type": "text/javascript"
+							}
+						}
+					]
+				},
+				{
+					"name": "Login TEACHER",
+					"request": {
+						"method": "POST",
+						"header": [
+							{
+								"key": "Content-Type",
+								"value": "application/json"
+							}
+						],
+						"url": {
+							"raw": "{{coreBaseUrl}}/auth/login",
+							"host": [
+								"{{coreBaseUrl}}"
+							],
+							"path": [
+								"auth",
+								"login"
+							]
+						},
+						"description": "Login inicial de TEACHER. Salva {tokenTeacher} e {{userIdTeacher}} (claim `sub`).",
+						"body": {
+							"mode": "raw",
+							"raw": "{\n  \"email\": \"{{emailTeacher}}\",\n  \"password\": \"{{passwordTeacher}}\"\n}"
+						}
+					},
+					"response": [],
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"exec": [
+									"pm.test('Status 200', () => pm.response.to.have.status(200));",
+									"if (pm.response.code === 200) {",
+									"    const body = pm.response.json();",
+									"    pm.environment.set('tokenTeacher', body.accessToken);",
+									"    pm.environment.set('accessToken', body.accessToken);",
+									"    pm.environment.set('refreshToken', body.refreshToken);",
+									"    const payload = JSON.parse(atob(body.accessToken.split('.')[1]));",
+									"    pm.environment.set('userIdTeacher', payload.sub);",
+									"}"
+								],
+								"type": "text/javascript"
+							}
+						}
+					]
+				},
+				{
+					"name": "Login REPRESENTATIVE",
+					"request": {
+						"method": "POST",
+						"header": [
+							{
+								"key": "Content-Type",
+								"value": "application/json"
+							}
+						],
+						"url": {
+							"raw": "{{coreBaseUrl}}/auth/login",
+							"host": [
+								"{{coreBaseUrl}}"
+							],
+							"path": [
+								"auth",
+								"login"
+							]
+						},
+						"description": "Login inicial de REPRESENTATIVE. Salva {tokenRepresentative} e {{userIdRepresentative}} (claim `sub`).",
+						"body": {
+							"mode": "raw",
+							"raw": "{\n  \"email\": \"{{emailRepresentative}}\",\n  \"password\": \"{{passwordRepresentative}}\"\n}"
+						}
+					},
+					"response": [],
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"exec": [
+									"pm.test('Status 200', () => pm.response.to.have.status(200));",
+									"if (pm.response.code === 200) {",
+									"    const body = pm.response.json();",
+									"    pm.environment.set('tokenRepresentative', body.accessToken);",
+									"    pm.environment.set('accessToken', body.accessToken);",
+									"    pm.environment.set('refreshToken', body.refreshToken);",
+									"    const payload = JSON.parse(atob(body.accessToken.split('.')[1]));",
+									"    pm.environment.set('userIdRepresentative', payload.sub);",
+									"}"
+								],
+								"type": "text/javascript"
+							}
+						}
+					]
+				},
+				{
+					"name": "Login STUDENT",
+					"request": {
+						"method": "POST",
+						"header": [
+							{
+								"key": "Content-Type",
+								"value": "application/json"
+							}
+						],
+						"url": {
+							"raw": "{{coreBaseUrl}}/auth/login",
+							"host": [
+								"{{coreBaseUrl}}"
+							],
+							"path": [
+								"auth",
+								"login"
+							]
+						},
+						"description": "Login inicial de STUDENT. Salva {tokenStudent} e {{userIdStudent}} (claim `sub`).",
+						"body": {
+							"mode": "raw",
+							"raw": "{\n  \"email\": \"{{emailStudent}}\",\n  \"password\": \"{{passwordStudent}}\"\n}"
+						}
+					},
+					"response": [],
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"exec": [
+									"pm.test('Status 200', () => pm.response.to.have.status(200));",
+									"if (pm.response.code === 200) {",
+									"    const body = pm.response.json();",
+									"    pm.environment.set('tokenStudent', body.accessToken);",
+									"    pm.environment.set('accessToken', body.accessToken);",
+									"    pm.environment.set('refreshToken', body.refreshToken);",
+									"    const payload = JSON.parse(atob(body.accessToken.split('.')[1]));",
+									"    pm.environment.set('userIdStudent', payload.sub);",
+									"}"
+								],
+								"type": "text/javascript"
+							}
+						}
+					]
+				}
+			]
+		},
+		{
+			"name": "03 - Turma (TEACHER/REP/STUDENT)",
+			"item": [
+				{
+					"name": "Criar curso",
+					"request": {
+						"method": "POST",
+						"header": [
+							{
+								"key": "Content-Type",
+								"value": "application/json"
+							}
+						],
+						"url": {
+							"raw": "{{coreBaseUrl}}/courses",
+							"host": [
+								"{{coreBaseUrl}}"
+							],
+							"path": [
+								"courses"
+							]
+						},
+						"description": "Cria curso de teste. Salva {{courseId}}.",
+						"body": {
+							"mode": "raw",
+							"raw": "{\n  \"name\": \"Curso Postman\",\n  \"code\": \"POST-01\"\n}"
+						},
+						"auth": {
+							"type": "bearer",
+							"bearer": [
+								{
+									"key": "token",
+									"value": "{{tokenAdmin}}",
+									"type": "string"
+								}
+							]
+						}
+					},
+					"response": [],
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"exec": [
+									"pm.test('Status 201', () => pm.response.to.have.status(201));",
+									"if (pm.response.code === 201) {",
+									"    const body = pm.response.json();",
+									"    pm.environment.set('courseId', body.id);",
+									"}"
+								],
+								"type": "text/javascript"
+							}
+						}
+					]
+				},
+				{
+					"name": "Criar turma",
+					"request": {
+						"method": "POST",
+						"header": [
+							{
+								"key": "Content-Type",
+								"value": "application/json"
+							}
+						],
+						"url": {
+							"raw": "{{coreBaseUrl}}/classes",
+							"host": [
+								"{{coreBaseUrl}}"
+							],
+							"path": [
+								"classes"
+							]
+						},
+						"description": "Cria turma vinculada ao curso. Salva {{classId}}.",
+						"body": {
+							"mode": "raw",
+							"raw": "{\n  \"shift\": \"FULL_AM_PM\",\n  \"courseId\": \"{{courseId}}\"\n}"
+						},
+						"auth": {
+							"type": "bearer",
+							"bearer": [
+								{
+									"key": "token",
+									"value": "{{tokenAdmin}}",
+									"type": "string"
+								}
+							]
+						}
+					},
+					"response": [],
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"exec": [
+									"pm.test('Status 201', () => pm.response.to.have.status(201));",
+									"if (pm.response.code === 201) {",
+									"    const body = pm.response.json();",
+									"    pm.environment.set('classId', body.id);",
+									"    pm.test('classId salvo', () => pm.expect(body.id).to.be.a('string'));",
+									"}"
+								],
+								"type": "text/javascript"
+							}
+						}
+					]
+				},
+				{
+					"name": "Vincular TEACHER à turma",
+					"request": {
+						"method": "POST",
+						"header": [
+							{
+								"key": "Content-Type",
+								"value": "application/json"
+							}
+						],
+						"url": {
+							"raw": "{{coreBaseUrl}}/classes/{{classId}}/members",
+							"host": [
+								"{{coreBaseUrl}}"
+							],
+							"path": [
+								"classes",
+								"{{classId}}",
+								"members"
+							]
+						},
+						"description": "TEACHER precisa estar na turma para publicar com destino CLASS.",
+						"body": {
+							"mode": "raw",
+							"raw": "{\n  \"userId\": \"{{userIdTeacher}}\",\n  \"classRole\": \"TEACHER\"\n}"
+						},
+						"auth": {
+							"type": "bearer",
+							"bearer": [
+								{
+									"key": "token",
+									"value": "{{tokenAdmin}}",
+									"type": "string"
+								}
+							]
+						}
+					},
+					"response": [],
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"exec": [
+									"pm.test('Status 201 — TEACHER', () => pm.response.to.have.status(201));",
+									"if (pm.response.code === 201) {",
+									"    const body = pm.response.json();",
+									"    pm.test('Papel TEACHER', () => pm.expect(body.classRole).to.eql('TEACHER'));",
+									"}"
+								],
+								"type": "text/javascript"
+							}
+						}
+					]
+				},
+				{
+					"name": "Vincular REPRESENTATIVE à turma",
+					"request": {
+						"method": "POST",
+						"header": [
+							{
+								"key": "Content-Type",
+								"value": "application/json"
+							}
+						],
+						"url": {
+							"raw": "{{coreBaseUrl}}/classes/{{classId}}/members",
+							"host": [
+								"{{coreBaseUrl}}"
+							],
+							"path": [
+								"classes",
+								"{{classId}}",
+								"members"
+							]
+						},
+						"description": "",
+						"body": {
+							"mode": "raw",
+							"raw": "{\n  \"userId\": \"{{userIdRepresentative}}\",\n  \"classRole\": \"REPRESENTATIVE\"\n}"
+						},
+						"auth": {
+							"type": "bearer",
+							"bearer": [
+								{
+									"key": "token",
+									"value": "{{tokenAdmin}}",
+									"type": "string"
+								}
+							]
+						}
+					},
+					"response": [],
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"exec": [
+									"pm.test('Status 201 — REPRESENTATIVE', () => pm.response.to.have.status(201));",
+									"if (pm.response.code === 201) {",
+									"    const body = pm.response.json();",
+									"    pm.test('Papel REPRESENTATIVE', () => pm.expect(body.classRole).to.eql('REPRESENTATIVE'));",
+									"}"
+								],
+								"type": "text/javascript"
+							}
+						}
+					]
+				},
+				{
+					"name": "Vincular STUDENT à turma",
+					"request": {
+						"method": "POST",
+						"header": [
+							{
+								"key": "Content-Type",
+								"value": "application/json"
+							}
+						],
+						"url": {
+							"raw": "{{coreBaseUrl}}/classes/{{classId}}/members",
+							"host": [
+								"{{coreBaseUrl}}"
+							],
+							"path": [
+								"classes",
+								"{{classId}}",
+								"members"
+							]
+						},
+						"description": "",
+						"body": {
+							"mode": "raw",
+							"raw": "{\n  \"userId\": \"{{userIdStudent}}\",\n  \"classRole\": \"STUDENT\"\n}"
+						},
+						"auth": {
+							"type": "bearer",
+							"bearer": [
+								{
+									"key": "token",
+									"value": "{{tokenAdmin}}",
+									"type": "string"
+								}
+							]
+						}
+					},
+					"response": [],
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"exec": [
+									"pm.test('Status 201 — STUDENT', () => pm.response.to.have.status(201));",
+									"if (pm.response.code === 201) {",
+									"    const body = pm.response.json();",
+									"    pm.test('Papel STUDENT', () => pm.expect(body.classRole).to.eql('STUDENT'));",
+									"}"
+								],
+								"type": "text/javascript"
+							}
+						}
+					]
+				}
+			]
+		},
+		{
+			"name": "04 - Re-login com turma",
+			"item": [
+				{
+					"name": "Re-login TEACHER (com turma)",
+					"request": {
+						"method": "POST",
+						"header": [
+							{
+								"key": "Content-Type",
+								"value": "application/json"
+							}
+						],
+						"url": {
+							"raw": "{{coreBaseUrl}}/auth/login",
+							"host": [
+								"{{coreBaseUrl}}"
+							],
+							"path": [
+								"auth",
+								"login"
+							]
+						},
+						"description": "Após vincular à turma, refaça o login para o JWT incluir `classes`. Atualiza {tokenTeacher}.",
+						"body": {
+							"mode": "raw",
+							"raw": "{\n  \"email\": \"{{emailTeacher}}\",\n  \"password\": \"{{passwordTeacher}}\"\n}"
+						}
+					},
+					"response": [],
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"exec": [
+									"pm.test('Status 200', () => pm.response.to.have.status(200));",
+									"if (pm.response.code === 200) {",
+									"    const body = pm.response.json();",
+									"    pm.environment.set('tokenTeacher', body.accessToken);",
+									"    pm.environment.set('accessToken', body.accessToken);",
+									"    pm.environment.set('refreshToken', body.refreshToken);",
+									"    const payload = JSON.parse(atob(body.accessToken.split('.')[1]));",
+									"    pm.environment.set('userIdTeacher', payload.sub);",
+									"}"
+								],
+								"type": "text/javascript"
+							}
+						}
+					]
+				},
+				{
+					"name": "Re-login REPRESENTATIVE (com turma)",
+					"request": {
+						"method": "POST",
+						"header": [
+							{
+								"key": "Content-Type",
+								"value": "application/json"
+							}
+						],
+						"url": {
+							"raw": "{{coreBaseUrl}}/auth/login",
+							"host": [
+								"{{coreBaseUrl}}"
+							],
+							"path": [
+								"auth",
+								"login"
+							]
+						},
+						"description": "Após vincular à turma, refaça o login para o JWT incluir `classes`. Atualiza {tokenRepresentative}.",
+						"body": {
+							"mode": "raw",
+							"raw": "{\n  \"email\": \"{{emailRepresentative}}\",\n  \"password\": \"{{passwordRepresentative}}\"\n}"
+						}
+					},
+					"response": [],
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"exec": [
+									"pm.test('Status 200', () => pm.response.to.have.status(200));",
+									"if (pm.response.code === 200) {",
+									"    const body = pm.response.json();",
+									"    pm.environment.set('tokenRepresentative', body.accessToken);",
+									"    pm.environment.set('accessToken', body.accessToken);",
+									"    pm.environment.set('refreshToken', body.refreshToken);",
+									"    const payload = JSON.parse(atob(body.accessToken.split('.')[1]));",
+									"    pm.environment.set('userIdRepresentative', payload.sub);",
+									"}"
+								],
+								"type": "text/javascript"
+							}
+						}
+					]
+				},
+				{
+					"name": "Re-login STUDENT (com turma)",
+					"request": {
+						"method": "POST",
+						"header": [
+							{
+								"key": "Content-Type",
+								"value": "application/json"
+							}
+						],
+						"url": {
+							"raw": "{{coreBaseUrl}}/auth/login",
+							"host": [
+								"{{coreBaseUrl}}"
+							],
+							"path": [
+								"auth",
+								"login"
+							]
+						},
+						"description": "Após vincular à turma, refaça o login para o JWT incluir `classes`. Atualiza {tokenStudent}.",
+						"body": {
+							"mode": "raw",
+							"raw": "{\n  \"email\": \"{{emailStudent}}\",\n  \"password\": \"{{passwordStudent}}\"\n}"
+						}
+					},
+					"response": [],
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"exec": [
+									"pm.test('Status 200', () => pm.response.to.have.status(200));",
+									"if (pm.response.code === 200) {",
+									"    const body = pm.response.json();",
+									"    pm.environment.set('tokenStudent', body.accessToken);",
+									"    pm.environment.set('accessToken', body.accessToken);",
+									"    pm.environment.set('refreshToken', body.refreshToken);",
+									"    const payload = JSON.parse(atob(body.accessToken.split('.')[1]));",
+									"    pm.environment.set('userIdStudent', payload.sub);",
+									"}"
+								],
+								"type": "text/javascript"
+							}
+						}
+					]
+				}
+			]
+		},
+		{
+			"name": "05 - Admin",
+			"item": [
+				{
+					"name": "Listar usuários (admin)",
+					"request": {
+						"method": "GET",
+						"header": [],
+						"url": {
+							"raw": "{{coreBaseUrl}}/users",
+							"host": [
+								"{{coreBaseUrl}}"
+							],
+							"path": [
+								"users"
+							]
+						},
+						"description": "Lista usuários — requer token admin.",
+						"auth": {
+							"type": "bearer",
+							"bearer": [
+								{
+									"key": "token",
+									"value": "{{tokenAdmin}}",
+									"type": "string"
+								}
+							]
+						}
+					},
+					"response": [],
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"exec": [
+									"pm.test('Status 200', () => pm.response.to.have.status(200));"
+								],
+								"type": "text/javascript"
+							}
+						}
+					]
+				}
+			]
+		}
+	]
+}

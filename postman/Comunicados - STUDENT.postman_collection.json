@@ -1,0 +1,536 @@
+{
+	"info": {
+		"_postman_id": "12c75779-a924-4a9d-bed5-90d62eb4b94b",
+		"name": "Comunicados - STUDENT",
+		"description": "Testes de comunicados para perfil **STUDENT**.\n\n**Pré-requisitos:**\n1. Core em `{{coreBaseUrl}}` e Comunicados em `{{baseUrl}}`\n2. Rode a coleção **Core - Login** para obter `{{tokenStudent}}`\n3. Para TEACHER/REPRESENTATIVE/STUDENT: rode **Core - Login** até a pasta **04 - Re-login**\n\n**Ordem sugerida:** Publicar → Agendar → Listar → Buscar → Fixar → Editar → Desafixar → Deletar",
+		"schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
+	},
+	"auth": {
+		"type": "bearer",
+		"bearer": [
+			{
+				"key": "token",
+				"value": "{{tokenStudent}}",
+				"type": "string"
+			}
+		]
+	},
+	"item": [
+		{
+			"name": "01 - Publicar",
+			"request": {
+				"method": "POST",
+				"header": [
+					{
+						"key": "Content-Type",
+						"value": "application/json"
+					}
+				],
+				"url": {
+					"raw": "{{baseUrl}}/api/posts/publish",
+					"host": [
+						"{{baseUrl}}"
+					],
+					"path": [
+						"api",
+						"posts",
+						"publish"
+					]
+				},
+				"description": "Publica comunicado como STUDENT. Esperado: 403 (sem permissão).",
+				"body": {
+					"mode": "raw",
+					"raw": "{\n  \"title\": \"[STUDENT] Retirada de documentos\",\n  \"description\": \"Comparecer na secretaria até sexta-feira (STUDENT).\",\n  \"origin\": \"SENAI\",\n  \"destinations\": [\n    { \"type\": \"CLASS\", \"referenceId\": \"{{classId}}\" }\n  ],\n  \"pinned\": false,\n  \"tagIds\": []\n}"
+				},
+				"auth": {
+					"type": "bearer",
+					"bearer": [
+						{
+							"key": "token",
+							"value": "{{tokenStudent}}",
+							"type": "string"
+						}
+					]
+				}
+			},
+			"response": [],
+			"event": [
+				{
+					"listen": "test",
+					"script": {
+						"exec": [
+							"const expected = 403;",
+							"pm.test(`Status ${expected}`, () => pm.response.to.have.status(expected));",
+							"pm.test('STUDENT não pode publicar', () => pm.expect(pm.response.code).to.eql(403));"
+						],
+						"type": "text/javascript"
+					}
+				}
+			]
+		},
+		{
+			"name": "02 - Agendar",
+			"request": {
+				"method": "POST",
+				"header": [
+					{
+						"key": "Content-Type",
+						"value": "application/json"
+					}
+				],
+				"url": {
+					"raw": "{{baseUrl}}/api/posts/schedule",
+					"host": [
+						"{{baseUrl}}"
+					],
+					"path": [
+						"api",
+						"posts",
+						"schedule"
+					]
+				},
+				"description": "Agenda comunicado. Use {{scheduledFor}} (ISO-8601 futuro).",
+				"body": {
+					"mode": "raw",
+					"raw": "{\n  \"title\": \"[STUDENT] Agendado\",\n  \"description\": \"Comunicado agendado via Postman (STUDENT).\",\n  \"origin\": \"SENAI\",\n  \"scheduledFor\": \"{{scheduledFor}}\",\n  \"destinations\": [\n    { \"type\": \"CLASS\", \"referenceId\": \"{{classId}}\" }\n  ],\n  \"pinned\": false,\n  \"tagIds\": []\n}"
+				},
+				"auth": {
+					"type": "bearer",
+					"bearer": [
+						{
+							"key": "token",
+							"value": "{{tokenStudent}}",
+							"type": "string"
+						}
+					]
+				}
+			},
+			"response": [],
+			"event": [
+				{
+					"listen": "test",
+					"script": {
+						"exec": [
+							"pm.test('Status 403', () => pm.response.to.have.status(403));"
+						],
+						"type": "text/javascript"
+					}
+				}
+			]
+		},
+		{
+			"name": "03 - Editar (PUT)",
+			"request": {
+				"method": "PUT",
+				"header": [
+					{
+						"key": "Content-Type",
+						"value": "application/json"
+					}
+				],
+				"url": {
+					"raw": "{{baseUrl}}/api/posts/{{postId}}",
+					"host": [
+						"{{baseUrl}}"
+					],
+					"path": [
+						"api",
+						"posts",
+						"{{postId}}"
+					]
+				},
+				"description": "Atualiza o comunicado criado em Publicar. Requer {{postId}}.",
+				"body": {
+					"mode": "raw",
+					"raw": "{\n  \"title\": \"[STUDENT] Retirada de documentos (atualizado)\",\n  \"description\": \"Novo horário: 14h às 17h (STUDENT).\",\n  \"origin\": \"SENAI\",\n  \"status\": \"PUBLISHED\",\n  \"pinned\": false,\n  \"pinnedOrder\": 0,\n  \"scheduledFor\": null,\n  \"destinations\": [\n    {\n      \"type\": \"CLASS\",\n      \"referenceId\": \"{{classId}}\"\n    }\n  ]\n}"
+				},
+				"auth": {
+					"type": "bearer",
+					"bearer": [
+						{
+							"key": "token",
+							"value": "{{tokenStudent}}",
+							"type": "string"
+						}
+					]
+				}
+			},
+			"response": [],
+			"event": [
+				{
+					"listen": "test",
+					"script": {
+						"exec": [
+							"pm.test('Status 403', () => pm.response.to.have.status(403));",
+							"if (pm.response.code === 200) {",
+							"    const body = pm.response.json();",
+							"    pm.test('Título atualizado', () => pm.expect(body.title).to.include('atualizado'));",
+							"}"
+						],
+						"type": "text/javascript"
+					}
+				}
+			]
+		},
+		{
+			"name": "04 - Deletar",
+			"request": {
+				"method": "DELETE",
+				"header": [],
+				"url": {
+					"raw": "{{baseUrl}}/api/posts/{{scheduledPostId}}",
+					"host": [
+						"{{baseUrl}}"
+					],
+					"path": [
+						"api",
+						"posts",
+						"{{scheduledPostId}}"
+					]
+				},
+				"description": "Remove o comunicado agendado ({{scheduledPostId}}). Rode Agendar antes.",
+				"auth": {
+					"type": "bearer",
+					"bearer": [
+						{
+							"key": "token",
+							"value": "{{tokenStudent}}",
+							"type": "string"
+						}
+					]
+				}
+			},
+			"response": [],
+			"event": [
+				{
+					"listen": "test",
+					"script": {
+						"exec": [
+							"pm.test('Status 403', () => pm.response.to.have.status(403));"
+						],
+						"type": "text/javascript"
+					}
+				}
+			]
+		},
+		{
+			"name": "05 - Listar todos",
+			"request": {
+				"method": "GET",
+				"header": [],
+				"url": {
+					"raw": "{{baseUrl}}/api/posts?page=0&size=20",
+					"host": [
+						"{{baseUrl}}"
+					],
+					"path": [
+						"api",
+						"posts"
+					],
+					"query": [
+						{
+							"key": "page",
+							"value": "0"
+						},
+						{
+							"key": "size",
+							"value": "20"
+						}
+					]
+				},
+				"description": "Lista paginada de comunicados no escopo do usuário.",
+				"auth": {
+					"type": "bearer",
+					"bearer": [
+						{
+							"key": "token",
+							"value": "{{tokenStudent}}",
+							"type": "string"
+						}
+					]
+				}
+			},
+			"response": [],
+			"event": [
+				{
+					"listen": "test",
+					"script": {
+						"exec": [
+							"pm.test('Status 200', () => pm.response.to.have.status(200));",
+							"const body = pm.response.json();",
+							"pm.test('Paginação', () => {",
+							"    pm.expect(body).to.have.property('items');",
+							"    pm.expect(body).to.have.property('totalElements');",
+							"});"
+						],
+						"type": "text/javascript"
+					}
+				}
+			]
+		},
+		{
+			"name": "06 - Listar com filtros",
+			"request": {
+				"method": "GET",
+				"header": [],
+				"url": {
+					"raw": "{{baseUrl}}/api/posts?page=0&size=20&origin=SENAI&classId={{classId}}&status=PUBLISHED",
+					"host": [
+						"{{baseUrl}}"
+					],
+					"path": [
+						"api",
+						"posts"
+					],
+					"query": [
+						{
+							"key": "page",
+							"value": "0"
+						},
+						{
+							"key": "size",
+							"value": "20"
+						},
+						{
+							"key": "origin",
+							"value": "SENAI"
+						},
+						{
+							"key": "classId",
+							"value": "{{classId}}"
+						},
+						{
+							"key": "status",
+							"value": "PUBLISHED"
+						}
+					]
+				},
+				"description": "Filtros: origin, classId, status.",
+				"auth": {
+					"type": "bearer",
+					"bearer": [
+						{
+							"key": "token",
+							"value": "{{tokenStudent}}",
+							"type": "string"
+						}
+					]
+				}
+			},
+			"response": [],
+			"event": [
+				{
+					"listen": "test",
+					"script": {
+						"exec": [
+							"pm.test('Status 200', () => pm.response.to.have.status(200));",
+							"const body = pm.response.json();",
+							"pm.test('Paginação', () => {",
+							"    pm.expect(body).to.have.property('items');",
+							"    pm.expect(body).to.have.property('totalElements');",
+							"});"
+						],
+						"type": "text/javascript"
+					}
+				}
+			]
+		},
+		{
+			"name": "07 - Listar com busca (search)",
+			"request": {
+				"method": "GET",
+				"header": [],
+				"url": {
+					"raw": "{{baseUrl}}/api/posts?search=retirada&page=0&size=20",
+					"host": [
+						"{{baseUrl}}"
+					],
+					"path": [
+						"api",
+						"posts"
+					],
+					"query": [
+						{
+							"key": "search",
+							"value": "retirada"
+						},
+						{
+							"key": "page",
+							"value": "0"
+						},
+						{
+							"key": "size",
+							"value": "20"
+						}
+					]
+				},
+				"description": "Busca textual em título, descrição, tag e destinatário.",
+				"auth": {
+					"type": "bearer",
+					"bearer": [
+						{
+							"key": "token",
+							"value": "{{tokenStudent}}",
+							"type": "string"
+						}
+					]
+				}
+			},
+			"response": [],
+			"event": [
+				{
+					"listen": "test",
+					"script": {
+						"exec": [
+							"pm.test('Status 200', () => pm.response.to.have.status(200));",
+							"const body = pm.response.json();",
+							"pm.test('Paginação', () => {",
+							"    pm.expect(body).to.have.property('items');",
+							"    pm.expect(body).to.have.property('totalElements');",
+							"});"
+						],
+						"type": "text/javascript"
+					}
+				}
+			]
+		},
+		{
+			"name": "08 - Buscar por ID",
+			"request": {
+				"method": "GET",
+				"header": [],
+				"url": {
+					"raw": "{{baseUrl}}/api/posts/{{postId}}",
+					"host": [
+						"{{baseUrl}}"
+					],
+					"path": [
+						"api",
+						"posts",
+						"{{postId}}"
+					]
+				},
+				"description": "Detalhe do comunicado. Requer {{postId}} (rode Publicar ou use post de outro perfil).",
+				"auth": {
+					"type": "bearer",
+					"bearer": [
+						{
+							"key": "token",
+							"value": "{{tokenStudent}}",
+							"type": "string"
+						}
+					]
+				}
+			},
+			"response": [],
+			"event": [
+				{
+					"listen": "test",
+					"script": {
+						"exec": [
+							"pm.test('Status 200 ou 404', () => pm.expect([200, 404]).to.include(pm.response.code));",
+							"if (pm.response.code === 200) {",
+							"    const body = pm.response.json();",
+							"    pm.test('Tem id', () => pm.expect(body.id).to.eql(pm.environment.get('postId')));",
+							"}"
+						],
+						"type": "text/javascript"
+					}
+				}
+			]
+		},
+		{
+			"name": "09 - Fixar (pin)",
+			"request": {
+				"method": "PATCH",
+				"header": [
+					{
+						"key": "Content-Type",
+						"value": "application/json"
+					}
+				],
+				"url": {
+					"raw": "{{baseUrl}}/api/posts/{{postId}}/pin",
+					"host": [
+						"{{baseUrl}}"
+					],
+					"path": [
+						"api",
+						"posts",
+						"{{postId}}",
+						"pin"
+					]
+				},
+				"description": "Fixa comunicado. Apenas SENAI, WEG e ADMIN.",
+				"body": {
+					"mode": "raw",
+					"raw": "{\n  \"pinnedOrder\": 1\n}"
+				},
+				"auth": {
+					"type": "bearer",
+					"bearer": [
+						{
+							"key": "token",
+							"value": "{{tokenStudent}}",
+							"type": "string"
+						}
+					]
+				}
+			},
+			"response": [],
+			"event": [
+				{
+					"listen": "test",
+					"script": {
+						"exec": [
+							"pm.test('Status 403', () => pm.response.to.have.status(403));"
+						],
+						"type": "text/javascript"
+					}
+				}
+			]
+		},
+		{
+			"name": "10 - Desafixar (unpin)",
+			"request": {
+				"method": "PATCH",
+				"header": [],
+				"url": {
+					"raw": "{{baseUrl}}/api/posts/{{postId}}/unpin",
+					"host": [
+						"{{baseUrl}}"
+					],
+					"path": [
+						"api",
+						"posts",
+						"{{postId}}",
+						"unpin"
+					]
+				},
+				"description": "Remove fixação. Apenas SENAI, WEG e ADMIN.",
+				"auth": {
+					"type": "bearer",
+					"bearer": [
+						{
+							"key": "token",
+							"value": "{{tokenStudent}}",
+							"type": "string"
+						}
+					]
+				}
+			},
+			"response": [],
+			"event": [
+				{
+					"listen": "test",
+					"script": {
+						"exec": [
+							"pm.test('Status 403', () => pm.response.to.have.status(403));"
+						],
+						"type": "text/javascript"
+					}
+				}
+			]
+		}
+	]
+}
