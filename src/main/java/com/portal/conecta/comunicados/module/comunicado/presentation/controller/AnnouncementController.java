@@ -30,6 +30,7 @@ import com.portal.conecta.comunicados.module.comunicado.application.usecase.Dele
 import com.portal.conecta.comunicados.module.comunicado.application.usecase.GetAnnouncementByIdUseCase;
 import com.portal.conecta.comunicados.module.comunicado.application.usecase.ListAnnouncementHistoryUseCase;
 import com.portal.conecta.comunicados.module.comunicado.application.usecase.ListAnnouncementsUseCase;
+import com.portal.conecta.comunicados.module.comunicado.application.usecase.ListPinnedAnnouncementsUseCase;
 import com.portal.conecta.comunicados.module.comunicado.application.usecase.PinAnnouncementUseCase;
 import com.portal.conecta.comunicados.module.comunicado.application.usecase.PublishAnnouncementUseCase;
 import com.portal.conecta.comunicados.module.comunicado.application.usecase.RescheduleAnnouncementUseCase;
@@ -49,6 +50,7 @@ import com.portal.conecta.comunicados.module.comunicado.presentation.dto.respons
 import com.portal.conecta.comunicados.module.comunicado.presentation.dto.response.AnnouncementResponse;
 import com.portal.conecta.comunicados.module.comunicado.presentation.dto.response.ListAnnouncementHistoryResponse;
 import com.portal.conecta.comunicados.module.comunicado.presentation.dto.response.ListAnnouncementsResponse;
+import com.portal.conecta.comunicados.module.comunicado.presentation.dto.response.ListPinnedAnnouncementsResponse;
 import com.portal.conecta.comunicados.shared.context.RequestContext;
 import com.portal.conecta.comunicados.shared.context.RequestContextProvider;
 
@@ -68,6 +70,7 @@ public class AnnouncementController {
     private final PublishAnnouncementUseCase publishAnnouncementUseCase;
     private final ScheduleAnnouncementUseCase scheduleAnnouncementUseCase;
     private final ListAnnouncementsUseCase listAnnouncementsUseCase;
+    private final ListPinnedAnnouncementsUseCase listPinnedAnnouncementsUseCase;
     private final GetAnnouncementByIdUseCase getAnnouncementByIdUseCase;
     private final DeleteAnnouncementUseCase deleteAnnouncementUseCase;
     private final RequestContextProvider contextProvider;
@@ -272,13 +275,20 @@ public class AnnouncementController {
         return ResponseEntity.ok(AnnouncementResponse.fromEntity(announcement));
     }
 
-    @Operation(summary = "Listar comunicados fixados")
+    @Operation(
+            summary = "Listar comunicados fixados",
+            description = "Retorna comunicados publicados e fixados visíveis ao perfil autenticado, "
+                    + "ordenados por pinnedOrder crescente. Lista vazia quando não houver fixados."
+    )
     @ApiResponses({
-            @ApiResponse(responseCode = "200", description = "Lista retornada")
+            @ApiResponse(responseCode = "200", description = "Lista retornada"),
+            @ApiResponse(responseCode = "401", description = "Não autenticado")
     })
     @GetMapping("/pinned")
-    public ResponseEntity<List<Object>> listPinned() {
-        return ResponseEntity.ok(null);
+    public ResponseEntity<ListPinnedAnnouncementsResponse> listPinned() {
+        List<Announcement> announcements = listPinnedAnnouncementsUseCase.execute();
+
+        return ResponseEntity.ok(ListPinnedAnnouncementsResponse.fromEntities(announcements));
     }
 
     @Operation(summary = "Reagendar comunicado")

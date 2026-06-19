@@ -33,6 +33,7 @@ import com.portal.conecta.comunicados.module.comunicado.application.usecase.Dele
 import com.portal.conecta.comunicados.module.comunicado.application.usecase.GetAnnouncementByIdUseCase;
 import com.portal.conecta.comunicados.module.comunicado.application.usecase.ListAnnouncementHistoryUseCase;
 import com.portal.conecta.comunicados.module.comunicado.application.usecase.ListAnnouncementsUseCase;
+import com.portal.conecta.comunicados.module.comunicado.application.usecase.ListPinnedAnnouncementsUseCase;
 import com.portal.conecta.comunicados.module.comunicado.application.usecase.PinAnnouncementUseCase;
 import com.portal.conecta.comunicados.module.comunicado.application.usecase.PublishAnnouncementUseCase;
 import com.portal.conecta.comunicados.module.comunicado.application.usecase.RescheduleAnnouncementUseCase;
@@ -74,6 +75,7 @@ class PublishAnnouncementFlowTest {
     private HubClassPort hubClassPort;
     private AutoLinkTagsByDestinationUseCase autoLinkTagsUseCase;
     private ListAnnouncementsUseCase listAnnouncementsUseCase;
+    private ListPinnedAnnouncementsUseCase listPinnedAnnouncementsUseCase;
     private GetAnnouncementByIdUseCase getAnnouncementByIdUseCase;
     private DeleteAnnouncementUseCase deleteAnnouncementUseCase;
     private PublishAnnouncementUseCase publishAnnouncementUseCase;
@@ -94,6 +96,7 @@ class PublishAnnouncementFlowTest {
         hubClassPort = mock(HubClassPort.class);
         autoLinkTagsUseCase = mock(AutoLinkTagsByDestinationUseCase.class);
         listAnnouncementsUseCase = mock(ListAnnouncementsUseCase.class);
+        listPinnedAnnouncementsUseCase = mock(ListPinnedAnnouncementsUseCase.class);
         getAnnouncementByIdUseCase = mock(GetAnnouncementByIdUseCase.class);
         deleteAnnouncementUseCase = mock(DeleteAnnouncementUseCase.class);
         updateAnnouncementUseCase = mock(UpdateAnnouncementUseCase.class);
@@ -116,6 +119,7 @@ class PublishAnnouncementFlowTest {
                 publishAnnouncementUseCase,
                 scheduleAnnouncementUseCase,
                 listAnnouncementsUseCase,
+                listPinnedAnnouncementsUseCase,
                 getAnnouncementByIdUseCase,
                 deleteAnnouncementUseCase,
                 requestContextProvider,
@@ -336,6 +340,9 @@ class PublishAnnouncementWebMvcTest {
 
     @MockitoBean
     private ListAnnouncementsUseCase listAnnouncementsUseCase;
+
+    @MockitoBean
+    private ListPinnedAnnouncementsUseCase listPinnedAnnouncementsUseCase;
 
     @MockitoBean
     private GetAnnouncementByIdUseCase getAnnouncementByIdUseCase;
