@@ -19,6 +19,8 @@ import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.Mock;
 import org.mockito.Spy;
 import org.mockito.junit.jupiter.MockitoExtension;
+import org.springframework.transaction.support.TransactionSynchronization;
+import org.springframework.transaction.support.TransactionSynchronizationManager;
 
 import com.portal.conecta.comunicados.module.comunicado.application.command.AttachAnnouncementFileCommand;
 import com.portal.conecta.comunicados.module.comunicado.application.usecase.AttachAnnouncementFileUseCase;
@@ -202,6 +204,46 @@ class AttachAnnouncementFileUseCaseTest {
                 .isInstanceOf(AnnouncementFileLimitExceededException.class);
 
         verify(storagePort, never()).upload(anyString(), any());
+    }
+
+    @Test
+    void shouldPrioritizeFileLimitOverSizeWhenBothViolated() {
+        long elevenMb = 11L * 1024 * 1024;
+        AttachAnnouncementFileCommand oversizedCommand = new AttachAnnouncementFileCommand(
+                announcementId, "big.jpg", "image/jpeg", elevenMb, new byte[]{}, false, userId
+        );
+
+        mockContext(UserType.SENAI, userId);
+        when(announcementRepository.findByIdAndRemovedAtIsNull(announcementId)).thenReturn(Optional.of(announcement));
+        when(fileRepository.countByAnnouncementId(announcementId)).thenReturn(5L);
+
+        assertThatThrownBy(() -> useCase.execute(oversizedCommand))
+                .isInstanceOf(AnnouncementFileLimitExceededException.class);
+
+        verify(storagePort, never()).upload(anyString(), any());
+    }
+
+    @Test
+    void shouldDeleteUploadedFileFromStorageWhenTransactionRollsBack() {
+        mockContext(UserType.SENAI, userId);
+        when(announcementRepository.findByIdAndRemovedAtIsNull(announcementId)).thenReturn(Optional.of(announcement));
+        when(fileRepository.countByAnnouncementId(announcementId)).thenReturn(0L);
+        when(storagePort.upload(anyString(), any())).thenReturn(new StorageUploadResult("key-123", "bucket"));
+        when(fileRepository.save(any())).thenThrow(new RuntimeException("falha ao persistir"));
+
+        TransactionSynchronizationManager.initSynchronization();
+        try {
+            assertThatThrownBy(() -> useCase.execute(command))
+                    .isInstanceOf(RuntimeException.class);
+
+            for (TransactionSynchronization sync : TransactionSynchronizationManager.getSynchronizations()) {
+                sync.afterCompletion(TransactionSynchronization.STATUS_ROLLED_BACK);
+            }
+        } finally {
+            TransactionSynchronizationManager.clearSynchronization();
+        }
+
+        verify(storagePort).delete("key-123");
     }
 
     private void mockContext(UserType userType, UUID id) {

@@ -5,6 +5,8 @@ import java.time.Instant;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
+import org.springframework.transaction.support.TransactionSynchronization;
+import org.springframework.transaction.support.TransactionSynchronizationManager;
 
 import com.portal.conecta.comunicados.module.comunicado.application.command.AttachAnnouncementFileCommand;
 import com.portal.conecta.comunicados.module.comunicado.domain.enums.AnnouncementFileType;
@@ -68,15 +70,15 @@ public class AttachAnnouncementFileUseCase {
             throw new AnnouncementPermissionDeniedException();
         }
 
-        if (command.sizeBytes() > maxFileSizeBytes) {
-            throw new AnnouncementFileTooLargeException();
+        if (fileRepository.countByAnnouncementId(command.announcementId()) >= maxFilesPerAnnouncement) {
+            throw new AnnouncementFileLimitExceededException();
         }
 
         AnnouncementFileType fileType = AnnouncementFileType.fromContentType(command.contentType())
                 .orElseThrow(() -> new AnnouncementFileContentTypeNotAllowedException(command.contentType()));
 
-        if (fileRepository.countByAnnouncementId(command.announcementId()) >= maxFilesPerAnnouncement) {
-            throw new AnnouncementFileLimitExceededException();
+        if (command.sizeBytes() > maxFileSizeBytes) {
+            throw new AnnouncementFileTooLargeException();
         }
 
         if (command.isThumbnail()) {
@@ -84,8 +86,28 @@ public class AttachAnnouncementFileUseCase {
         }
 
         StorageUploadResult upload = storagePort.upload(command.contentType(), command.content());
+        registerStorageRollbackCompensation(upload.s3Key());
 
         AnnouncementFile file = command.toEntity(announcement, upload.s3Key(), upload.s3Bucket(), fileType, Instant.now());
         return fileRepository.save(file);
+    }
+
+    /**
+     * Remove o objeto recém-enviado ao storage caso a transação seja revertida (#130). O storage
+     * não é transacional: um upload seguido de falha no {@code save} ou no commit deixaria um
+     * arquivo órfão. A compensação cobre os dois casos via {@code afterCompletion(ROLLED_BACK)}.
+     */
+    private void registerStorageRollbackCompensation(String s3Key) {
+        if (!TransactionSynchronizationManager.isSynchronizationActive()) {
+            return;
+        }
+        TransactionSynchronizationManager.registerSynchronization(new TransactionSynchronization() {
+            @Override
+            public void afterCompletion(int status) {
+                if (status == STATUS_ROLLED_BACK) {
+                    storagePort.delete(s3Key);
+                }
+            }
+        });
     }
 }

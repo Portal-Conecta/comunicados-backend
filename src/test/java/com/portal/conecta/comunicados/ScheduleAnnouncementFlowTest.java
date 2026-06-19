@@ -41,6 +41,8 @@ import com.portal.conecta.comunicados.module.comunicado.application.usecase.List
 import com.portal.conecta.comunicados.module.comunicado.application.usecase.PublishAnnouncementUseCase;
 import com.portal.conecta.comunicados.module.comunicado.application.usecase.ScheduleAnnouncementUseCase;
 import com.portal.conecta.comunicados.module.comunicado.application.usecase.UpdateAnnouncementUseCase;
+import com.portal.conecta.comunicados.module.comunicado.application.usecase.PinAnnouncementUseCase;
+import com.portal.conecta.comunicados.module.comunicado.application.usecase.UnpinAnnouncementUseCase;
 import com.portal.conecta.comunicados.module.comunicado.domain.enums.AnnouncementDestinationType;
 import com.portal.conecta.comunicados.module.comunicado.domain.enums.AnnouncementHistoryAction;
 import com.portal.conecta.comunicados.module.comunicado.domain.enums.AnnouncementOrigin;
@@ -84,6 +86,8 @@ class ScheduleAnnouncementFlowTest {
     private DeleteAnnouncementUseCase deleteAnnouncementUseCase;
     private PublishAnnouncementUseCase publishAnnouncementUseCase;
     private ScheduleAnnouncementUseCase scheduleAnnouncementUseCase;
+    private PinAnnouncementUseCase pinAnnouncementUseCase;
+    private UnpinAnnouncementUseCase unpinAnnouncementUseCase;
     private UpdateAnnouncementUseCase updateAnnouncementUseCase;
     private ListAnnouncementHistoryUseCase listAnnouncementHistoryUseCase;
     private MockMvc mockMvc;
@@ -102,6 +106,8 @@ class ScheduleAnnouncementFlowTest {
         publishAnnouncementUseCase = mock(PublishAnnouncementUseCase.class);
         updateAnnouncementUseCase = mock(UpdateAnnouncementUseCase.class);
         listAnnouncementHistoryUseCase = mock(ListAnnouncementHistoryUseCase.class);
+        pinAnnouncementUseCase = mock(PinAnnouncementUseCase.class);
+        unpinAnnouncementUseCase = mock(UnpinAnnouncementUseCase.class);
 
         scheduleAnnouncementUseCase = new ScheduleAnnouncementUseCase(
                 announcementRepository,
@@ -119,6 +125,8 @@ class ScheduleAnnouncementFlowTest {
                 getAnnouncementByIdUseCase,
                 deleteAnnouncementUseCase,
                 requestContextProvider,
+                pinAnnouncementUseCase,
+                unpinAnnouncementUseCase,
                 updateAnnouncementUseCase,
                 listAnnouncementHistoryUseCase
         );
@@ -332,6 +340,12 @@ class ScheduleAnnouncementWebMvcTest {
 
     @MockitoBean
     private SecurityErrorResponseWriter securityErrorResponseWriter;
+
+    @MockitoBean
+    private PinAnnouncementUseCase pinAnnouncementUseCase;
+
+    @MockitoBean
+    private UnpinAnnouncementUseCase unpinAnnouncementUseCase;
 
     @Test
     void shouldScheduleAnnouncementByEndpoint() throws Exception {
