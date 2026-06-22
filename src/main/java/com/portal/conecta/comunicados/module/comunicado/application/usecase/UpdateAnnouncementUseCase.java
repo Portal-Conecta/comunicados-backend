@@ -57,11 +57,15 @@ public class UpdateAnnouncementUseCase {
         Announcement updated = command.toEntity(announcement, now);
         updated = announcementRepository.save(updated);
 
-        destinationRepository.deleteByAnnouncementId(updated.getId());
+        // Edição parcial: só substitui os destinos quando o cliente os enviou no body;
+        // ausentes (null) preservam os destinos atuais.
+        if (command.data().destinations() != null) {
+            destinationRepository.deleteByAnnouncementId(updated.getId());
 
-        List<AnnouncementDestination> destinations = command.toDestinations(updated);
-        destinationRepository.saveAll(destinations);
-        updated.setDestinations(destinations);
+            List<AnnouncementDestination> destinations = command.toDestinations(updated);
+            destinationRepository.saveAll(destinations);
+            updated.setDestinations(destinations);
+        }
 
         historyRepository.save(command.toEditHistory(updated, now, snapshot));
 
