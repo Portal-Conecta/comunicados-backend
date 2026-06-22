@@ -1,5 +1,12 @@
 # Contrato de eventos Core → Comunicados (tags)
 
+> ⚠️ **DEPRECIADO** — Este documento descreve o contrato legado de eventos (`core.class.*`, envelope aninhado).
+>
+> **Não use este documento para novas integrações.**
+> O contrato oficial e atualizado está em [`docs/tags-por-eventos.md`](./tags-por-eventos.md).
+>
+> Este arquivo será removido após a conclusão das issues #142 e #143.
+
 Documento de referência para o time **Core** publicar entidades que o módulo Comunicados espelha como **tags** locais.
 
 ## Visão geral
