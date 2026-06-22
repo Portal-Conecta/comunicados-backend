@@ -290,13 +290,29 @@ Chave natural: `(entity_type, hub_entity_id)`. Campo `active` para desativação
 
 | Método | Rota | Status |
 |--------|------|--------|
-| GET | `/api/posts` | Implementado (listagem paginada) |
-| GET | `/api/posts/{id}` | Implementado |
-| DELETE | `/api/posts/{id}` | Implementado |
-| PATCH | `/api/posts/{id}/publish` | Legado `@Deprecated` — só `SCHEDULED→PUBLISHED` |
-| PATCH | `/api/posts/{id}/schedule` | Legado `@Deprecated` — reagendar `SCHEDULED` |
-| POST | `/api/posts` | **Removido** — retorna 405 |
-| PUT/PATCH parcial, pin, tags duplicadas | vários | **Stubs** (`return null`) — implementação em `TagController` ou issues futuras |
+| GET | `/api/posts` | Implementado (listagem paginada + filtros + busca textual) |
+| GET | `/api/posts/{id}` | Implementado (detalhe com regra de escopo) |
+| GET | `/api/posts/{id}/history` | Implementado (histórico paginado do comunicado) |
+| PUT | `/api/posts/{id}` | Implementado (atualização completa) |
+| DELETE | `/api/posts/{id}` | Implementado (soft delete) |
+| POST | `/api/posts/publish` | Implementado (cria + publica) |
+| POST | `/api/posts/schedule` | Implementado (cria + agenda) |
+| PATCH | `/api/posts/{id}/schedule` | Implementado (reagenda comunicado agendado) |
+| PATCH | `/api/posts/{id}/pin` | Implementado (fixa comunicado) |
+| PATCH | `/api/posts/{id}/unpin` | Implementado (desafixa comunicado) |
+| PATCH | `/api/posts/{id}` | **Stub** — atualização parcial ainda não implementada |
+| PATCH | `/api/posts/{id}/cancel-schedule` | **Stub** — cancelamento de agendamento ainda não implementado |
+| GET | `/api/posts/pinned` | **Stub** — listagem de fixados ainda não implementada |
+| POST | `/api/posts` | **Removido** — retorna 405; usar `POST /publish` ou `POST /schedule` |
+
+### Imagens e arquivos (`PostImageController` — `/api/posts/{postId}/images`)
+
+| Método | Rota | Status |
+|--------|------|--------|
+| GET | `/api/posts/{postId}/images` | Implementado (lista arquivos do comunicado) |
+| POST | `/api/posts/{postId}/images` | Implementado (upload multipart) |
+| DELETE | `/api/posts/{postId}/images/{imageId}` | Implementado (remove arquivo) |
+| PATCH | `/api/posts/{postId}/images/{imageId}/thumbnail` | Implementado (define miniatura) |
 
 ### Tags (`TagController`)
 
@@ -306,7 +322,7 @@ Chave natural: `(entity_type, hub_entity_id)`. Campo `active` para desativação
 | GET | `/api/posts/{id}/tags` | Implementado |
 | POST | `/api/posts/{id}/tags` | Implementado (vincular) |
 | DELETE | `/api/posts/{id}/tags/{tagId}` | Implementado |
-| POST | `/api/tags` | **Não existe** (TAG02) |
+| POST | `/api/tags` | **Não existe** (TAG02 — tags vêm do Core/RabbitMQ) |
 
 ---
 

@@ -210,12 +210,25 @@ O adapter HTTP repassa o header `Authorization` da request atual para o Hub. Use
 |--------|------|--------|-----------|
 | `GET` | `/api/posts` | Implementado | Listagem paginada + filtros + `search` |
 | `GET` | `/api/posts/{id}` | Implementado | Detalhe por ID (com escopo) |
+| `GET` | `/api/posts/{id}/history` | Implementado | Histórico paginado do comunicado |
 | `PUT` | `/api/posts/{id}` | Implementado | Atualização completa |
 | `DELETE` | `/api/posts/{id}` | Implementado | Remoção (soft delete) |
 | `POST` | `/api/posts/publish` | Implementado | Cria + publica (#107) |
 | `POST` | `/api/posts/schedule` | Implementado | Cria + agenda (#108) |
+| `PATCH` | `/api/posts/{id}/schedule` | Implementado | Reagenda comunicado agendado |
+| `PATCH` | `/api/posts/{id}/pin` | Implementado | Fixa comunicado |
+| `PATCH` | `/api/posts/{id}/unpin` | Implementado | Desafixa comunicado |
 
-### 6.2 Tags — `TagController`
+### 6.2 Imagens e arquivos — `PostImageController`
+
+| Método | Rota | Status | Descrição |
+|--------|------|--------|-----------|
+| `GET` | `/api/posts/{postId}/images` | Implementado | Lista arquivos vinculados ao comunicado |
+| `POST` | `/api/posts/{postId}/images` | Implementado | Upload multipart de arquivo |
+| `DELETE` | `/api/posts/{postId}/images/{imageId}` | Implementado | Remove arquivo do comunicado |
+| `PATCH` | `/api/posts/{postId}/images/{imageId}/thumbnail` | Implementado | Define arquivo como thumbnail |
+
+### 6.3 Tags — `TagController`
 
 | Método | Rota | Status | Descrição |
 |--------|------|--------|-----------|
@@ -226,7 +239,7 @@ O adapter HTTP repassa o header `Authorization` da request atual para o Hub. Use
 
 > Tags **não** são criadas via `POST /api/tags`. Origem: RabbitMQ (Core) ou insert manual no H2 para testes locais.
 
-### 6.3 Públicos (sem JWT)
+### 6.4 Públicos (sem JWT)
 
 | Método | Rota |
 |--------|------|
@@ -240,18 +253,12 @@ O adapter HTTP repassa o header `Authorization` da request atual para o Hub. Use
 
 Retornam corpo vazio/`null` ou não possuem regra de negócio — **stubs** para documentação futura:
 
-| Método | Rota |
-|--------|------|
-| `PATCH` | `/api/posts/{id}` |
-| `PATCH` | `/api/posts/{id}/cancel-schedule` |
-| `PATCH` | `/api/posts/{id}/pin` |
-| `PATCH` | `/api/posts/{id}/unpin` |
-| `GET` | `/api/posts/pinned` |
-| `POST` | `/api/posts` *(removido — criação só via publish/schedule)* |
-| `POST` | `/api/posts/{postId}/images` |
-| `GET` | `/api/posts/{postId}/images` |
-| `DELETE` | `/api/posts/{postId}/images/{imageId}` |
-| `PATCH` | `/api/posts/{postId}/images/{imageId}/thumbnail` |
+| Método | Rota | Observação |
+|--------|------|------------|
+| `PATCH` | `/api/posts/{id}` | Atualização parcial ainda não implementada |
+| `PATCH` | `/api/posts/{id}/cancel-schedule` | Cancelamento de agendamento ainda não implementado |
+| `GET` | `/api/posts/pinned` | Listagem de comunicados fixados ainda não implementada |
+| `POST` | `/api/posts` | Removido — criação só via `POST /api/posts/publish` ou `POST /api/posts/schedule` |
 
 ---
 
