@@ -144,7 +144,12 @@ public class AnnouncementController {
         return ResponseEntity.ok(ListAnnouncementHistoryResponse.fromPage(page));
     }
 
-    @Operation(summary = "Atualizar comunicado completo")
+    @Operation(
+            summary = "Atualizar comunicado",
+            description = "Atualiza um comunicado. Campos ausentes (null) são preservados; "
+                    + "envie apenas os campos que deseja alterar. `destinations` é opcional — "
+                    + "quando omitido, os destinos atuais são mantidos; quando enviado, substitui a lista."
+    )
     @ApiResponses({
             @ApiResponse(responseCode = "200", description = "Atualizado"),
             @ApiResponse(responseCode = "403", description = "Sem permissao"),
@@ -162,17 +167,6 @@ public class AnnouncementController {
         Announcement updated = updateAnnouncementUseCase.execute(command);
 
         return ResponseEntity.ok(AnnouncementResponse.fromEntity(updated));
-    }
-
-    @Operation(summary = "Atualizar comunicado parcialmente")
-    @ApiResponses({
-            @ApiResponse(responseCode = "200", description = "Atualizado"),
-            @ApiResponse(responseCode = "403", description = "Sem permissão"),
-            @ApiResponse(responseCode = "404", description = "Não encontrado")
-    })
-    @PatchMapping("/{id}")
-    public ResponseEntity<Object> partialUpdate(@PathVariable UUID id, @Valid @RequestBody Object request) {
-        return ResponseEntity.ok(null);
     }
 
     @Operation(summary = "Remover comunicado")

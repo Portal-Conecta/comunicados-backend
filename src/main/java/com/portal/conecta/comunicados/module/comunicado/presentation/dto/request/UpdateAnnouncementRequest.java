@@ -9,7 +9,6 @@ import com.portal.conecta.comunicados.module.comunicado.domain.model.Announcemen
 
 import jakarta.validation.Valid;
 import jakarta.validation.constraints.Min;
-import jakarta.validation.constraints.NotEmpty;
 import jakarta.validation.constraints.Size;
 
 public record UpdateAnnouncementRequest(
@@ -30,7 +29,6 @@ public record UpdateAnnouncementRequest(
 
         Instant scheduledFor,
 
-        @NotEmpty
         @Valid
         List<CreateAnnouncementDestinationRequest> destinations
 

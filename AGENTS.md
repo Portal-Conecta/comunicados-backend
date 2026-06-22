@@ -293,14 +293,14 @@ Chave natural: `(entity_type, hub_entity_id)`. Campo `active` para desativação
 | GET | `/api/posts` | Implementado (listagem paginada + filtros + busca textual) |
 | GET | `/api/posts/{id}` | Implementado (detalhe com regra de escopo) |
 | GET | `/api/posts/{id}/history` | Implementado (histórico paginado do comunicado) |
-| PUT | `/api/posts/{id}` | Implementado (atualização completa) |
+| PUT | `/api/posts/{id}` | Implementado (atualização parcial — campos ausentes/`destinations` omitido são preservados) |
 | DELETE | `/api/posts/{id}` | Implementado (soft delete) |
 | POST | `/api/posts/publish` | Implementado (cria + publica) |
 | POST | `/api/posts/schedule` | Implementado (cria + agenda) |
 | PATCH | `/api/posts/{id}/schedule` | Implementado (reagenda comunicado agendado) |
 | PATCH | `/api/posts/{id}/pin` | Implementado (fixa comunicado) |
 | PATCH | `/api/posts/{id}/unpin` | Implementado (desafixa comunicado) |
-| PATCH | `/api/posts/{id}` | **Stub** — atualização parcial ainda não implementada |
+| PATCH | `/api/posts/{id}` | **Removido** (#137 won't-do) — edição parcial é coberta pelo `PUT /api/posts/{id}` |
 | PATCH | `/api/posts/{id}/cancel-schedule` | **Stub** — cancelamento de agendamento ainda não implementado |
 | GET | `/api/posts/pinned` | **Stub** — listagem de fixados ainda não implementada |
 | POST | `/api/posts` | **Removido** — retorna 405; usar `POST /publish` ou `POST /schedule` |
