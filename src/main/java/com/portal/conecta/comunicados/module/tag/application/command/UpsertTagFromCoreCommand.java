@@ -1,39 +1,34 @@
 package com.portal.conecta.comunicados.module.tag.application.command;
 
 import java.time.Instant;
-import java.util.UUID;
 
 import com.portal.conecta.comunicados.module.tag.domain.enums.TagEntityType;
 import com.portal.conecta.comunicados.module.tag.domain.model.Tag;
 import com.portal.conecta.comunicados.module.tag.infrastructure.messaging.dto.CoreEntityEventEnvelope;
-import com.portal.conecta.comunicados.module.tag.infrastructure.messaging.dto.CoreEntityEventPayload;
 import com.portal.conecta.comunicados.module.tag.infrastructure.messaging.exception.InvalidCoreEntityEventException;
 
 public record UpsertTagFromCoreCommand(
-        UUID hubEntityId,
+        String hubEntityId,
         TagEntityType entityType,
         String name,
         boolean active
 ) {
 
     public static UpsertTagFromCoreCommand from(CoreEntityEventEnvelope envelope) {
-        CoreEntityEventPayload payload = requirePayload(envelope);
+        if (envelope == null) {
+            throw new InvalidCoreEntityEventException("envelope do evento é obrigatório.");
+        }
+        if (envelope.entityId() == null || envelope.entityId().isBlank()) {
+            throw new InvalidCoreEntityEventException("entityId é obrigatório.");
+        }
 
-        if (payload.entityId() == null) {
-            throw new InvalidCoreEntityEventException("payload.entityId é obrigatório.");
-        }
-        if (payload.entityType() == null) {
-            throw new InvalidCoreEntityEventException("payload.entityType é obrigatório.");
-        }
-        if (payload.name() == null || payload.name().isBlank()) {
-            throw new InvalidCoreEntityEventException("payload.name é obrigatório para upsert de tag.");
-        }
+        String name = resolveName(envelope);
 
         return new UpsertTagFromCoreCommand(
-                payload.entityId(),
-                payload.entityType(),
-                payload.name().trim(),
-                payload.resolvedActive()
+                envelope.entityId().trim(),
+                resolveEntityType(envelope.entityType()),
+                name,
+                true
         );
     }
 
@@ -54,10 +49,26 @@ public record UpsertTagFromCoreCommand(
         existing.setUpdatedAt(now);
     }
 
-    private static CoreEntityEventPayload requirePayload(CoreEntityEventEnvelope envelope) {
-        if (envelope == null || envelope.payload() == null) {
-            throw new InvalidCoreEntityEventException("payload do evento é obrigatório.");
+    private static String resolveName(CoreEntityEventEnvelope envelope) {
+        if (envelope.name() != null && !envelope.name().isBlank()) {
+            return envelope.name().trim();
         }
-        return envelope.payload();
+        if (envelope.code() != null && !envelope.code().isBlank()) {
+            return envelope.code().trim();
+        }
+        throw new InvalidCoreEntityEventException("name ou code é obrigatório para upsert de tag.");
     }
+
+    private static TagEntityType resolveEntityType(String entityType) {
+        if (entityType == null || entityType.isBlank()) {
+            throw new InvalidCoreEntityEventException("entityType é obrigatório.");
+        }
+
+        return switch (entityType.trim().toLowerCase()) {
+            case "course" -> TagEntityType.COURSE;
+            case "turma" -> TagEntityType.CLASS;
+            default -> throw new InvalidCoreEntityEventException("entityType não suportado: " + entityType);
+        };
+    }
+
 }

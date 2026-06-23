@@ -35,7 +35,7 @@ public class Tag {
 
     @Id
     @GeneratedValue(strategy = GenerationType.UUID)
-    private UUID id;
+    private String id;
 
     @Column(name = "name", nullable = false)
     private String name;

@@ -1,6 +1,7 @@
 package com.portal.conecta.comunicados.module.tag.infrastructure.messaging.consumer;
 
 import java.time.Instant;
+import java.util.Set;
 
 import org.springframework.amqp.rabbit.annotation.RabbitListener;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnProperty;
@@ -23,6 +24,19 @@ import lombok.RequiredArgsConstructor;
 @RequiredArgsConstructor
 public class CoreEntityTagConsumer {
 
+    private static final Set<String> UPSERT_EVENTS = Set.of(
+            "course.created",
+            "course.updated",
+            "turma.created"
+    );
+
+    private static final Set<String> DEACTIVATION_EVENTS = Set.of(
+            "course.deleted",
+            "turma.deleted",
+            "course.deactivated",
+            "turma.deactivated"
+    );
+
     private final UpsertTagFromCoreUseCase upsertTagFromCoreUseCase;
     private final DeactivateTagUseCase deactivateTagUseCase;
     private final ProcessedEventRepository processedEventRepository;
@@ -36,9 +50,9 @@ public class CoreEntityTagConsumer {
             return;
         }
 
-        String eventType = envelope.eventType();
+        String eventType = envelope.eventType().trim();
 
-        if (isDeactivated(eventType)) {
+        if (isDeactivation(eventType)) {
             deactivateTagUseCase.execute(DeactivateTagCommand.from(envelope));
         } else if (isUpsert(eventType)) {
             upsertTagFromCoreUseCase.execute(UpsertTagFromCoreCommand.from(envelope));
@@ -56,19 +70,39 @@ public class CoreEntityTagConsumer {
         if (envelope == null) {
             throw new InvalidCoreEntityEventException("envelope do evento é obrigatório.");
         }
-        if (envelope.eventId() == null) {
+        if (isBlank(envelope.eventId())) {
             throw new InvalidCoreEntityEventException("eventId é obrigatório.");
         }
-        if (envelope.eventType() == null || envelope.eventType().isBlank()) {
+        if (isBlank(envelope.correlationId())) {
+            throw new InvalidCoreEntityEventException("correlationId é obrigatório.");
+        }
+        if (isBlank(envelope.source())) {
+            throw new InvalidCoreEntityEventException("source é obrigatório.");
+        }
+        if (isBlank(envelope.eventType())) {
             throw new InvalidCoreEntityEventException("eventType é obrigatório.");
+        }
+        if (envelope.occurredAt() == null) {
+            throw new InvalidCoreEntityEventException("occurredAt é obrigatório.");
+        }
+        if (isBlank(envelope.entityType())) {
+            throw new InvalidCoreEntityEventException("entityType é obrigatório.");
+        }
+        if (isBlank(envelope.entityId())) {
+            throw new InvalidCoreEntityEventException("entityId é obrigatório.");
         }
     }
 
     private boolean isUpsert(String eventType) {
-        return eventType.endsWith(".created") || eventType.endsWith(".updated");
+        return UPSERT_EVENTS.contains(eventType);
     }
 
-    private boolean isDeactivated(String eventType) {
-        return eventType.endsWith(".deactivated");
+    private boolean isDeactivation(String eventType) {
+        return DEACTIVATION_EVENTS.contains(eventType) || eventType.endsWith(".deactivated");
     }
+
+    private boolean isBlank(String value) {
+        return value == null || value.isBlank();
+    }
+
 }
