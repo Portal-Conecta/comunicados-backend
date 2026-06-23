@@ -2,7 +2,6 @@ package com.portal.conecta.comunicados.module.tag;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.mockito.ArgumentMatchers.any;
-import static org.mockito.Mockito.never;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
@@ -33,11 +32,11 @@ class UpsertTagFromCoreUseCaseTest {
 
     @Test
     void shouldCreateTagWhenNotExists() {
-        UUID hubEntityId = UUID.randomUUID();
+        String hubEntityId = "turma-78";
         UpsertTagFromCoreCommand command = new UpsertTagFromCoreCommand(
                 hubEntityId,
                 TagEntityType.CLASS,
-                "MI78 - Manhã",
+                "MI78 - Manha",
                 true
         );
 
@@ -49,7 +48,7 @@ class UpsertTagFromCoreUseCaseTest {
 
         assertThat(result.getHubEntityId()).isEqualTo(hubEntityId);
         assertThat(result.getEntityType()).isEqualTo(TagEntityType.CLASS);
-        assertThat(result.getName()).isEqualTo("MI78 - Manhã");
+        assertThat(result.getName()).isEqualTo("MI78 - Manha");
         assertThat(result.isActive()).isTrue();
         assertThat(result.getCreatedAt()).isNotNull();
         assertThat(result.getUpdatedAt()).isNotNull();
@@ -57,7 +56,7 @@ class UpsertTagFromCoreUseCaseTest {
 
     @Test
     void shouldUpdateTagWhenAlreadyExists() {
-        UUID hubEntityId = UUID.randomUUID();
+        String hubEntityId = "turma-78";
         Tag existing = Tag.builder()
                 .id(UUID.randomUUID())
                 .hubEntityId(hubEntityId)

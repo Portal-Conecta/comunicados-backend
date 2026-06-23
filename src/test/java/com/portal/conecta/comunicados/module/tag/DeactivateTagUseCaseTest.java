@@ -1,5 +1,7 @@
 package com.portal.conecta.comunicados.module.tag;
 
+import static org.assertj.core.api.Assertions.assertThat;
+import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.Mockito.never;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
@@ -31,7 +33,7 @@ class DeactivateTagUseCaseTest {
 
     @Test
     void shouldDeactivateExistingTag() {
-        UUID hubEntityId = UUID.randomUUID();
+        String hubEntityId = "user-123";
         Tag tag = Tag.builder()
                 .id(UUID.randomUUID())
                 .hubEntityId(hubEntityId)
@@ -49,18 +51,18 @@ class DeactivateTagUseCaseTest {
         useCase.execute(new DeactivateTagCommand(hubEntityId, TagEntityType.USER));
 
         verify(tagRepository).save(tag);
-        org.assertj.core.api.Assertions.assertThat(tag.isActive()).isFalse();
+        assertThat(tag.isActive()).isFalse();
     }
 
     @Test
     void shouldDoNothingWhenTagDoesNotExist() {
-        UUID hubEntityId = UUID.randomUUID();
+        String hubEntityId = "course-123";
 
         when(tagRepository.findByEntityTypeAndHubEntityId(TagEntityType.COURSE, hubEntityId))
                 .thenReturn(Optional.empty());
 
         useCase.execute(new DeactivateTagCommand(hubEntityId, TagEntityType.COURSE));
 
-        verify(tagRepository, never()).save(org.mockito.ArgumentMatchers.any());
+        verify(tagRepository, never()).save(any());
     }
 }
