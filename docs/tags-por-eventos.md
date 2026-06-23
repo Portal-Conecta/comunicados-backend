@@ -75,13 +75,13 @@ Todo evento deve conter:
 
 | Campo | Obrigatório | Descrição |
 |-------|-------------|-----------|
-| `eventId` | Sim | UUID único por publicação (idempotência) |
+| `eventId` | Sim | Identificador único por publicação (idempotência) |
 | `correlationId` | Sim | Rastreio entre serviços |
 | `source` | Sim | Ex.: `core-api` |
 | `eventType` | Sim | Ex.: `course.created` |
 | `occurredAt` | Sim | ISO-8601 |
 | `entityType` | Sim | `course` ou `turma` |
-| `entityId` | Sim | UUID estável no Core → vira `tag.hub_entity_id` |
+| `entityId` | Sim | Identificador estável no Core; vira `tag.hub_entity_id` |
 | `name` | Upsert | Nome de exibição da tag |
 | `code` | Curso | Código do curso (alternativa/complemento a `name`) |
 
@@ -250,19 +250,18 @@ Esses pontos estão nas tasks #147 e #148.
 
 ---
 
-## 6. Gap: implementação atual vs contrato oficial
+## 6. Status da implementação após #147
 
-| Aspecto | Contrato oficial (PDF) | Implementação atual |
-|---------|------------------------|---------------------|
-| Formato envelope | Campos na raiz | Objeto aninhado `payload` |
-| `eventType` | `course.created`, `turma.created` | `core.course.created`, `core.class.created` |
-| Remoção | `*.deleted` | `*.deactivated` |
-| Vocabulário turma | `turma` | `class` / `CLASS` |
-| `correlationId` | Obrigatório | Ausente |
-| Auto-link `USER` | Necessário | Não implementado |
-| `tagIds` no publish | Mesclar com auto-link | Campo existe, não wired |
-| Filtro por tag na listagem | Necessário para produto | Não implementado |
-| Re-sync tags no PUT | Necessário | Não implementado |
+| Aspecto | Contrato oficial | Implementação atual |
+|---------|------------------|---------------------|
+| Formato envelope | Campos na raiz | Alinhado com `CoreEntityEventEnvelope` plano |
+| `eventType` | `course.created`, `course.updated`, `course.deleted`, `turma.created`, `turma.deleted` | Alinhado |
+| Remoção | `*.deleted` | Alinhado; mantém compatibilidade temporária com `*.deactivated` |
+| Vocabulário turma | `turma` | Alinhado; mapeia `turma` para `TagEntityType.CLASS` |
+| `correlationId` | Obrigatório | Validado antes de persistir |
+| Idempotência | `eventId` duplicado ignorado | Alinhado via tabela `processed_event` |
+| Chave natural | `(entity_type, hub_entity_id)` | Alinhado no upsert de tags |
+| Eventos inválidos | Não criam tag parcial e seguem para DLQ | Alinhado: exceção antes de persistir/processar |
 
 ---
 
@@ -275,7 +274,7 @@ Configuração atual em `application.yaml` (pode ser ajustada no alinhamento):
 | Exchange | `portal.core.events` (topic) |
 | Queue Comunicados | `comunicados.core-entities` |
 | DLQ | `comunicados.core-entities.dlq` |
-| Routing keys | `course.#`, `turma.#` (atualizar de `core.class.#`) |
+| Routing keys | `course.#`, `turma.#` |
 | Feature flag | `MESSAGING_ENABLED=true` |
 
 ---

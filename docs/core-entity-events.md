@@ -1,6 +1,7 @@
-# Contrato de eventos Core → Comunicados (tags)
+# Contrato de eventos Core -> Comunicados (tags)
 
-Documento de referência para o time **Core** publicar entidades que o módulo Comunicados espelha como **tags** locais.
+> Documento legado. O contrato oficial atual está em [`tags-por-eventos.md`](./tags-por-eventos.md).
+> Desde a #147, o consumidor usa envelope plano, `eventType` sem prefixo `core.`, vocabulário `turma` e routing keys `course.#` / `turma.#`.
 
 ## Visão geral
 
