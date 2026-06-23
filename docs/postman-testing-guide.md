@@ -511,7 +511,7 @@ Esperado: `204`.
 
 ### 8.9 Tags via RabbitMQ (opcional)
 
-Só se `MESSAGING_ENABLED=true` e RabbitMQ rodando. Contrato completo: [`docs/tags-por-eventos.md`](./tags-por-eventos.md).
+Só se `MESSAGING_ENABLED=true` e RabbitMQ rodando. Contrato completo: [`docs/tags-por-eventos.md`](./tags-por-eventos.md) (oficial). O arquivo `core-entity-events.md` está depreciado e será removido após #142 e #143.
 
 Fluxo resumido:
 

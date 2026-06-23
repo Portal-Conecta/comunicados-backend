@@ -44,7 +44,8 @@ public class Tag {
     @Column(name = "entity_type", nullable = false)
     private TagEntityType entityType;
 
-    @Column(name = "hub_entity_id", nullable = false)
+    // Nulo para a tag GENERAL (singleton "todos"); demais tipos referenciam a entidade no Hub.
+    @Column(name = "hub_entity_id", nullable = true)
     private String hubEntityId;
 
     @Column(name = "active", nullable = false)

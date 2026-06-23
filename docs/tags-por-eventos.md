@@ -209,13 +209,13 @@ Para cada destino do comunicado:
 |--------------|---------------|---------------|
 | `CLASS` | UUID da turma | Tag ativa com `entity_type=CLASS` e `hub_entity_id=referenceId` |
 | `COURSE` | UUID do curso | Tag ativa com `entity_type=COURSE` e `hub_entity_id=referenceId` |
-| `USER` | UUID do usuário | Tag ativa com `entity_type=USER` e `hub_entity_id=referenceId` |
+| `USER` | UUID do usuário | **Nenhuma** — destino de usuário não vira tag (ver §5) |
 | `GENERAL` | `null` | Tag ativa singleton `entity_type=GENERAL` |
 
 ### Onde já existe
 
 - `AutoLinkTagsByDestinationUseCase` — chamado em `PublishAnnouncementUseCase` e `ScheduleAnnouncementUseCase`.
-- Mapeamento atual: `CLASS`, `COURSE`, `GENERAL` (**falta `USER`**).
+- Mapeamento: `CLASS`, `COURSE`, `GENERAL`. `USER` é intencionalmente excluído (ver §5).
 - Tags explícitas via `tagIds` no body **ainda não são persistidas** no fluxo publish/schedule.
 
 ### Comportamento esperado (completo)
@@ -237,31 +237,46 @@ Tags vinculadas permitem:
 
 ---
 
-## 5. Escopo futuro: usuário e geral
+## 5. Destinos `GENERAL` e `USER`
 
-O contrato PDF inicial cobre **curso** e **turma**. Para destinos `USER` e `GENERAL`:
+O contrato de eventos cobre **curso** e **turma**. Os destinos `GENERAL` e `USER` **não** vêm de evento do Core — cada um por um motivo diferente:
 
-| Destino | Proposta |
-|---------|----------|
-| **USER** | Core publica `user.created` / `user.updated` / `user.deleted` (contrato a formalizar) **ou** tag criada na primeira matrícula do usuário em turma |
-| **GENERAL** | Tag singleton criada via migration/seed local (`hub_entity_id = null`); não depende de evento Core |
+| Destino | Como é resolvido | Status |
+|---------|------------------|--------|
+| **GENERAL** | Tag singleton semeada localmente (`migration V002`, `hub_entity_id = null`, nome `"Geral"`). Não depende do Core. Auto-vincula em todo publish/schedule que tenha destino GENERAL. | ✅ #151 |
+| **USER** | **Não é tag.** Mirar um usuário é um destino `AnnouncementDestination(type=USER, referenceId=UUID)` escolhido na publicação. | ✅ já existe |
 
-Esses pontos estão nas tasks #147 e #148.
+### Por que `USER` não é tag (e não vem do Core)
+
+Investigação do código (#151) mostrou que o "tag USER via Core" era premissa equivocada:
+
+- **Visibilidade já é resolvida por destino**, não por tag: `AnnouncementSpecifications.visibleTo` e `GetAnnouncementByIdUseCase` filtram comunicados pelo destino `USER` cujo `referenceId` é o id de quem visualiza (com 404 anti-vazamento no acesso direto). Tag **não** participa de visibilidade.
+- **O Core não publica — nem planeja publicar — evento de usuário.** O contrato de tags do Core (`core-backend` #167/#168) cobre apenas `course.*` e `turma.*`. Faz sentido: o usuário-alvo já chega como `referenceId` do destino no momento do publish; não há o que o Core anunciar.
+- **Busca por usuário já funciona sem tag:** `matchesSearch` resolve o nome via `HubUserPort` e casa contra destinos `USER` (`userDestinationMatches`). Uma tag `USER` seria redundante até para busca.
+- `AnnouncementMention` é **decorativo** (exibido no detalhe do comunicado); **não** restringe acesso.
+
+> Por isso `AutoLinkTagsByDestinationUseCase` **não** mapeia `USER` — é intencional, não um gap. Ver testes `shouldNotLinkUserDestination` e `shouldLinkGeneralTag`.
+
+### Fora deste escopo (issues próprias)
+
+- **Notificar o usuário-alvo** que recebeu um comunicado → fluxo de **notificações** (`notifications.exchange`), onde o comunicados seria **produtor**. Não existe hoje e não é tag.
+- **Seletor de usuários-alvo com busca por nome + turma** → endpoint dedicado; o `/users/search` do Hub hoje devolve `id/name/userType`, **sem turma**.
 
 ---
 
 ## 6. Status da implementação após #147
 
-| Aspecto | Contrato oficial | Implementação atual |
-|---------|------------------|---------------------|
-| Formato envelope | Campos na raiz | Alinhado com `CoreEntityEventEnvelope` plano |
-| `eventType` | `course.created`, `course.updated`, `course.deleted`, `turma.created`, `turma.deleted` | Alinhado |
-| Remoção | `*.deleted` | Alinhado; mantém compatibilidade temporária com `*.deactivated` |
-| Vocabulário turma | `turma` | Alinhado; mapeia `turma` para `TagEntityType.CLASS` |
-| `correlationId` | Obrigatório | Validado antes de persistir |
-| Idempotência | `eventId` duplicado ignorado | Alinhado via tabela `processed_event` |
-| Chave natural | `(entity_type, hub_entity_id)` | Alinhado no upsert de tags |
-| Eventos inválidos | Não criam tag parcial e seguem para DLQ | Alinhado: exceção antes de persistir/processar |
+| Aspecto | Contrato oficial (PDF) | Implementação atual |
+|---------|------------------------|---------------------|
+| Formato envelope | Campos na raiz | Objeto aninhado `payload` |
+| `eventType` | `course.created`, `turma.created` | `core.course.created`, `core.class.created` |
+| Remoção | `*.deleted` | `*.deactivated` |
+| Vocabulário turma | `turma` | `class` / `CLASS` |
+| `correlationId` | Obrigatório | Ausente |
+| Auto-link `USER` | ~~Necessário~~ Descartado (#151) | Intencionalmente não é tag (ver §5) |
+| `tagIds` no publish | Mesclar com auto-link | Campo existe, não wired |
+| Filtro por tag na listagem | Necessário para produto | Não implementado |
+| Re-sync tags no PUT | Necessário | Não implementado |
 
 ---
 

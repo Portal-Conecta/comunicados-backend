@@ -220,8 +220,7 @@ domain/port/*Port  →  infrastructure/hub/adapter/Http*Adapter | Mock*Adapter
 
 ## 10. Mensageria RabbitMQ (tags)
 
-Sincroniza entidades do Core como tags locais. Contrato completo: `docs/core-entity-events.md`.
-
+Sincroniza entidades do Core como tags locais. Contrato completo: [`docs/tags-por-eventos.md`](./docs/tags-por-eventos.md) (oficial). O arquivo `docs/core-entity-events.md` está **depreciado** — será removido após #142 e #143.
 ### Feature flag
 
 ```yaml
@@ -396,7 +395,8 @@ Ver `CONTRIBUTING.md`. Resumo:
 | JWT / contexto | `shared/security/`, `shared/context/RequestContext.java` |
 | Hub adapters | `module/comunicado/infrastructure/hub/` |
 | Rabbit consumer | `module/tag/infrastructure/messaging/consumer/CoreEntityTagConsumer.java` |
-| Contrato eventos Core | `docs/core-entity-events.md` |
+| Contrato eventos Core (oficial) | `docs/tags-por-eventos.md` |
+| Contrato eventos Core (depreciado) | `docs/core-entity-events.md` |
 | Guia Swagger | `docs/swagger-documentation-guide.md` |
 | Contribuição | `CONTRIBUTING.md` |
 
