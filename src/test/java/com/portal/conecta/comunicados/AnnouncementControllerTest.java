@@ -168,6 +168,18 @@ class AnnouncementControllerTest {
     }
 
     @Test
+    void shouldReturn200AndItems_WhenListingWithTagId() throws Exception {
+        stubContext();
+
+        when(listAnnouncementsUseCase.execute(any()))
+                .thenReturn(new PageImpl<>(List.of()));
+
+        mockMvc.perform(get("/api/posts").param("tagId", UUID.randomUUID().toString()))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.items").isArray());
+    }
+
+    @Test
     void shouldReturn404_WhenNotFound() throws Exception {
         stubContext();
 
