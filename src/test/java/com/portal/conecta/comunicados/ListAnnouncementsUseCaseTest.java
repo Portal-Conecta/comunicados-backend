@@ -176,4 +176,33 @@ class ListAnnouncementsUseCaseTest {
 
         verifyNoInteractions(hubUserPort);
     }
+
+    @Test
+    void shouldApplyTagFilter_WhenTagIdIsProvided() {
+        UUID userId = UUID.randomUUID();
+        UUID tagId = UUID.randomUUID();
+        RequestContext context = new RequestContext(userId, UserType.ADMIN, List.of());
+
+        when(contextProvider.getRequestContext()).thenReturn(context);
+        when(permissionValidator.canViewAll(UserType.ADMIN)).thenReturn(true);
+        when(announcementRepository.findAll(any(Specification.class), any(Pageable.class)))
+                .thenReturn(new PageImpl<>(List.of()));
+
+        PostFilterRequest tagFilter = PostFilterRequest.withTagId(tagId);
+
+        useCase.execute(new ListAnnouncementsQuery(tagFilter, userId));
+
+        verify(announcementRepository).findAll(any(Specification.class), any(Pageable.class));
+    }
+
+    @Test
+    void shouldMergeTagIdAndTagIds_WhenBothAreProvided() {
+        UUID tagId = UUID.randomUUID();
+        UUID otherTagId = UUID.randomUUID();
+
+        PostFilterRequest filter = new PostFilterRequest(
+                null, null, null, null, null, null, tagId, List.of(otherTagId, tagId), null, null);
+
+        assertThat(filter.resolvedTagIds()).containsExactly(tagId, otherTagId);
+    }
 }

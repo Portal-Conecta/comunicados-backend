@@ -47,6 +47,11 @@ public class ListAnnouncementsUseCase {
             spec = spec.and(AnnouncementSpecifications.matchesSearch(searchTerm, matchingUserIds));
         }
 
+        List<UUID> tagIds = filter.resolvedTagIds();
+        if (!tagIds.isEmpty()) {
+            spec = spec.and(AnnouncementSpecifications.hasAnyTag(tagIds));
+        }
+
         if (!permissionValidator.canViewAll(context.userType())) {
             spec = spec.and(AnnouncementSpecifications.visibleTo(
                     classIds(context),

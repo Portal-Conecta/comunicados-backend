@@ -131,6 +131,24 @@ public class AnnouncementSpecifications {
         return cb.exists(subquery);
     }
 
+    public static Specification<Announcement> hasAnyTag(List<UUID> tagIds) {
+        return (root, query, cb) -> {
+            if (tagIds == null || tagIds.isEmpty()) {
+                return cb.conjunction();
+            }
+
+            Subquery<UUID> subquery = query.subquery(UUID.class);
+            Root<AnnouncementTag> announcementTag = subquery.from(AnnouncementTag.class);
+            Join<AnnouncementTag, Tag> tag = announcementTag.join("tag");
+            subquery.select(announcementTag.get("id"));
+            subquery.where(cb.and(
+                    cb.equal(announcementTag.get("announcement"), root),
+                    tag.get("id").in(tagIds)
+            ));
+            return cb.exists(subquery);
+        };
+    }
+
     public static Specification<Announcement> visibleTo(List<UUID> classIds, List<UUID> courseIds, UUID viewerUserId) {
         return (root, query, cb) -> {
             Subquery<UUID> subquery = query.subquery(UUID.class);
