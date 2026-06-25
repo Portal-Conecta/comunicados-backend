@@ -515,7 +515,7 @@ Só se `MESSAGING_ENABLED=true` e RabbitMQ rodando. Contrato completo: [`docs/ta
 
 Fluxo resumido:
 
-1. Publicar evento `core.class.created` no exchange `portal.core.events`.
+1. Publicar evento `turma.created` no exchange `portal.core.events`.
 2. `GET /api/tags?entityType=CLASS` deve listar a tag sincronizada.
 3. Republicar o mesmo `eventId` não duplica registro.
 

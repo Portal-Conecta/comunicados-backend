@@ -75,13 +75,13 @@ Todo evento deve conter:
 
 | Campo | Obrigatório | Descrição |
 |-------|-------------|-----------|
-| `eventId` | Sim | UUID único por publicação (idempotência) |
+| `eventId` | Sim | Identificador único por publicação (idempotência) |
 | `correlationId` | Sim | Rastreio entre serviços |
 | `source` | Sim | Ex.: `core-api` |
 | `eventType` | Sim | Ex.: `course.created` |
 | `occurredAt` | Sim | ISO-8601 |
 | `entityType` | Sim | `course` ou `turma` |
-| `entityId` | Sim | UUID estável no Core → vira `tag.hub_entity_id` |
+| `entityId` | Sim | Identificador estável no Core; vira `tag.hub_entity_id` |
 | `name` | Upsert | Nome de exibição da tag |
 | `code` | Curso | Código do curso (alternativa/complemento a `name`) |
 
@@ -264,7 +264,7 @@ Investigação do código (#151) mostrou que o "tag USER via Core" era premissa 
 
 ---
 
-## 6. Gap: implementação atual vs contrato oficial
+## 6. Status da implementação após #147
 
 | Aspecto | Contrato oficial (PDF) | Implementação atual |
 |---------|------------------------|---------------------|
@@ -289,7 +289,7 @@ Configuração atual em `application.yaml` (pode ser ajustada no alinhamento):
 | Exchange | `portal.core.events` (topic) |
 | Queue Comunicados | `comunicados.core-entities` |
 | DLQ | `comunicados.core-entities.dlq` |
-| Routing keys | `course.#`, `turma.#` (atualizar de `core.class.#`) |
+| Routing keys | `course.#`, `turma.#` |
 | Feature flag | `MESSAGING_ENABLED=true` |
 
 ---

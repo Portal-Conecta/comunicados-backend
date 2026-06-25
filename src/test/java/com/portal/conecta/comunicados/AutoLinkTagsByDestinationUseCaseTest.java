@@ -1,5 +1,21 @@
 package com.portal.conecta.comunicados;
 
+import static org.assertj.core.api.Assertions.assertThat;
+import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.Mockito.mock;
+import static org.mockito.Mockito.never;
+import static org.mockito.Mockito.verify;
+import static org.mockito.Mockito.when;
+
+import java.time.Instant;
+import java.util.List;
+import java.util.Optional;
+import java.util.UUID;
+
+import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Test;
+import org.mockito.ArgumentCaptor;
+
 import com.portal.conecta.comunicados.module.comunicado.domain.enums.AnnouncementDestinationType;
 import com.portal.conecta.comunicados.module.comunicado.domain.enums.AnnouncementOrigin;
 import com.portal.conecta.comunicados.module.comunicado.domain.enums.AnnouncementStatus;
@@ -11,18 +27,6 @@ import com.portal.conecta.comunicados.module.tag.application.usecase.AutoLinkTag
 import com.portal.conecta.comunicados.module.tag.domain.enums.TagEntityType;
 import com.portal.conecta.comunicados.module.tag.domain.model.Tag;
 import com.portal.conecta.comunicados.module.tag.domain.port.TagRepository;
-import org.junit.jupiter.api.BeforeEach;
-import org.junit.jupiter.api.Test;
-import org.mockito.ArgumentCaptor;
-
-import java.time.Instant;
-import java.util.List;
-import java.util.Optional;
-import java.util.UUID;
-
-import static org.assertj.core.api.Assertions.assertThat;
-import static org.mockito.ArgumentMatchers.any;
-import static org.mockito.Mockito.*;
 
 class AutoLinkTagsByDestinationUseCaseTest {
 
@@ -56,13 +60,17 @@ class AutoLinkTagsByDestinationUseCaseTest {
     void shouldLinkClassTag() {
         UUID classId = UUID.randomUUID();
         Tag tag = activeTag(TagEntityType.CLASS, classId);
-        when(tagRepository.findByEntityTypeAndHubEntityIdAndActiveTrue(TagEntityType.CLASS, classId))
-                .thenReturn(Optional.of(tag));
+
+        when(tagRepository.findByEntityTypeAndHubEntityIdAndActiveTrue(
+                TagEntityType.CLASS,
+                classId.toString()
+        )).thenReturn(Optional.of(tag));
 
         useCase.execute(announcement, List.of(command(AnnouncementDestinationType.CLASS, classId)));
 
         ArgumentCaptor<List<AnnouncementTag>> captor = ArgumentCaptor.captor();
         verify(announcementTagRepository).saveAll(captor.capture());
+
         assertThat(captor.getValue()).hasSize(1);
         assertThat(captor.getValue().get(0).getTag()).isEqualTo(tag);
     }
@@ -71,25 +79,35 @@ class AutoLinkTagsByDestinationUseCaseTest {
     void shouldLinkCourseTag() {
         UUID courseId = UUID.randomUUID();
         Tag tag = activeTag(TagEntityType.COURSE, courseId);
-        when(tagRepository.findByEntityTypeAndHubEntityIdAndActiveTrue(TagEntityType.COURSE, courseId))
-                .thenReturn(Optional.of(tag));
+
+        when(tagRepository.findByEntityTypeAndHubEntityIdAndActiveTrue(
+                TagEntityType.COURSE,
+                courseId.toString()
+        )).thenReturn(Optional.of(tag));
 
         useCase.execute(announcement, List.of(command(AnnouncementDestinationType.COURSE, courseId)));
 
         ArgumentCaptor<List<AnnouncementTag>> captor = ArgumentCaptor.captor();
         verify(announcementTagRepository).saveAll(captor.capture());
+
         assertThat(captor.getValue()).hasSize(1);
+        assertThat(captor.getValue().get(0).getTag()).isEqualTo(tag);
     }
 
     @Test
     void shouldLinkGeneralTag() {
         Tag tag = activeTag(TagEntityType.GENERAL, null);
+
         when(tagRepository.findFirstByEntityTypeAndActiveTrueOrderByCreatedAtAsc(TagEntityType.GENERAL))
                 .thenReturn(Optional.of(tag));
 
         useCase.execute(announcement, List.of(command(AnnouncementDestinationType.GENERAL, null)));
 
-        verify(announcementTagRepository).saveAll(any());
+        ArgumentCaptor<List<AnnouncementTag>> captor = ArgumentCaptor.captor();
+        verify(announcementTagRepository).saveAll(captor.capture());
+
+        assertThat(captor.getValue()).hasSize(1);
+        assertThat(captor.getValue().get(0).getTag()).isEqualTo(tag);
     }
 
     @Test
@@ -102,8 +120,11 @@ class AutoLinkTagsByDestinationUseCaseTest {
     @Test
     void shouldSkipWhenTagNotFound() {
         UUID classId = UUID.randomUUID();
-        when(tagRepository.findByEntityTypeAndHubEntityIdAndActiveTrue(TagEntityType.CLASS, classId))
-                .thenReturn(Optional.empty());
+
+        when(tagRepository.findByEntityTypeAndHubEntityIdAndActiveTrue(
+                TagEntityType.CLASS,
+                classId.toString()
+        )).thenReturn(Optional.empty());
 
         useCase.execute(announcement, List.of(command(AnnouncementDestinationType.CLASS, classId)));
 
@@ -114,11 +135,19 @@ class AutoLinkTagsByDestinationUseCaseTest {
     void shouldNotDuplicateAlreadyLinkedTag() {
         UUID classId = UUID.randomUUID();
         Tag tag = activeTag(TagEntityType.CLASS, classId);
-        when(tagRepository.findByEntityTypeAndHubEntityIdAndActiveTrue(TagEntityType.CLASS, classId))
-                .thenReturn(Optional.of(tag));
 
-        AnnouncementTag existing = AnnouncementTag.builder().announcement(announcement).tag(tag).build();
-        when(announcementTagRepository.findByAnnouncementId(announcement.getId())).thenReturn(List.of(existing));
+        when(tagRepository.findByEntityTypeAndHubEntityIdAndActiveTrue(
+                TagEntityType.CLASS,
+                classId.toString()
+        )).thenReturn(Optional.of(tag));
+
+        AnnouncementTag existing = AnnouncementTag.builder()
+                .announcement(announcement)
+                .tag(tag)
+                .build();
+
+        when(announcementTagRepository.findByAnnouncementId(announcement.getId()))
+                .thenReturn(List.of(existing));
 
         useCase.execute(announcement, List.of(command(AnnouncementDestinationType.CLASS, classId)));
 
@@ -132,10 +161,15 @@ class AutoLinkTagsByDestinationUseCaseTest {
         Tag tag1 = activeTag(TagEntityType.CLASS, class1);
         Tag tag2 = activeTag(TagEntityType.CLASS, class2);
 
-        when(tagRepository.findByEntityTypeAndHubEntityIdAndActiveTrue(TagEntityType.CLASS, class1))
-                .thenReturn(Optional.of(tag1));
-        when(tagRepository.findByEntityTypeAndHubEntityIdAndActiveTrue(TagEntityType.CLASS, class2))
-                .thenReturn(Optional.of(tag2));
+        when(tagRepository.findByEntityTypeAndHubEntityIdAndActiveTrue(
+                TagEntityType.CLASS,
+                class1.toString()
+        )).thenReturn(Optional.of(tag1));
+
+        when(tagRepository.findByEntityTypeAndHubEntityIdAndActiveTrue(
+                TagEntityType.CLASS,
+                class2.toString()
+        )).thenReturn(Optional.of(tag2));
 
         useCase.execute(announcement, List.of(
                 command(AnnouncementDestinationType.CLASS, class1),
@@ -144,7 +178,11 @@ class AutoLinkTagsByDestinationUseCaseTest {
 
         ArgumentCaptor<List<AnnouncementTag>> captor = ArgumentCaptor.captor();
         verify(announcementTagRepository).saveAll(captor.capture());
+
         assertThat(captor.getValue()).hasSize(2);
+        assertThat(captor.getValue())
+                .extracting(AnnouncementTag::getTag)
+                .containsExactlyInAnyOrder(tag1, tag2);
     }
 
     private Tag activeTag(TagEntityType type, UUID hubEntityId) {
@@ -152,7 +190,7 @@ class AutoLinkTagsByDestinationUseCaseTest {
                 .id(UUID.randomUUID())
                 .name("Tag " + type)
                 .entityType(type)
-                .hubEntityId(hubEntityId != null ? hubEntityId : UUID.randomUUID())
+                .hubEntityId(hubEntityId != null ? hubEntityId.toString() : UUID.randomUUID().toString())
                 .active(true)
                 .createdAt(Instant.now())
                 .updatedAt(Instant.now())

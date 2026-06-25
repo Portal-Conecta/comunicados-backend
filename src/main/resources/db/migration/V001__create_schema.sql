@@ -44,7 +44,7 @@ CREATE TABLE tag (
     id            uuid                        NOT NULL,
     name          varchar(255)                NOT NULL,
     entity_type   varchar(255)                NOT NULL,
-    hub_entity_id uuid                        NOT NULL,
+    hub_entity_id varchar(255)                NOT NULL,
     active        boolean                     NOT NULL,
     created_at    timestamp(6) with time zone NOT NULL,
     updated_at    timestamp(6) with time zone NOT NULL,
@@ -55,7 +55,7 @@ CREATE TABLE tag (
 CREATE INDEX idx_tag_hub_entity_id ON tag (hub_entity_id);
 
 CREATE TABLE processed_event (
-    event_id     uuid                        NOT NULL,
+    event_id     varchar(255)                NOT NULL,
     processed_at timestamp(6) with time zone NOT NULL,
     CONSTRAINT pk_processed_event PRIMARY KEY (event_id)
 );

@@ -34,9 +34,8 @@ app:
       queue: comunicados.core-entities
       dlq: comunicados.core-entities.dlq
       routing-keys:
-        - core.course.#
-        - core.class.#
-        - core.user.#
+        - course.#
+        - turma.#
 
 management:
   endpoints:

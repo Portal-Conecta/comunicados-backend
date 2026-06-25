@@ -59,12 +59,12 @@ public class AutoLinkTagsByDestinationUseCase {
         if (tagType == null) return Optional.empty();
 
         if (destination.hubEntityId() != null) {
-            return findByTypeAndHubEntity(tagType, destination.hubEntityId());
+            return findByTypeAndHubEntity(tagType, destination.hubEntityId().toString());
         }
         return findFirstActiveByType(tagType);
     }
 
-    private Optional<Tag> findByTypeAndHubEntity(TagEntityType type, UUID hubEntityId) {
+    private Optional<Tag> findByTypeAndHubEntity(TagEntityType type, String hubEntityId) {
         Optional<Tag> tag = tagRepository.findByEntityTypeAndHubEntityIdAndActiveTrue(type, hubEntityId);
         if (tag.isEmpty()) {
             log.debug("Auto-link: tag ativa não encontrada para type={} hubEntityId={}", type, hubEntityId);

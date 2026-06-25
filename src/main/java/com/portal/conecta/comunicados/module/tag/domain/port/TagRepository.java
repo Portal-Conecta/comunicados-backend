@@ -12,9 +12,10 @@ public interface TagRepository extends JpaRepository<Tag, UUID> {
 
     List<Tag> findByEntityTypeAndActiveTrue(TagEntityType entityType);
 
-    Optional<Tag> findByEntityTypeAndHubEntityId(TagEntityType entityType, UUID hubEntityId);
+    Optional<Tag> findByEntityTypeAndHubEntityId(TagEntityType entityType, String hubEntityId);
 
-    Optional<Tag> findByEntityTypeAndHubEntityIdAndActiveTrue(TagEntityType entityType, UUID hubEntityId);
+    Optional<Tag> findByEntityTypeAndHubEntityIdAndActiveTrue(TagEntityType entityType, String hubEntityId);
 
     Optional<Tag> findFirstByEntityTypeAndActiveTrueOrderByCreatedAtAsc(TagEntityType entityType);
+
 }

@@ -1,7 +1,6 @@
 package com.portal.conecta.comunicados.module.tag.domain.model;
 
 import java.time.Instant;
-import java.util.UUID;
 
 import jakarta.persistence.Column;
 import jakarta.persistence.Entity;
@@ -22,8 +21,9 @@ public class ProcessedEvent {
 
     @Id
     @Column(name = "event_id", nullable = false)
-    private UUID eventId;
+    private String eventId;
 
     @Column(name = "processed_at", nullable = false)
     private Instant processedAt;
+
 }
