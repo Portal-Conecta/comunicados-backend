@@ -18,7 +18,9 @@ import com.portal.conecta.comunicados.module.tag.infrastructure.messaging.dto.Co
 import com.portal.conecta.comunicados.module.tag.infrastructure.messaging.exception.InvalidCoreEntityEventException;
 
 import lombok.RequiredArgsConstructor;
+import lombok.extern.slf4j.Slf4j;
 
+@Slf4j
 @Component
 @ConditionalOnProperty(prefix = "app.messaging", name = "enabled", havingValue = "true")
 @RequiredArgsConstructor
@@ -46,11 +48,25 @@ public class CoreEntityTagConsumer {
     public void handle(CoreEntityEventEnvelope envelope) {
         validateEnvelope(envelope);
 
+        String eventType = envelope.eventType().trim();
+
+        log.info(
+                "Evento de tag recebido do Core. eventId={}, correlationId={}, eventType={}, entityType={}, entityId={}",
+                envelope.eventId(),
+                envelope.correlationId(),
+                eventType,
+                envelope.entityType(),
+                envelope.entityId()
+        );
+
         if (processedEventRepository.existsById(envelope.eventId())) {
+            log.info(
+                    "Evento de tag ignorado por idempotência. eventId={}, correlationId={}",
+                    envelope.eventId(),
+                    envelope.correlationId()
+            );
             return;
         }
-
-        String eventType = envelope.eventType().trim();
 
         if (isDeactivation(eventType)) {
             deactivateTagUseCase.execute(DeactivateTagCommand.from(envelope));
@@ -64,6 +80,13 @@ public class CoreEntityTagConsumer {
                 .eventId(envelope.eventId())
                 .processedAt(Instant.now())
                 .build());
+
+        log.info(
+                "Evento de tag processado com sucesso. eventId={}, correlationId={}, eventType={}",
+                envelope.eventId(),
+                envelope.correlationId(),
+                eventType
+        );
     }
 
     private void validateEnvelope(CoreEntityEventEnvelope envelope) {
