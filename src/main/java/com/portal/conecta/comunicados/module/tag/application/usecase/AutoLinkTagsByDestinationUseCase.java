@@ -12,12 +12,14 @@ import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Component;
 
+import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
 import java.util.Set;
 import java.util.UUID;
 import java.util.stream.Collectors;
+import java.util.stream.Stream;
 
 @Slf4j
 @Component
@@ -27,24 +29,37 @@ public class AutoLinkTagsByDestinationUseCase {
     private static final Map<AnnouncementDestinationType, TagEntityType> DESTINATION_TO_TAG_TYPE = Map.of(
             AnnouncementDestinationType.CLASS, TagEntityType.CLASS,
             AnnouncementDestinationType.COURSE, TagEntityType.COURSE,
-            AnnouncementDestinationType.GENERAL, TagEntityType.GENERAL
+            AnnouncementDestinationType.GENERAL, TagEntityType.GENERAL,
+            AnnouncementDestinationType.USER, TagEntityType.USER
     );
 
     private final TagRepository tagRepository;
     private final AnnouncementTagRepository announcementTagRepository;
 
     public void execute(Announcement announcement, List<TagLinkDestinationCommand> destinations) {
+        execute(announcement, destinations, null);
+    }
+
+    public void execute(Announcement announcement, List<TagLinkDestinationCommand> destinations, List<UUID> explicitTagIds) {
         Set<UUID> alreadyLinked = announcementTagRepository
                 .findByAnnouncementId(announcement.getId())
                 .stream()
                 .map(at -> at.getTag().getId())
                 .collect(Collectors.toSet());
 
-        List<AnnouncementTag> newLinks = destinations.stream()
+        List<Tag> destinationTags = destinations.stream()
                 .map(this::resolveTag)
                 .flatMap(Optional::stream)
+                .collect(Collectors.toList());
+
+        List<Tag> explicitTags = (explicitTagIds == null || explicitTagIds.isEmpty())
+                ? List.of()
+                : tagRepository.findAllById(explicitTagIds);
+
+        Set<UUID> seen = new HashSet<>();
+        List<AnnouncementTag> newLinks = Stream.concat(destinationTags.stream(), explicitTags.stream())
                 .filter(tag -> !alreadyLinked.contains(tag.getId()))
-                .distinct()
+                .filter(tag -> seen.add(tag.getId()))
                 .map(tag -> AnnouncementTag.builder().announcement(announcement).tag(tag).build())
                 .toList();
 

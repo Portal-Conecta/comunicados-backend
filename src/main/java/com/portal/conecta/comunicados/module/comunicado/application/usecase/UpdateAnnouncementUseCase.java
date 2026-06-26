@@ -16,7 +16,10 @@ import com.portal.conecta.comunicados.module.comunicado.domain.model.Announcemen
 import com.portal.conecta.comunicados.module.comunicado.domain.port.announcement.AnnouncementDestinationRepository;
 import com.portal.conecta.comunicados.module.comunicado.domain.port.announcement.AnnouncementHistoryRepository;
 import com.portal.conecta.comunicados.module.comunicado.domain.port.announcement.AnnouncementRepository;
+import com.portal.conecta.comunicados.module.comunicado.domain.port.support.AnnouncementTagRepository;
 import com.portal.conecta.comunicados.module.comunicado.domain.validator.AnnouncementPermissionValidator;
+import com.portal.conecta.comunicados.module.tag.application.dto.TagLinkDestinationCommand;
+import com.portal.conecta.comunicados.module.tag.application.usecase.AutoLinkTagsByDestinationUseCase;
 import com.portal.conecta.comunicados.shared.context.RequestContext;
 import com.portal.conecta.comunicados.shared.context.RequestContextProvider;
 
@@ -30,8 +33,10 @@ public class UpdateAnnouncementUseCase {
     private final AnnouncementRepository announcementRepository;
     private final AnnouncementDestinationRepository destinationRepository;
     private final AnnouncementHistoryRepository historyRepository;
+    private final AnnouncementTagRepository announcementTagRepository;
     private final RequestContextProvider contextProvider;
     private final AnnouncementPermissionValidator permissionValidator;
+    private final AutoLinkTagsByDestinationUseCase autoLinkTagsUseCase;
     private final ObjectMapper objectMapper = new ObjectMapper();
 
     @Transactional
@@ -61,15 +66,24 @@ public class UpdateAnnouncementUseCase {
         // ausentes (null) preservam os destinos atuais.
         if (command.data().destinations() != null) {
             destinationRepository.deleteByAnnouncementId(updated.getId());
+            announcementTagRepository.deleteByAnnouncementId(updated.getId());
 
             List<AnnouncementDestination> destinations = command.toDestinations(updated);
             destinationRepository.saveAll(destinations);
             updated.setDestinations(destinations);
+
+            autoLinkTagsUseCase.execute(updated, toTagCommands(destinations));
         }
 
         historyRepository.save(command.toEditHistory(updated, now, snapshot));
 
         return updated;
+    }
+
+    private List<TagLinkDestinationCommand> toTagCommands(List<AnnouncementDestination> destinations) {
+        return destinations.stream()
+                .map(d -> new TagLinkDestinationCommand(d.getType(), d.getReferenceId()))
+                .toList();
     }
 
 }

@@ -25,8 +25,10 @@ import com.portal.conecta.comunicados.module.comunicado.domain.model.Announcemen
 import com.portal.conecta.comunicados.module.comunicado.domain.port.announcement.AnnouncementDestinationRepository;
 import com.portal.conecta.comunicados.module.comunicado.domain.port.announcement.AnnouncementHistoryRepository;
 import com.portal.conecta.comunicados.module.comunicado.domain.port.announcement.AnnouncementRepository;
+import com.portal.conecta.comunicados.module.comunicado.domain.port.support.AnnouncementTagRepository;
 import com.portal.conecta.comunicados.module.comunicado.domain.port.support.HubClassPort;
 import com.portal.conecta.comunicados.module.comunicado.domain.validator.AnnouncementPermissionValidator;
+import com.portal.conecta.comunicados.module.tag.application.usecase.AutoLinkTagsByDestinationUseCase;
 import com.portal.conecta.comunicados.module.comunicado.presentation.dto.request.CreateAnnouncementDestinationRequest;
 import com.portal.conecta.comunicados.module.comunicado.presentation.dto.request.UpdateAnnouncementRequest;
 import com.portal.conecta.comunicados.shared.context.RequestContext;
@@ -56,7 +58,13 @@ class UpdateAnnouncementUseCaseTest {
     private AnnouncementHistoryRepository historyRepository;
 
     @Mock
+    private AnnouncementTagRepository announcementTagRepository;
+
+    @Mock
     private RequestContextProvider contextProvider;
+
+    @Mock
+    private AutoLinkTagsByDestinationUseCase autoLinkTagsUseCase;
 
     private UpdateAnnouncementUseCase useCase;
     private ObjectMapper objectMapper;
@@ -75,8 +83,10 @@ class UpdateAnnouncementUseCaseTest {
                 announcementRepository,
                 destinationRepository,
                 historyRepository,
+                announcementTagRepository,
                 contextProvider,
-                new AnnouncementPermissionValidator(org.mockito.Mockito.mock(HubClassPort.class))
+                new AnnouncementPermissionValidator(org.mockito.Mockito.mock(HubClassPort.class)),
+                autoLinkTagsUseCase
         );
 
         announcementId = UUID.randomUUID();
