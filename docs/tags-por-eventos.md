@@ -294,6 +294,91 @@ Configuração atual em `application.yaml` (pode ser ajustada no alinhamento):
 
 ---
 
+## 7.1 Setup local com RabbitMQ real
+
+Para testar o consumo de eventos manualmente (simulando o Core publicando no broker):
+
+### 1. Subir os serviços via Docker Compose
+
+O `docker-compose.yml` inclui PostgreSQL, RabbitMQ e a API:
+
+```bash
+docker-compose up -d
+```
+
+O painel de administração do RabbitMQ estará disponível em `http://localhost:15672` (usuário/senha: `guest/guest` por padrão).
+
+### 2. Variáveis de ambiente
+
+Copie `.env.example` para `.env` e confirme os valores de RabbitMQ:
+
+```env
+RABBITMQ_HOST=localhost
+RABBITMQ_PORT=5672
+RABBITMQ_USERNAME=guest
+RABBITMQ_PASSWORD=guest
+RABBITMQ_VHOST=/
+MESSAGING_ENABLED=true
+```
+
+### 3. Rodar a aplicação com mensageria ativa
+
+```bash
+MESSAGING_ENABLED=true ./mvnw spring-boot:run -Dspring-boot.run.profiles=dev
+```
+
+Ou via IDE, setando `MESSAGING_ENABLED=true` nas variáveis de ambiente do run configuration.
+
+### 4. Publicar um evento de teste manualmente
+
+Pelo painel do RabbitMQ (`http://localhost:15672` → Exchanges → `portal.core.events` → Publish message):
+
+- **Routing key:** `course.created`
+- **Payload:**
+```json
+{
+  "eventId": "evt-manual-teste-01",
+  "correlationId": "corr-manual-01",
+  "source": "core-api",
+  "eventType": "course.created",
+  "occurredAt": "2026-06-26T12:00:00Z",
+  "entityType": "course",
+  "entityId": "course-manual-123",
+  "code": "MIDS",
+  "name": "MIDS"
+}
+```
+
+A tag deve aparecer em `GET /api/tags` após o consumo.
+
+---
+
+## 7.2 Executar os testes de integração (sem broker)
+
+Os testes de integração da issue #152 **não precisam de RabbitMQ**. Eles instanciam o consumer diretamente com repositórios reais (H2 em memória), usando o perfil `test`.
+
+```bash
+./mvnw test -Dtest="TagRabbitMqIntegrationTest,TagAutoLinkFlowTest"
+```
+
+| Classe | Cenários cobertos |
+|--------|-------------------|
+| `TagRabbitMqIntegrationTest` | `course.created` → COURSE tag; `turma.created` → CLASS tag; eventId duplicado (idempotência); payload inválido → exceção; eventType não suportado → DLQ |
+| `TagAutoLinkFlowTest` | evento turma + publicar com destino CLASS → `announcement_tag` criado; filtro `GET /api/posts?tagId=` retorna comunicado vinculado |
+
+Para rodar toda a suite:
+
+```bash
+./mvnw test
+```
+
+> **Nota:** o PATH padrão desta máquina aponta para o JDK 8. Configure `JAVA_HOME` para o JDK 21+ antes de executar:
+> ```bash
+> export JAVA_HOME="C:\Program Files\Java\jdk-25"
+> ```
+
+---
+
 ## 8. Critérios de aceite (história de tags)
 
 - [ ] Core publica eventos conforme §2 após CRUD de curso/turma
