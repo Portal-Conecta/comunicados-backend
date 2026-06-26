@@ -259,7 +259,7 @@ class ScheduleAnnouncementFlowTest {
 
         ScheduleAnnouncementCommand command = new ScheduleAnnouncementCommand(
                 "Titulo", "Descricao", AnnouncementOrigin.SENAI, false, past, userId, UserType.SENAI,
-                List.of(classDestination(UUID.randomUUID()))
+                List.of(classDestination(UUID.randomUUID())), null
         );
 
         assertThrows(AnnouncementMustBeInTheFutureException.class, () -> scheduleAnnouncementUseCase.execute(command));

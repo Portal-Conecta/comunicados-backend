@@ -28,7 +28,8 @@ public record ScheduleAnnouncementCommand(
     Instant scheduledFor,
     UUID authorUserId,
     UserType authorUserType,
-    List<CreateAnnouncementDestinationInput> destinations
+    List<CreateAnnouncementDestinationInput> destinations,
+    List<UUID> tagIds
 
 ) {
 
@@ -41,7 +42,8 @@ public record ScheduleAnnouncementCommand(
                 request.scheduledFor(),
                 context.userId(),
                 context.userType(),
-                request.destinations()
+                request.destinations(),
+                request.tagIds()
         );
     }
 

@@ -50,7 +50,7 @@ public class ScheduleAnnouncementUseCase {
 
         Announcement announcement = announcementRepository.save(command.toEntity(now));
         List<AnnouncementDestination> destinations = announcementDestinationRepository.saveAll(command.toDestinations(announcement));
-        autoLinkTagsUseCase.execute(announcement, toTagCommands(destinations));
+        autoLinkTagsUseCase.execute(announcement, toTagCommands(destinations), command.tagIds());
 
         announcementHistoryRepository.save(command.toCreationHistory(announcement, now));
         announcementHistoryRepository.save(command.toScheduleHistory(announcement, now));

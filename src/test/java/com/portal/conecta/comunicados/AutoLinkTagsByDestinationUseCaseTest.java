@@ -111,8 +111,34 @@ class AutoLinkTagsByDestinationUseCaseTest {
     }
 
     @Test
-    void shouldNotLinkUserDestination() {
-        useCase.execute(announcement, List.of(command(AnnouncementDestinationType.USER, UUID.randomUUID())));
+    void shouldLinkUserTag() {
+        UUID userId = UUID.randomUUID();
+        Tag tag = activeTag(TagEntityType.USER, userId);
+
+        when(tagRepository.findByEntityTypeAndHubEntityIdAndActiveTrue(
+                TagEntityType.USER,
+                userId.toString()
+        )).thenReturn(Optional.of(tag));
+
+        useCase.execute(announcement, List.of(command(AnnouncementDestinationType.USER, userId)));
+
+        ArgumentCaptor<List<AnnouncementTag>> captor = ArgumentCaptor.captor();
+        verify(announcementTagRepository).saveAll(captor.capture());
+
+        assertThat(captor.getValue()).hasSize(1);
+        assertThat(captor.getValue().get(0).getTag()).isEqualTo(tag);
+    }
+
+    @Test
+    void shouldSkipUserWhenTagNotFound() {
+        UUID userId = UUID.randomUUID();
+
+        when(tagRepository.findByEntityTypeAndHubEntityIdAndActiveTrue(
+                TagEntityType.USER,
+                userId.toString()
+        )).thenReturn(Optional.empty());
+
+        useCase.execute(announcement, List.of(command(AnnouncementDestinationType.USER, userId)));
 
         verify(announcementTagRepository, never()).saveAll(any());
     }
@@ -183,6 +209,42 @@ class AutoLinkTagsByDestinationUseCaseTest {
         assertThat(captor.getValue())
                 .extracting(AnnouncementTag::getTag)
                 .containsExactlyInAnyOrder(tag1, tag2);
+    }
+
+    @Test
+    void shouldLinkExplicitTagIds() {
+        Tag tag = activeTag(TagEntityType.COURSE, UUID.randomUUID());
+
+        when(tagRepository.findAllById(List.of(tag.getId()))).thenReturn(List.of(tag));
+
+        useCase.execute(announcement, List.of(), List.of(tag.getId()));
+
+        ArgumentCaptor<List<AnnouncementTag>> captor = ArgumentCaptor.captor();
+        verify(announcementTagRepository).saveAll(captor.capture());
+
+        assertThat(captor.getValue()).hasSize(1);
+        assertThat(captor.getValue().get(0).getTag()).isEqualTo(tag);
+    }
+
+    @Test
+    void shouldNotDuplicateWhenTagInBothDestinationAndExplicit() {
+        UUID classId = UUID.randomUUID();
+        Tag tag = activeTag(TagEntityType.CLASS, classId);
+
+        when(tagRepository.findByEntityTypeAndHubEntityIdAndActiveTrue(
+                TagEntityType.CLASS,
+                classId.toString()
+        )).thenReturn(Optional.of(tag));
+        when(tagRepository.findAllById(List.of(tag.getId()))).thenReturn(List.of(tag));
+
+        useCase.execute(announcement,
+                List.of(command(AnnouncementDestinationType.CLASS, classId)),
+                List.of(tag.getId()));
+
+        ArgumentCaptor<List<AnnouncementTag>> captor = ArgumentCaptor.captor();
+        verify(announcementTagRepository).saveAll(captor.capture());
+
+        assertThat(captor.getValue()).hasSize(1);
     }
 
     private Tag activeTag(TagEntityType type, UUID hubEntityId) {

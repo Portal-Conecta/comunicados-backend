@@ -167,7 +167,7 @@ class PublishAnnouncementFlowTest {
         assertNotNull(saved.getPublishedAt());
 
         verify(announcementDestinationRepository).saveAll(any());
-        verify(autoLinkTagsUseCase).execute(any(), any());
+        verify(autoLinkTagsUseCase).execute(any(), any(), any());
 
         ArgumentCaptor<AnnouncementHistory> historyCaptor = ArgumentCaptor.forClass(AnnouncementHistory.class);
         verify(announcementHistoryRepository, times(2)).save(historyCaptor.capture());

@@ -10,5 +10,7 @@ public interface AnnouncementTagRepository extends JpaRepository<AnnouncementTag
 
     List<AnnouncementTag> findByAnnouncementId(UUID announcementId);
 
+    void deleteByAnnouncementId(UUID announcementId);
+
     void deleteByAnnouncementIdAndTagId(UUID announcementId, UUID tagId);
 }
