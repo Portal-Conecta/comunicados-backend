@@ -12,6 +12,7 @@ import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Component;
 
+import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
@@ -26,6 +27,7 @@ public class AutoLinkTagsByDestinationUseCase {
 
     private static final Map<AnnouncementDestinationType, TagEntityType> DESTINATION_TO_TAG_TYPE = Map.of(
             AnnouncementDestinationType.CLASS, TagEntityType.CLASS,
+            AnnouncementDestinationType.USER, TagEntityType.USER,
             AnnouncementDestinationType.COURSE, TagEntityType.COURSE,
             AnnouncementDestinationType.GENERAL, TagEntityType.GENERAL
     );
@@ -33,24 +35,36 @@ public class AutoLinkTagsByDestinationUseCase {
     private final TagRepository tagRepository;
     private final AnnouncementTagRepository announcementTagRepository;
 
-    public void execute(Announcement announcement, List<TagLinkDestinationCommand> destinations) {
+    public void execute(Announcement announcement, List<TagLinkDestinationCommand> destinations, List<UUID> explicitTagIds) {
+
         Set<UUID> alreadyLinked = announcementTagRepository
                 .findByAnnouncementId(announcement.getId())
                 .stream()
                 .map(at -> at.getTag().getId())
                 .collect(Collectors.toSet());
 
-        List<AnnouncementTag> newLinks = destinations.stream()
+        Map<UUID, Tag> uniqueTagsToLink = new HashMap<>();
+
+        destinations.stream()
                 .map(this::resolveTag)
                 .flatMap(Optional::stream)
+                .forEach(tag -> uniqueTagsToLink.put(tag.getId(), tag));
+
+        if (explicitTagIds != null && !explicitTagIds.isEmpty()) {
+            explicitTagIds.stream()
+                    .map(tagRepository::findById) // Busca a tag real pelo ID
+                    .flatMap(Optional::stream)
+                    .forEach(tag -> uniqueTagsToLink.put(tag.getId(), tag));
+        }
+
+        List<AnnouncementTag> newLinks = uniqueTagsToLink.values().stream()
                 .filter(tag -> !alreadyLinked.contains(tag.getId()))
-                .distinct()
                 .map(tag -> AnnouncementTag.builder().announcement(announcement).tag(tag).build())
                 .toList();
 
         if (!newLinks.isEmpty()) {
             announcementTagRepository.saveAll(newLinks);
-            log.info("Auto-link: {} novas tags vinculadas ao comunicado {}", newLinks.size(), announcement.getId());
+            log.info("Link: {} novas tags vinculadas ao comunicado {}", newLinks.size(), announcement.getId());
         }
     }
 

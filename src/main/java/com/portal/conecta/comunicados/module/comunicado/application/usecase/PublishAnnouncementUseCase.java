@@ -2,6 +2,7 @@ package com.portal.conecta.comunicados.module.comunicado.application.usecase;
 
 import java.time.Instant;
 import java.util.List;
+import java.util.UUID;
 
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -49,7 +50,10 @@ public class PublishAnnouncementUseCase {
 
         Announcement announcement = announcementRepository.save(command.toEntity(now));
         List<AnnouncementDestination> destinations = announcementDestinationRepository.saveAll(command.toDestinations(announcement));
-        autoLinkTagsUseCase.execute(announcement, toTagCommands(destinations));
+
+        List<UUID> explicitTagIds = command.tagIds() != null ? command.tagIds() : List.of();
+
+        autoLinkTagsUseCase.execute(announcement, toTagCommands(destinations), explicitTagIds);
 
         announcementHistoryRepository.save(command.toCreationHistory(announcement, now));
         announcementHistoryRepository.save(command.toPublicationHistory(announcement, now));

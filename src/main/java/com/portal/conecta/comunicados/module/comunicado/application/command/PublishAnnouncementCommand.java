@@ -20,13 +20,14 @@ import com.portal.conecta.comunicados.shared.context.UserType;
  */
 public record PublishAnnouncementCommand(
 
-    String title,
-    String description,
-    AnnouncementOrigin origin,
-    boolean pinned,
-    UUID authorUserId,
-    UserType authorUserType,
-    List<CreateAnnouncementDestinationInput> destinations
+        String title,
+        String description,
+        AnnouncementOrigin origin,
+        boolean pinned,
+        UUID authorUserId,
+        UserType authorUserType,
+        List<CreateAnnouncementDestinationInput> destinations,
+        List<UUID> tagIds
 
 ) {
 
@@ -38,7 +39,8 @@ public record PublishAnnouncementCommand(
                 request.isPinned(),
                 context.userId(),
                 context.userType(),
-                request.destinations()
+                request.destinations(),
+                request.tagIds() != null ? request.tagIds() : List.of()
         );
     }
 
