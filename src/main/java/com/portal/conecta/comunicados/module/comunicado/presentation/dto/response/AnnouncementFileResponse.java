@@ -4,6 +4,7 @@ import java.time.Instant;
 import java.util.List;
 import java.util.UUID;
 
+import com.portal.conecta.comunicados.module.comunicado.domain.enums.AnnouncementFileStatus;
 import com.portal.conecta.comunicados.module.comunicado.domain.enums.AnnouncementFileType;
 import com.portal.conecta.comunicados.module.comunicado.domain.model.AnnouncementFile;
 
@@ -16,6 +17,7 @@ public record AnnouncementFileResponse(
     String s3Bucket,
     String contentType,
     AnnouncementFileType type,
+    AnnouncementFileStatus fileStatus,
     Long sizeBytes,
     Boolean isThumbnail,
     UUID uploadedByUserId,
@@ -32,6 +34,7 @@ public record AnnouncementFileResponse(
                 entity.getS3Bucket(),
                 entity.getContentType(),
                 entity.getType(),
+                entity.getFileStatus(),
                 entity.getSizeBytes(),
                 entity.isThumbnail(),
                 entity.getUploadedByUserId(),

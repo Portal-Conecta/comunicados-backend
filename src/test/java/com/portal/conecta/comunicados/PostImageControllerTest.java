@@ -26,6 +26,7 @@ import org.springframework.test.web.servlet.MockMvc;
 
 import com.portal.conecta.comunicados.module.comunicado.application.usecase.AttachAnnouncementFileUseCase;
 import com.portal.conecta.comunicados.module.comunicado.application.usecase.ListAnnouncementFilesUseCase;
+import com.portal.conecta.comunicados.module.comunicado.application.usecase.PresignUploadAnnouncementFileUseCase;
 import com.portal.conecta.comunicados.module.comunicado.application.usecase.RemoveAnnouncementFileUseCase;
 import com.portal.conecta.comunicados.module.comunicado.application.usecase.SetAnnouncementThumbnailUseCase;
 import com.portal.conecta.comunicados.module.comunicado.domain.enums.AnnouncementFileType;
@@ -55,6 +56,7 @@ class PostImageControllerTest {
     private MockMvc mockMvc;
 
     @MockitoBean private AttachAnnouncementFileUseCase attachFileUseCase;
+    @MockitoBean private PresignUploadAnnouncementFileUseCase presignUploadUseCase;
     @MockitoBean private RemoveAnnouncementFileUseCase removeFileUseCase;
     @MockitoBean private SetAnnouncementThumbnailUseCase setThumbnailUseCase;
     @MockitoBean private ListAnnouncementFilesUseCase listFilesUseCase;

@@ -8,6 +8,7 @@ import java.util.UUID;
 
 import org.springframework.web.multipart.MultipartFile;
 
+import com.portal.conecta.comunicados.module.comunicado.domain.enums.AnnouncementFileStatus;
 import com.portal.conecta.comunicados.module.comunicado.domain.enums.AnnouncementFileType;
 import com.portal.conecta.comunicados.module.comunicado.domain.model.Announcement;
 import com.portal.conecta.comunicados.module.comunicado.domain.model.AnnouncementFile;
@@ -59,6 +60,7 @@ public record AttachAnnouncementFileCommand(
                 .s3Bucket(s3Bucket)
                 .contentType(contentType)
                 .type(resolvedType)
+                .fileStatus(AnnouncementFileStatus.READY)
                 .sizeBytes(sizeBytes)
                 .isThumbnail(isThumbnail)
                 .uploadedByUserId(uploadedByUserId)

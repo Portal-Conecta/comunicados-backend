@@ -3,6 +3,8 @@ package com.portal.conecta.comunicados.module.comunicado.presentation.controller
 import java.util.List;
 import java.util.UUID;
 
+import jakarta.validation.Valid;
+
 import org.springframework.http.HttpStatus;
 import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
@@ -11,6 +13,7 @@ import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PatchMapping;
 import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.PostMapping;
+import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RequestPart;
@@ -18,14 +21,18 @@ import org.springframework.web.bind.annotation.RestController;
 import org.springframework.web.multipart.MultipartFile;
 
 import com.portal.conecta.comunicados.module.comunicado.application.command.AttachAnnouncementFileCommand;
+import com.portal.conecta.comunicados.module.comunicado.application.command.PresignUploadAnnouncementFileCommand;
 import com.portal.conecta.comunicados.module.comunicado.application.command.RemoveAnnouncementFileCommand;
 import com.portal.conecta.comunicados.module.comunicado.application.command.SetAnnouncementThumbnailCommand;
 import com.portal.conecta.comunicados.module.comunicado.application.usecase.AttachAnnouncementFileUseCase;
 import com.portal.conecta.comunicados.module.comunicado.application.usecase.ListAnnouncementFilesUseCase;
+import com.portal.conecta.comunicados.module.comunicado.application.usecase.PresignUploadAnnouncementFileUseCase;
 import com.portal.conecta.comunicados.module.comunicado.application.usecase.RemoveAnnouncementFileUseCase;
 import com.portal.conecta.comunicados.module.comunicado.application.usecase.SetAnnouncementThumbnailUseCase;
 import com.portal.conecta.comunicados.module.comunicado.domain.model.AnnouncementFile;
+import com.portal.conecta.comunicados.module.comunicado.presentation.dto.request.PresignUploadRequest;
 import com.portal.conecta.comunicados.module.comunicado.presentation.dto.response.AnnouncementFileResponse;
+import com.portal.conecta.comunicados.module.comunicado.presentation.dto.response.PresignUploadResponse;
 import com.portal.conecta.comunicados.shared.context.RequestContextProvider;
 
 import io.swagger.v3.oas.annotations.Operation;
@@ -43,10 +50,36 @@ import lombok.RequiredArgsConstructor;
 public class PostImageController {
 
     private final AttachAnnouncementFileUseCase attachFileUseCase;
+    private final PresignUploadAnnouncementFileUseCase presignUploadUseCase;
     private final RemoveAnnouncementFileUseCase removeFileUseCase;
     private final SetAnnouncementThumbnailUseCase setThumbnailUseCase;
     private final ListAnnouncementFilesUseCase listFilesUseCase;
     private final RequestContextProvider contextProvider;
+
+    @Operation(summary = "Solicitar URL pré-assinada para upload direto ao S3")
+    @ApiResponses({
+            @ApiResponse(responseCode = "201", description = "URL gerada — faça PUT direto ao S3"),
+            @ApiResponse(responseCode = "400", description = "ARQ02 — limite de 5 arquivos atingido, tipo inválido ou tamanho excedido"),
+            @ApiResponse(responseCode = "403", description = "Sem permissão de edição"),
+            @ApiResponse(responseCode = "404", description = "Comunicado não encontrado")
+    })
+    @PostMapping("/presign")
+    public ResponseEntity<PresignUploadResponse> presign(
+            @PathVariable UUID postId,
+            @Valid @RequestBody PresignUploadRequest request
+    ) {
+        UUID userId = contextProvider.getRequestContext().userId();
+        PresignUploadAnnouncementFileCommand command = new PresignUploadAnnouncementFileCommand(
+                postId,
+                request.contentType(),
+                request.sizeBytes(),
+                request.originalName(),
+                request.thumbnail(),
+                userId
+        );
+        PresignUploadResponse response = presignUploadUseCase.execute(command);
+        return ResponseEntity.status(HttpStatus.CREATED).body(response);
+    }
 
     @Operation(summary = "Listar arquivos do comunicado")
     @ApiResponses({

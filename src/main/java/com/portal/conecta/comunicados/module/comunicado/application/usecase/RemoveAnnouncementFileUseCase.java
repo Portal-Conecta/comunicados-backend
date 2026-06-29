@@ -35,7 +35,7 @@ public class RemoveAnnouncementFileUseCase {
             throw new AnnouncementPermissionDeniedException();
         }
 
-        storagePort.delete(file.getS3Key());
+        storagePort.delete(file.getS3Key(), file.getS3Bucket());
         fileRepository.delete(file);
     }
 }
