@@ -3,6 +3,7 @@ package com.portal.conecta.comunicados.module.comunicado.domain.model;
 import java.time.Instant;
 import java.util.UUID;
 
+import com.portal.conecta.comunicados.module.comunicado.domain.enums.AnnouncementFileStatus;
 import com.portal.conecta.comunicados.module.comunicado.domain.enums.AnnouncementFileType;
 
 import jakarta.persistence.*;
@@ -37,12 +38,19 @@ public class AnnouncementFile {
     @Column(name = "s3_bucket", nullable = false)
     private String s3Bucket;
 
+    @Column(name = "processed_s3")
+    private String processedS3Key;
+
     @Column(name = "content_type", nullable = false)
     private String contentType;
 
     @Enumerated(EnumType.STRING)
     @Column(name = "type", nullable = false)
     private AnnouncementFileType type;
+
+    @Enumerated(EnumType.STRING)
+    @Column(name = "file_status", nullable = false)
+    private AnnouncementFileStatus fileStatus;
 
     @Column(name = "size_bytes", nullable = false)
     private Long sizeBytes;
