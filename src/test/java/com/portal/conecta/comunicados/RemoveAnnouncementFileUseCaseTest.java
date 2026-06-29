@@ -89,7 +89,7 @@ class RemoveAnnouncementFileUseCaseTest {
 
         useCase.execute(RemoveAnnouncementFileCommand.of(fileId, ownerId));
 
-        verify(storagePort).delete("s3-key-abc");
+        verify(storagePort).delete("s3-key-abc", "bucket");
         verify(fileRepository).delete(file);
     }
 
@@ -101,7 +101,7 @@ class RemoveAnnouncementFileUseCaseTest {
         assertThatThrownBy(() -> useCase.execute(RemoveAnnouncementFileCommand.of(fileId, ownerId)))
                 .isInstanceOf(AnnouncementFileNotFoundException.class);
 
-        verify(storagePort, never()).delete(any());
+        verify(storagePort, never()).delete(any(), any());
     }
 
     @Test
@@ -113,7 +113,7 @@ class RemoveAnnouncementFileUseCaseTest {
         assertThatThrownBy(() -> useCase.execute(RemoveAnnouncementFileCommand.of(fileId, otherId)))
                 .isInstanceOf(AnnouncementPermissionDeniedException.class);
 
-        verify(storagePort, never()).delete(any());
+        verify(storagePort, never()).delete(any(), any());
         verify(fileRepository, never()).delete(any());
     }
 
