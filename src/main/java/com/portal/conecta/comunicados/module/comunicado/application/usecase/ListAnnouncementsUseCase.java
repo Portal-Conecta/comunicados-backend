@@ -1,6 +1,7 @@
 package com.portal.conecta.comunicados.module.comunicado.application.usecase;
 
 import com.portal.conecta.comunicados.module.comunicado.application.query.ListAnnouncementsQuery;
+import com.portal.conecta.comunicados.module.comunicado.application.query.ListAnnouncementsResult;
 import com.portal.conecta.comunicados.module.comunicado.domain.model.Announcement;
 import com.portal.conecta.comunicados.module.comunicado.domain.port.announcement.AnnouncementRepository;
 import com.portal.conecta.comunicados.module.comunicado.domain.port.hub.HubCoursePort;
@@ -13,6 +14,7 @@ import com.portal.conecta.comunicados.shared.context.RequestContext;
 import com.portal.conecta.comunicados.shared.context.RequestContextProvider;
 import lombok.RequiredArgsConstructor;
 import org.springframework.data.domain.Page;
+import org.springframework.data.domain.Sort;
 import org.springframework.data.jpa.domain.Specification;
 import org.springframework.stereotype.Component;
 import org.springframework.transaction.annotation.Transactional;
@@ -24,6 +26,8 @@ import java.util.UUID;
 @RequiredArgsConstructor
 public class ListAnnouncementsUseCase {
 
+    private static final Sort PINNED_ORDER = Sort.by(Sort.Order.asc("pinnedOrder"));
+
     private final AnnouncementRepository announcementRepository;
     private final RequestContextProvider contextProvider;
     private final AnnouncementPermissionValidator permissionValidator;
@@ -31,10 +35,24 @@ public class ListAnnouncementsUseCase {
     private final HubUserPort hubUserPort;
 
     @Transactional(readOnly = true)
-    public Page<Announcement> execute(ListAnnouncementsQuery query) {
+    public ListAnnouncementsResult execute(ListAnnouncementsQuery query) {
         RequestContext context = contextProvider.getRequestContext();
-        PostFilterRequest filter = query.filter();
+        Specification<Announcement> baseSpec = buildBaseSpecification(context, query.filter());
 
+        List<Announcement> pinned = announcementRepository.findAll(
+                baseSpec.and(AnnouncementSpecifications.isPinned()),
+                PINNED_ORDER
+        );
+
+        Page<Announcement> items = announcementRepository.findAll(
+                baseSpec.and(AnnouncementSpecifications.isNotPinned()),
+                query.toPageRequest()
+        );
+
+        return new ListAnnouncementsResult(pinned, items);
+    }
+
+    private Specification<Announcement> buildBaseSpecification(RequestContext context, PostFilterRequest filter) {
         Specification<Announcement> spec = AnnouncementSpecifications.notRemoved()
                 .and(AnnouncementSpecifications.isPublished())
                 .and(AnnouncementSpecifications.hasOrigin(filter.origin()))
@@ -60,7 +78,7 @@ public class ListAnnouncementsUseCase {
             ));
         }
 
-        return announcementRepository.findAll(spec, query.toPageRequest());
+        return spec;
     }
 
     private List<UUID> classIds(RequestContext context) {
