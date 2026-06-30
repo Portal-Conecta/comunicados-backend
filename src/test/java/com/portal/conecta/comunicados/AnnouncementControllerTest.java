@@ -2,6 +2,7 @@ package com.portal.conecta.comunicados;
 
 import com.portal.conecta.comunicados.module.comunicado.application.usecase.DeleteAnnouncementUseCase;
 import com.portal.conecta.comunicados.module.comunicado.application.usecase.GetAnnouncementByIdUseCase;
+import com.portal.conecta.comunicados.module.comunicado.application.query.ListAnnouncementsResult;
 import com.portal.conecta.comunicados.module.comunicado.application.usecase.ListAnnouncementsUseCase;
 import com.portal.conecta.comunicados.module.comunicado.application.usecase.ListPinnedAnnouncementsUseCase;
 import com.portal.conecta.comunicados.module.comunicado.application.usecase.PublishAnnouncementUseCase;
@@ -108,10 +109,14 @@ class AnnouncementControllerTest {
                 .build();
 
         when(listAnnouncementsUseCase.execute(any()))
-                .thenReturn(new PageImpl<>(List.of(announcement)));
+                .thenReturn(new ListAnnouncementsResult(
+                        List.of(),
+                        new PageImpl<>(List.of(announcement))
+                ));
 
         mockMvc.perform(get("/api/posts"))
                 .andExpect(status().isOk())
+                .andExpect(jsonPath("$.pinned").isArray())
                 .andExpect(jsonPath("$.items").isArray())
                 .andExpect(jsonPath("$.items[0].title").value("Comunicado"));
     }
@@ -160,10 +165,11 @@ class AnnouncementControllerTest {
         stubContext();
 
         when(listAnnouncementsUseCase.execute(any()))
-                .thenReturn(new PageImpl<>(List.of()));
+                .thenReturn(new ListAnnouncementsResult(List.of(), new PageImpl<>(List.of())));
 
         mockMvc.perform(get("/api/posts").param("search", "retirada"))
                 .andExpect(status().isOk())
+                .andExpect(jsonPath("$.pinned").isArray())
                 .andExpect(jsonPath("$.items").isArray());
     }
 
@@ -172,11 +178,42 @@ class AnnouncementControllerTest {
         stubContext();
 
         when(listAnnouncementsUseCase.execute(any()))
-                .thenReturn(new PageImpl<>(List.of()));
+                .thenReturn(new ListAnnouncementsResult(List.of(), new PageImpl<>(List.of())));
 
         mockMvc.perform(get("/api/posts").param("tagId", UUID.randomUUID().toString()))
                 .andExpect(status().isOk())
+                .andExpect(jsonPath("$.pinned").isArray())
                 .andExpect(jsonPath("$.items").isArray());
+    }
+
+    @Test
+    void shouldReturnPinnedAndItems_WhenListing() throws Exception {
+        stubContext();
+
+        Announcement pinned = Announcement.builder()
+                .id(UUID.randomUUID())
+                .title("Fixado")
+                .pinned(true)
+                .pinnedOrder((short) 1)
+                .build();
+        Announcement feedItem = Announcement.builder()
+                .id(UUID.randomUUID())
+                .title("Feed")
+                .pinned(false)
+                .build();
+
+        when(listAnnouncementsUseCase.execute(any()))
+                .thenReturn(new ListAnnouncementsResult(
+                        List.of(pinned),
+                        new PageImpl<>(List.of(feedItem))
+                ));
+
+        mockMvc.perform(get("/api/posts"))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.pinned[0].title").value("Fixado"))
+                .andExpect(jsonPath("$.pinned[0].pinned").value(true))
+                .andExpect(jsonPath("$.items[0].title").value("Feed"))
+                .andExpect(jsonPath("$.items[0].pinned").value(false));
     }
 
     @Test

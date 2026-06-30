@@ -114,17 +114,17 @@ class CoreEntityTagConsumerTest {
     }
 
     @Test
-    void shouldUpsertTurmaCreatedEventAsClassTag() {
+    void shouldUpsertClassCreatedEventAsClassTag() {
         CoreEntityEventEnvelope envelope = envelope(
-                "evt-turma-created",
-                "turma.created",
-                "turma",
-                "turma-78",
+                "evt-class-created",
+                "class.created",
+                "class",
+                "class-78",
                 null,
                 "MIDS-78"
         );
 
-        when(processedEventRepository.existsById("evt-turma-created")).thenReturn(false);
+        when(processedEventRepository.existsById("evt-class-created")).thenReturn(false);
 
         consumer.handle(envelope);
 
@@ -136,7 +136,7 @@ class CoreEntityTagConsumerTest {
         verify(processedEventRepository).save(any(ProcessedEvent.class));
 
         UpsertTagFromCoreCommand command = commandCaptor.getValue();
-        assertThat(command.hubEntityId()).isEqualTo("turma-78");
+        assertThat(command.hubEntityId()).isEqualTo("class-78");
         assertThat(command.entityType()).isEqualTo(TagEntityType.CLASS);
         assertThat(command.name()).isEqualTo("MIDS-78");
         assertThat(command.active()).isTrue();
@@ -170,17 +170,17 @@ class CoreEntityTagConsumerTest {
     }
 
     @Test
-    void shouldDeactivateTurmaDeletedEventAsClassTag() {
+    void shouldDeactivateClassDeletedEventAsClassTag() {
         CoreEntityEventEnvelope envelope = envelope(
-                "evt-turma-deleted",
-                "turma.deleted",
-                "turma",
-                "turma-78",
+                "evt-class-deleted",
+                "class.deleted",
+                "class",
+                "class-78",
                 null,
                 "MIDS-78"
         );
 
-        when(processedEventRepository.existsById("evt-turma-deleted")).thenReturn(false);
+        when(processedEventRepository.existsById("evt-class-deleted")).thenReturn(false);
 
         consumer.handle(envelope);
 
@@ -192,12 +192,12 @@ class CoreEntityTagConsumerTest {
         verify(processedEventRepository).save(any(ProcessedEvent.class));
 
         DeactivateTagCommand command = commandCaptor.getValue();
-        assertThat(command.hubEntityId()).isEqualTo("turma-78");
+        assertThat(command.hubEntityId()).isEqualTo("class-78");
         assertThat(command.entityType()).isEqualTo(TagEntityType.CLASS);
     }
 
     @Test
-    void shouldKeepTemporaryCompatibilityWithDeactivatedSuffix() {
+    void shouldRejectDeactivatedSuffixAsUnsupportedEvent() {
         CoreEntityEventEnvelope envelope = envelope(
                 "evt-course-deactivated",
                 "course.deactivated",
@@ -209,11 +209,13 @@ class CoreEntityTagConsumerTest {
 
         when(processedEventRepository.existsById("evt-course-deactivated")).thenReturn(false);
 
-        consumer.handle(envelope);
+        assertThatThrownBy(() -> consumer.handle(envelope))
+                .isInstanceOf(InvalidCoreEntityEventException.class)
+                .hasMessageContaining("eventType");
 
-        verify(deactivateTagUseCase).execute(any(DeactivateTagCommand.class));
         verify(upsertTagFromCoreUseCase, never()).execute(any());
-        verify(processedEventRepository).save(any(ProcessedEvent.class));
+        verify(deactivateTagUseCase, never()).execute(any());
+        verify(processedEventRepository, never()).save(any());
     }
 
     @Test
@@ -335,21 +337,21 @@ class CoreEntityTagConsumerTest {
     }
 
     @Test
-    void shouldConsumeOfficialTurmaCreatedJsonExample() throws Exception {
+    void shouldConsumeOfficialClassCreatedJsonExample() throws Exception {
         CoreEntityEventEnvelope envelope = objectMapper().readValue("""
                 {
-                  "eventId": "evt-01JYTAGTURMACREATED",
-                  "correlationId": "corr-01JYTAGTURMACREATED",
+                  "eventId": "evt-01JYTAGCLASSCREATED",
+                  "correlationId": "corr-01JYTAGCLASSCREATED",
                   "source": "core-api",
-                  "eventType": "turma.created",
+                  "eventType": "class.created",
                   "occurredAt": "2026-06-19T18:30:00Z",
-                  "entityType": "turma",
-                  "entityId": "turma-78",
+                  "entityType": "class",
+                  "entityId": "class-78",
                   "name": "MIDS-78"
                 }
                 """, CoreEntityEventEnvelope.class);
 
-        when(processedEventRepository.existsById("evt-01JYTAGTURMACREATED")).thenReturn(false);
+        when(processedEventRepository.existsById("evt-01JYTAGCLASSCREATED")).thenReturn(false);
 
         consumer.handle(envelope);
 
@@ -360,25 +362,25 @@ class CoreEntityTagConsumerTest {
         verify(processedEventRepository).save(any(ProcessedEvent.class));
 
         assertThat(commandCaptor.getValue().entityType()).isEqualTo(TagEntityType.CLASS);
-        assertThat(commandCaptor.getValue().hubEntityId()).isEqualTo("turma-78");
+        assertThat(commandCaptor.getValue().hubEntityId()).isEqualTo("class-78");
     }
 
     @Test
-    void shouldConsumeOfficialTurmaDeletedJsonExample() throws Exception {
+    void shouldConsumeOfficialClassDeletedJsonExample() throws Exception {
         CoreEntityEventEnvelope envelope = objectMapper().readValue("""
                 {
-                  "eventId": "evt-01JYTAGTURMADELETED",
-                  "correlationId": "corr-01JYTAGTURMADELETED",
+                  "eventId": "evt-01JYTAGCLASSDELETED",
+                  "correlationId": "corr-01JYTAGCLASSDELETED",
                   "source": "core-api",
-                  "eventType": "turma.deleted",
+                  "eventType": "class.deleted",
                   "occurredAt": "2026-06-19T18:40:00Z",
-                  "entityType": "turma",
-                  "entityId": "turma-78",
+                  "entityType": "class",
+                  "entityId": "class-78",
                   "name": "MIDS-78"
                 }
                 """, CoreEntityEventEnvelope.class);
 
-        when(processedEventRepository.existsById("evt-01JYTAGTURMADELETED")).thenReturn(false);
+        when(processedEventRepository.existsById("evt-01JYTAGCLASSDELETED")).thenReturn(false);
 
         consumer.handle(envelope);
 
@@ -389,7 +391,7 @@ class CoreEntityTagConsumerTest {
         verify(processedEventRepository).save(any(ProcessedEvent.class));
 
         assertThat(commandCaptor.getValue().entityType()).isEqualTo(TagEntityType.CLASS);
-        assertThat(commandCaptor.getValue().hubEntityId()).isEqualTo("turma-78");
+        assertThat(commandCaptor.getValue().hubEntityId()).isEqualTo("class-78");
     }
 
     private CoreEntityEventEnvelope envelope(

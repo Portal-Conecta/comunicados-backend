@@ -29,6 +29,7 @@ import com.portal.conecta.comunicados.module.comunicado.application.usecase.List
 import com.portal.conecta.comunicados.module.comunicado.application.usecase.PresignUploadAnnouncementFileUseCase;
 import com.portal.conecta.comunicados.module.comunicado.application.usecase.RemoveAnnouncementFileUseCase;
 import com.portal.conecta.comunicados.module.comunicado.application.usecase.SetAnnouncementThumbnailUseCase;
+import com.portal.conecta.comunicados.module.comunicado.application.dto.AnnouncementFileView;
 import com.portal.conecta.comunicados.module.comunicado.domain.model.AnnouncementFile;
 import com.portal.conecta.comunicados.module.comunicado.presentation.dto.request.PresignUploadRequest;
 import com.portal.conecta.comunicados.module.comunicado.presentation.dto.response.AnnouncementFileResponse;
@@ -88,8 +89,8 @@ public class PostImageController {
     })
     @GetMapping
     public ResponseEntity<List<AnnouncementFileResponse>> list(@PathVariable UUID postId) {
-        List<AnnouncementFile> files = listFilesUseCase.execute(postId);
-        return ResponseEntity.ok(AnnouncementFileResponse.fromEntities(files));
+        List<AnnouncementFileView> views = listFilesUseCase.execute(postId);
+        return ResponseEntity.ok(AnnouncementFileResponse.fromViews(views));
     }
 
     @Operation(summary = "Anexar arquivo ao comunicado")
