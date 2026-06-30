@@ -1,6 +1,7 @@
 package com.portal.conecta.comunicados.module.comunicado.application.usecase;
 
 import java.time.Instant;
+import java.util.List;
 
 import org.springframework.stereotype.Component;
 import org.springframework.transaction.annotation.Transactional;
