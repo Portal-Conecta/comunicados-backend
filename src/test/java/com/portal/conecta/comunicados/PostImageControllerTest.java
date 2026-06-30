@@ -24,11 +24,13 @@ import org.springframework.mock.web.MockMultipartFile;
 import org.springframework.test.context.bean.override.mockito.MockitoBean;
 import org.springframework.test.web.servlet.MockMvc;
 
+import com.portal.conecta.comunicados.module.comunicado.application.dto.AnnouncementFileView;
 import com.portal.conecta.comunicados.module.comunicado.application.usecase.AttachAnnouncementFileUseCase;
 import com.portal.conecta.comunicados.module.comunicado.application.usecase.ListAnnouncementFilesUseCase;
 import com.portal.conecta.comunicados.module.comunicado.application.usecase.PresignUploadAnnouncementFileUseCase;
 import com.portal.conecta.comunicados.module.comunicado.application.usecase.RemoveAnnouncementFileUseCase;
 import com.portal.conecta.comunicados.module.comunicado.application.usecase.SetAnnouncementThumbnailUseCase;
+import com.portal.conecta.comunicados.module.comunicado.domain.enums.AnnouncementFileStatus;
 import com.portal.conecta.comunicados.module.comunicado.domain.enums.AnnouncementFileType;
 import com.portal.conecta.comunicados.module.comunicado.domain.exception.AnnouncementFileNotFoundException;
 import com.portal.conecta.comunicados.module.comunicado.domain.exception.AnnouncementFileLimitExceededException;
@@ -134,11 +136,30 @@ class PostImageControllerTest {
     @Test
     void shouldReturn200WhenListingFiles() throws Exception {
         stubContext();
-        when(listFilesUseCase.execute(POST_ID)).thenReturn(List.of(stubFile()));
+        AnnouncementFile file = stubFile();
+        file.setFileStatus(AnnouncementFileStatus.READY);
+        when(listFilesUseCase.execute(POST_ID))
+                .thenReturn(List.of(new AnnouncementFileView(file, "https://s3.example.com/signed")));
 
         mockMvc.perform(get("/api/posts/{postId}/images", POST_ID))
                 .andExpect(status().isOk())
-                .andExpect(jsonPath("$[0].originalName").value("foto.jpg"));
+                .andExpect(jsonPath("$[0].originalName").value("foto.jpg"))
+                .andExpect(jsonPath("$[0].fileStatus").value("READY"))
+                .andExpect(jsonPath("$[0].displayUrl").value("https://s3.example.com/signed"));
+    }
+
+    @Test
+    void shouldReturnNullDisplayUrlForPendingFile() throws Exception {
+        stubContext();
+        AnnouncementFile file = stubFile();
+        file.setFileStatus(AnnouncementFileStatus.PENDING);
+        when(listFilesUseCase.execute(POST_ID))
+                .thenReturn(List.of(new AnnouncementFileView(file, null)));
+
+        mockMvc.perform(get("/api/posts/{postId}/images", POST_ID))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$[0].fileStatus").value("PENDING"))
+                .andExpect(jsonPath("$[0].displayUrl").doesNotExist());
     }
 
     @Test
