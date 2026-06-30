@@ -6,6 +6,7 @@ import java.util.Map;
 import java.util.UUID;
 
 import org.springframework.amqp.rabbit.core.RabbitTemplate;
+import org.springframework.boot.autoconfigure.condition.ConditionalOnProperty;
 import org.springframework.stereotype.Component;
 
 import com.portal.conecta.comunicados.module.comunicado.domain.enums.AnnouncementDestinationType;
@@ -21,6 +22,7 @@ import lombok.extern.slf4j.Slf4j;
 
 @Slf4j
 @Component
+@ConditionalOnProperty(prefix = "app.messaging", name = "enabled", havingValue = "true")
 @RequiredArgsConstructor
 public class AnnouncementNotificationPublisherAdapter implements AnnouncementNotificationPublisher {
 
