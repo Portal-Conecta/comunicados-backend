@@ -66,14 +66,14 @@ class TagRabbitMqIntegrationTest {
     }
 
     @Test
-    void turmaCreatedEvent_shouldPersistClassTag() {
-        consumer.handle(envelope("evt-turma-int-01", "turma.created", "turma", "turma-78", null, "MIDS-78"));
+    void classCreatedEvent_shouldPersistClassTag() {
+        consumer.handle(envelope("evt-class-int-01", "class.created", "class", "class-78", null, "MIDS-78"));
 
-        Optional<Tag> tag = tagRepository.findByEntityTypeAndHubEntityId(TagEntityType.CLASS, "turma-78");
+        Optional<Tag> tag = tagRepository.findByEntityTypeAndHubEntityId(TagEntityType.CLASS, "class-78");
         assertThat(tag).isPresent();
         assertThat(tag.get().getName()).isEqualTo("MIDS-78");
         assertThat(tag.get().isActive()).isTrue();
-        assertThat(processedEventRepository.existsById("evt-turma-int-01")).isTrue();
+        assertThat(processedEventRepository.existsById("evt-class-int-01")).isTrue();
     }
 
     @Test

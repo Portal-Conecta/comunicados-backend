@@ -2,19 +2,27 @@ package com.portal.conecta.comunicados.module.comunicado.infrastructure.storage;
 
 import java.time.Duration;
 import java.util.Map;
+import java.util.Optional;
 import java.util.Set;
 import java.util.UUID;
+
+import software.amazon.awssdk.services.s3.model.GetObjectRequest;
+import software.amazon.awssdk.services.s3.presigner.model.GetObjectPresignRequest;
+import software.amazon.awssdk.services.s3.presigner.model.PresignedGetObjectRequest;
 
 import org.springframework.boot.autoconfigure.condition.ConditionalOnProperty;
 import org.springframework.stereotype.Component;
 
 import com.portal.conecta.comunicados.module.comunicado.domain.port.presign.PresignedUpload;
+import com.portal.conecta.comunicados.module.comunicado.domain.port.storage.StorageObjectMetadata;
 import com.portal.conecta.comunicados.module.comunicado.domain.port.storage.StoragePort;
 import com.portal.conecta.comunicados.module.comunicado.domain.port.storage.StorageUploadResult;
 
 import software.amazon.awssdk.core.sync.RequestBody;
 import software.amazon.awssdk.regions.Region;
 import software.amazon.awssdk.services.s3.S3Client;
+import software.amazon.awssdk.services.s3.model.HeadObjectResponse;
+import software.amazon.awssdk.services.s3.model.NoSuchKeyException;
 import software.amazon.awssdk.services.s3.model.PutObjectRequest;
 import software.amazon.awssdk.services.s3.presigner.S3Presigner;
 import software.amazon.awssdk.services.s3.presigner.model.PresignedPutObjectRequest;
@@ -87,9 +95,40 @@ public class S3StorageAdapter implements StoragePort {
         return new PresignedUpload(presigned.url().toString(), Map.of(), s3Key, bucket);
     }
 
+    @Override
+    public String presignDownload(String bucket, String key, Duration expiry) {
+        return presigner.presignGetObject(
+                GetObjectPresignRequest.builder()
+                        .signatureDuration(expiry)
+                        .getObjectRequest(GetObjectRequest.builder()
+                                .bucket(bucket)
+                                .key(key)
+                                .build())
+                        .build()
+        ).url().toString();
+    }
+
+    @Override
+    public Optional<StorageObjectMetadata> headObject(String bucket, String key) {
+        try {
+            HeadObjectResponse response = s3Client.headObject(r -> r.bucket(bucket).key(key));
+            Map<String, String> meta = response.metadata();
+            Integer width = parseIntOrNull(meta.get("width"));
+            Integer height = parseIntOrNull(meta.get("height"));
+            return Optional.of(new StorageObjectMetadata(response.contentLength(), width, height));
+        } catch (NoSuchKeyException e) {
+            return Optional.empty();
+        }
+    }
+
     private String resolveBucket(String contentType) {
         return IMAGE_BUCKET_TYPES.contains(contentType)
                 ? properties.imagesBucket()
                 : properties.filesBucket();
+    }
+
+    private Integer parseIntOrNull(String value) {
+        if (value == null || value.isBlank()) return null;
+        try { return Integer.parseInt(value); } catch (NumberFormatException e) { return null; }
     }
 }

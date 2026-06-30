@@ -1,12 +1,15 @@
 package com.portal.conecta.comunicados.module.comunicado.infrastructure.storage;
 
+import java.time.Duration;
 import java.util.Map;
+import java.util.Optional;
 import java.util.UUID;
 
 import org.springframework.boot.autoconfigure.condition.ConditionalOnProperty;
 import org.springframework.stereotype.Component;
 
 import com.portal.conecta.comunicados.module.comunicado.domain.port.presign.PresignedUpload;
+import com.portal.conecta.comunicados.module.comunicado.domain.port.storage.StorageObjectMetadata;
 import com.portal.conecta.comunicados.module.comunicado.domain.port.storage.StoragePort;
 import com.portal.conecta.comunicados.module.comunicado.domain.port.storage.StorageUploadResult;
 
@@ -37,5 +40,17 @@ public class LocalStorageAdapter implements StoragePort {
         log.info("LocalStorageAdapter: presignUpload simulado — key={}, contentType={}, maxBytes={}",
                 s3Key, contentType, maxBytes);
         return new PresignedUpload("http://localhost/mock-presign/" + s3Key, Map.of(), s3Key, LOCAL_BUCKET);
+    }
+
+    @Override
+    public Optional<StorageObjectMetadata> headObject(String bucket, String key) {
+        log.info("LocalStorageAdapter: headObject simulado — bucket={}, key={}", bucket, key);
+        return Optional.empty();
+    }
+
+    @Override
+    public String presignDownload(String bucket, String key, Duration expiry) {
+        log.info("LocalStorageAdapter: presignDownload simulado — bucket={}, key={}", bucket, key);
+        return "http://localhost/mock-download/" + key;
     }
 }
