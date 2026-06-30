@@ -3,7 +3,10 @@ package com.portal.conecta.comunicados;
 import com.portal.conecta.comunicados.module.comunicado.application.usecase.AnnouncementPublisher;
 import com.portal.conecta.comunicados.module.comunicado.domain.enums.AnnouncementHistoryAction;
 import com.portal.conecta.comunicados.module.comunicado.domain.model.Announcement;
+import com.portal.conecta.comunicados.module.comunicado.domain.model.AnnouncementDestination;
 import com.portal.conecta.comunicados.module.comunicado.domain.model.AnnouncementHistory;
+import com.portal.conecta.comunicados.module.comunicado.domain.port.AnnouncementNotificationPublisher;
+import com.portal.conecta.comunicados.module.comunicado.domain.port.announcement.AnnouncementDestinationRepository;
 import com.portal.conecta.comunicados.module.comunicado.domain.port.announcement.AnnouncementHistoryRepository;
 import com.portal.conecta.comunicados.module.comunicado.domain.port.announcement.AnnouncementRepository;
 import org.junit.jupiter.api.Test;
@@ -14,6 +17,7 @@ import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
 
 import java.time.Instant;
+import java.util.List;
 import java.util.UUID;
 
 import static org.assertj.core.api.Assertions.assertThat;
@@ -31,6 +35,12 @@ class AnnouncementPublisherTest {
 
     @Mock
     private AnnouncementHistoryRepository announcementHistoryRepository;
+
+    @Mock
+    private AnnouncementDestinationRepository announcementDestinationRepository;
+
+    @Mock
+    private AnnouncementNotificationPublisher notificationPublisher;
 
     @InjectMocks
     private AnnouncementPublisher publisher;
@@ -52,6 +62,7 @@ class AnnouncementPublisherTest {
 
         when(announcementRepository.markScheduledAsPublished(eq(id), eq(now))).thenReturn(1);
         when(announcementRepository.getReferenceById(id)).thenReturn(announcement);
+        when(announcementDestinationRepository.findByAnnouncementId(id)).thenReturn(List.of());
 
         boolean result = publisher.publish(announcement, now);
 
@@ -65,6 +76,9 @@ class AnnouncementPublisherTest {
         assertThat(history.getUserId()).isEqualTo(author);
         assertThat(history.getCreatedAt()).isEqualTo(now);
         assertThat(history.getSnapshot()).contains("Aviso de prova");
+
+        verify(announcementDestinationRepository).findByAnnouncementId(id);
+        verify(notificationPublisher).publish(eq(announcement), any(List.class));
     }
 
     @Test
@@ -80,5 +94,7 @@ class AnnouncementPublisherTest {
         assertThat(result).isFalse();
         verify(announcementHistoryRepository, never()).save(any());
         verify(announcementRepository, never()).getReferenceById(any());
+        verify(announcementDestinationRepository, never()).findByAnnouncementId(any());
+        verify(notificationPublisher, never()).publish(any(), any());
     }
 }
