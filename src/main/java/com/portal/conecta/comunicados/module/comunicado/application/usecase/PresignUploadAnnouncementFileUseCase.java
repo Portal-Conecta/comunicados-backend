@@ -1,6 +1,7 @@
 package com.portal.conecta.comunicados.module.comunicado.application.usecase;
 
 import java.time.Instant;
+import java.util.Map;
 import java.util.UUID;
 
 import org.springframework.stereotype.Service;
@@ -34,6 +35,17 @@ public class PresignUploadAnnouncementFileUseCase {
 
     private static final String S3_KEY_PREFIX = "comunicados/";
 
+    private static final Map<String, String> CONTENT_TYPE_TO_EXT = Map.ofEntries(
+            Map.entry("image/jpeg",       "jpg"),
+            Map.entry("image/png",        "png"),
+            Map.entry("image/gif",        "gif"),
+            Map.entry("image/webp",       "webp"),
+            Map.entry("image/svg+xml",    "svg"),
+            Map.entry("application/pdf",  "pdf"),
+            Map.entry("video/mp4",        "mp4"),
+            Map.entry("video/webm",       "webm")
+    );
+
     private final AnnouncementRepository announcementRepository;
     private final AnnouncementFileRepository fileRepository;
     private final RequestContextProvider contextProvider;
@@ -65,11 +77,12 @@ public class PresignUploadAnnouncementFileUseCase {
             throw new AnnouncementFileTooLargeException();
         }
 
-        // Pré-gera o UUID e usa como ID da entidade E sufixo da chave S3.
-        // O Lambda extrai o fileId da chave raw (comunicados/{fileId}) para montar
-        // a chave de saída determinística e para o backend identificar o registro.
+        // Pré-gera o UUID e usa como ID da entidade E parte da chave S3.
+        // Chave no formato esperado pelo Lambda: {domain}/{ownerId}/raw/{fileId}.{ext}
+        // Lambda deriva a chave processada como: {domain}/{ownerId}/processed/{fileId}
         UUID fileId = UUID.randomUUID();
-        String s3Key = S3_KEY_PREFIX + fileId;
+        String ext = CONTENT_TYPE_TO_EXT.getOrDefault(command.contentType(), "bin");
+        String s3Key = S3_KEY_PREFIX + command.uploadedByUserId() + "/raw/" + fileId + "." + ext;
 
         PresignedUpload presignedUpload = storagePort.presignUpload(s3Key, command.contentType(), maxBytes);
 
