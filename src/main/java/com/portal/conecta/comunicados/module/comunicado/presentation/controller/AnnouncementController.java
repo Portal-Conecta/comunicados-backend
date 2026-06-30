@@ -26,6 +26,7 @@ import com.portal.conecta.comunicados.module.comunicado.application.command.Upda
 import com.portal.conecta.comunicados.module.comunicado.application.query.GetAnnouncementByIdQuery;
 import com.portal.conecta.comunicados.module.comunicado.application.query.ListAnnouncementHistoryQuery;
 import com.portal.conecta.comunicados.module.comunicado.application.query.ListAnnouncementsQuery;
+import com.portal.conecta.comunicados.module.comunicado.application.query.ListAnnouncementsResult;
 import com.portal.conecta.comunicados.module.comunicado.application.usecase.DeleteAnnouncementUseCase;
 import com.portal.conecta.comunicados.module.comunicado.application.usecase.GetAnnouncementByIdUseCase;
 import com.portal.conecta.comunicados.module.comunicado.application.usecase.ListAnnouncementHistoryUseCase;
@@ -85,11 +86,13 @@ public class AnnouncementController {
 
     @Operation(
             summary = "Listar comunicados",
-            description = "Lista paginada de comunicados visíveis ao perfil autenticado, em ordem "
-                    + "cronológica decrescente. Comunicados removidos nunca aparecem. Aceita filtros "
-                    + "por origem (WEG/SENAI/BOTH), turma, intervalo de publicação, tag (`tagId` ou "
-                    + "`tagIds` com semântica OR) e termo de busca textual (`search`) em título, "
-                    + "descrição, tags e destinatários. Tag inexistente retorna lista vazia."
+            description = "Retorna comunicados visíveis ao perfil em dois arrays: `pinned` (fixados, "
+                    + "ordenados por pinnedOrder ASC, sem paginação) e `items` (não fixados, paginados "
+                    + "por publishedAt DESC). A paginação (`page`, `size`, `totalElements`, "
+                    + "`totalPages`) refere-se apenas a `items`. Comunicados removidos nunca aparecem. "
+                    + "Aceita filtros por origem (WEG/SENAI/BOTH), turma, intervalo de publicação, tag "
+                    + "(`tagId` ou `tagIds` com semântica OR) e termo de busca textual (`search`) — "
+                    + "aplicados a ambos os arrays. Tag inexistente retorna listas vazias."
     )
     @ApiResponses({
             @ApiResponse(responseCode = "200", description = "Lista retornada"),
@@ -101,9 +104,9 @@ public class AnnouncementController {
         UUID userId = contextProvider.getRequestContext().userId();
 
         ListAnnouncementsQuery query = new ListAnnouncementsQuery(filter, userId);
-        Page<Announcement> page = listAnnouncementsUseCase.execute(query);
+        ListAnnouncementsResult result = listAnnouncementsUseCase.execute(query);
 
-        return ResponseEntity.ok(ListAnnouncementsResponse.fromPage(page));
+        return ResponseEntity.ok(ListAnnouncementsResponse.fromPinnedAndPage(result.pinned(), result.items()));
     }
 
     @Operation(summary = "Buscar comunicado por ID")

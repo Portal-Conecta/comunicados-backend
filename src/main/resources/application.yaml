@@ -30,12 +30,19 @@ app:
   messaging:
     enabled: ${MESSAGING_ENABLED:false}
     core:
-      exchange: portal.core.events
       queue: comunicados.core-entities
       dlq: comunicados.core-entities.dlq
-      routing-keys:
-        - course.#
-        - turma.#
+      class-exchange:
+        name: class-events.exchange
+        routing-keys:
+          - class.created
+          - class.deleted
+      course-exchange:
+        name: course-events.exchange
+        routing-keys:
+          - course.created
+          - course.updated
+          - course.deleted
     notification:
       exchange: notifications.exchange
       routing-key: notification.requested

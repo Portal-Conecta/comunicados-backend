@@ -11,12 +11,17 @@ public record MessagingProperties(
 ) {
 
     public record CoreMessagingProperties(
-            String exchange,
             String queue,
             String dlq,
+            ExchangeProperties classExchange,
+            ExchangeProperties courseExchange
+    ) {}
+
+    public record ExchangeProperties(
+            String name,
             List<String> routingKeys
     ) {
-        public CoreMessagingProperties {
+        public ExchangeProperties {
             if (routingKeys == null) {
                 routingKeys = List.of();
             }

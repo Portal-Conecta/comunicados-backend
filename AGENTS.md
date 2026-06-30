@@ -91,7 +91,7 @@ command.toEntity(existing, now);
 
 // Entity → Response (no controller)
 TagResponse.fromEntity(tag);
-ListAnnouncementsResponse.fromPage(page);
+ListAnnouncementsResponse.fromPinnedAndPage(pinned, page);
 ```
 
 **Consumer RabbitMQ:** fino — `Envelope → Command.from(envelope) → UseCase.execute(command)`. Sem lógica de negócio no `@RabbitListener`.
@@ -289,7 +289,7 @@ Chave natural: `(entity_type, hub_entity_id)`. Campo `active` para desativação
 
 | Método | Rota | Status |
 |--------|------|--------|
-| GET | `/api/posts` | Implementado (listagem paginada + filtros + busca textual) |
+| GET | `/api/posts` | Implementado (listagem com `pinned` + `items` paginado, filtros e busca textual) |
 | GET | `/api/posts/{id}` | Implementado (detalhe com regra de escopo) |
 | GET | `/api/posts/{id}/history` | Implementado (histórico paginado do comunicado) |
 | PUT | `/api/posts/{id}` | Implementado (atualização parcial — campos ausentes/`destinations` omitido são preservados) |
@@ -301,7 +301,7 @@ Chave natural: `(entity_type, hub_entity_id)`. Campo `active` para desativação
 | PATCH | `/api/posts/{id}/unpin` | Implementado (desafixa comunicado) |
 | PATCH | `/api/posts/{id}` | **Removido** (#137 won't-do) — edição parcial é coberta pelo `PUT /api/posts/{id}` |
 | PATCH | `/api/posts/{id}/cancel-schedule` | **Stub** — cancelamento de agendamento ainda não implementado |
-| GET | `/api/posts/pinned` | **Stub** — listagem de fixados ainda não implementada |
+| GET | `/api/posts/pinned` | Implementado (redundante para o mural — preferir `pinned` em `GET /api/posts`) |
 | POST | `/api/posts` | **Removido** — retorna 405; usar `POST /publish` ou `POST /schedule` |
 
 ### Imagens e arquivos (`PostImageController` — `/api/posts/{postId}/images`)

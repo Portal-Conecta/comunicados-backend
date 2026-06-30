@@ -72,20 +72,20 @@ class TagAutoLinkFlowTest {
     }
 
     @Test
-    void turmaCreatedEvent_thenPublishToClassDestination_shouldAutoLinkAnnouncementTag() {
-        UUID turmaId = UUID.randomUUID();
+    void classCreatedEvent_thenPublishToClassDestination_shouldAutoLinkAnnouncementTag() {
+        UUID classId = UUID.randomUUID();
 
-        // Passo 1: consumir evento turma.created → cria tag CLASS com hubEntityId = turmaId
-        consumer.handle(turmaEnvelope("evt-flow-int-01", turmaId.toString(), "MIDS-78"));
-        Tag classTag = tagRepository.findByEntityTypeAndHubEntityId(TagEntityType.CLASS, turmaId.toString())
+        // Passo 1: consumir evento class.created → cria tag CLASS com hubEntityId = classId
+        consumer.handle(classEnvelope("evt-flow-int-01", classId.toString(), "MIDS-78"));
+        Tag classTag = tagRepository.findByEntityTypeAndHubEntityId(TagEntityType.CLASS, classId.toString())
                 .orElseThrow(() -> new AssertionError("Tag CLASS não foi criada pelo evento"));
 
         // Passo 2: salvar comunicado publicado
         Announcement announcement = announcementRepository.save(publishedAnnouncement());
 
-        // Passo 3: auto-vincular via destino CLASS apontando para turmaId
+        // Passo 3: auto-vincular via destino CLASS apontando para classId
         autoLinkTagsByDestinationUseCase.execute(announcement, List.of(
-                new TagLinkDestinationCommand(AnnouncementDestinationType.CLASS, turmaId)
+                new TagLinkDestinationCommand(AnnouncementDestinationType.CLASS, classId)
         ));
 
         // Passo 4: verificar que announcement_tag foi criado
@@ -96,18 +96,18 @@ class TagAutoLinkFlowTest {
 
     @Test
     void listAnnouncements_filteredByTagId_afterAutoLink_shouldReturnOnlyLinkedAnnouncement() {
-        UUID turmaId = UUID.randomUUID();
+        UUID classId = UUID.randomUUID();
 
         // Setup: criar tag via evento e vincular a um comunicado
-        consumer.handle(turmaEnvelope("evt-filter-int-01", turmaId.toString(), "MIDS-78"));
-        Tag classTag = tagRepository.findByEntityTypeAndHubEntityId(TagEntityType.CLASS, turmaId.toString())
+        consumer.handle(classEnvelope("evt-filter-int-01", classId.toString(), "MIDS-78"));
+        Tag classTag = tagRepository.findByEntityTypeAndHubEntityId(TagEntityType.CLASS, classId.toString())
                 .orElseThrow();
 
         Announcement linked = announcementRepository.save(publishedAnnouncement());
         Announcement unlinked = announcementRepository.save(publishedAnnouncement());
 
         autoLinkTagsByDestinationUseCase.execute(linked, List.of(
-                new TagLinkDestinationCommand(AnnouncementDestinationType.CLASS, turmaId)
+                new TagLinkDestinationCommand(AnnouncementDestinationType.CLASS, classId)
         ));
 
         // Filtrar por tagId (equivalente a GET /api/posts?tagId={classTag.id})
@@ -124,10 +124,10 @@ class TagAutoLinkFlowTest {
         assertThat(results.getContent()).noneMatch(a -> a.getId().equals(unlinked.getId()));
     }
 
-    private CoreEntityEventEnvelope turmaEnvelope(String eventId, String entityId, String name) {
+    private CoreEntityEventEnvelope classEnvelope(String eventId, String entityId, String name) {
         return new CoreEntityEventEnvelope(
-                eventId, "corr-" + eventId, "core-api", "turma.created",
-                Instant.parse("2026-06-19T18:00:00Z"), "turma", entityId, null, name
+                eventId, "corr-" + eventId, "core-api", "class.created",
+                Instant.parse("2026-06-19T18:00:00Z"), "class", entityId, null, name
         );
     }
 
