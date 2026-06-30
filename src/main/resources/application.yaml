@@ -36,6 +36,9 @@ app:
       routing-keys:
         - course.#
         - turma.#
+    notification:
+      exchange: notifications.exchange
+      routing-key: notification.requested
 
 management:
   endpoints:
