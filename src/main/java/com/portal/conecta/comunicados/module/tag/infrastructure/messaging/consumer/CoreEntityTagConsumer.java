@@ -29,14 +29,12 @@ public class CoreEntityTagConsumer {
     private static final Set<String> UPSERT_EVENTS = Set.of(
             "course.created",
             "course.updated",
-            "turma.created"
+            "class.created"
     );
 
     private static final Set<String> DEACTIVATION_EVENTS = Set.of(
             "course.deleted",
-            "turma.deleted",
-            "course.deactivated",
-            "turma.deactivated"
+            "class.deleted"
     );
 
     private final UpsertTagFromCoreUseCase upsertTagFromCoreUseCase;
@@ -121,7 +119,7 @@ public class CoreEntityTagConsumer {
     }
 
     private boolean isDeactivation(String eventType) {
-        return DEACTIVATION_EVENTS.contains(eventType) || eventType.endsWith(".deactivated");
+        return DEACTIVATION_EVENTS.contains(eventType);
     }
 
     private boolean isBlank(String value) {
