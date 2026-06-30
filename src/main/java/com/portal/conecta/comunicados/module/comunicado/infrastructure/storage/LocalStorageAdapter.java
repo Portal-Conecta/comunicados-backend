@@ -1,5 +1,6 @@
 package com.portal.conecta.comunicados.module.comunicado.infrastructure.storage;
 
+import java.time.Duration;
 import java.util.Map;
 import java.util.Optional;
 import java.util.UUID;
@@ -45,5 +46,11 @@ public class LocalStorageAdapter implements StoragePort {
     public Optional<StorageObjectMetadata> headObject(String bucket, String key) {
         log.info("LocalStorageAdapter: headObject simulado — bucket={}, key={}", bucket, key);
         return Optional.empty();
+    }
+
+    @Override
+    public String presignDownload(String bucket, String key, Duration expiry) {
+        log.info("LocalStorageAdapter: presignDownload simulado — bucket={}, key={}", bucket, key);
+        return "http://localhost/mock-download/" + key;
     }
 }

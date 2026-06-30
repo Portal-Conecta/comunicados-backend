@@ -1,11 +1,13 @@
 package com.portal.conecta.comunicados.module.comunicado.application.usecase;
 
+import java.time.Duration;
 import java.util.List;
 import java.util.UUID;
 
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
+import com.portal.conecta.comunicados.module.comunicado.application.dto.AnnouncementFileView;
 import com.portal.conecta.comunicados.module.comunicado.domain.enums.AnnouncementFileStatus;
 import com.portal.conecta.comunicados.module.comunicado.domain.exception.AnnouncementNotFoundException;
 import com.portal.conecta.comunicados.module.comunicado.domain.model.AnnouncementFile;
@@ -20,13 +22,15 @@ import lombok.RequiredArgsConstructor;
 @RequiredArgsConstructor
 public class ListAnnouncementFilesUseCase {
 
+    private static final Duration DOWNLOAD_URL_EXPIRY = Duration.ofHours(1);
+
     private final AnnouncementRepository announcementRepository;
     private final AnnouncementFileRepository fileRepository;
     private final StoragePort storagePort;
     private final StorageProperties storageProperties;
 
     @Transactional
-    public List<AnnouncementFile> execute(UUID announcementId) {
+    public List<AnnouncementFileView> execute(UUID announcementId) {
         announcementRepository.findByIdAndRemovedAtIsNull(announcementId)
                 .orElseThrow(AnnouncementNotFoundException::new);
 
@@ -34,7 +38,10 @@ public class ListAnnouncementFilesUseCase {
         files.stream()
                 .filter(f -> f.getFileStatus() == AnnouncementFileStatus.PENDING)
                 .forEach(this::reconcile);
-        return files;
+
+        return files.stream()
+                .map(f -> new AnnouncementFileView(f, resolveDisplayUrl(f)))
+                .toList();
     }
 
     private void reconcile(AnnouncementFile file) {
@@ -46,6 +53,14 @@ public class ListAnnouncementFilesUseCase {
                     file.setSizeBytes(meta.sizeBytes());
                     fileRepository.save(file);
                 });
+    }
+
+    private String resolveDisplayUrl(AnnouncementFile file) {
+        if (file.getFileStatus() != AnnouncementFileStatus.READY) return null;
+        if (file.getProcessedS3Key() != null) {
+            return storagePort.presignDownload(storageProperties.filesBucket(), file.getProcessedS3Key(), DOWNLOAD_URL_EXPIRY);
+        }
+        return storagePort.presignDownload(file.getS3Bucket(), file.getS3Key(), DOWNLOAD_URL_EXPIRY);
     }
 
     // "comunicados/{ownerId}/raw/{fileId}.ext" -> "comunicados/{ownerId}/processed/{fileId}"

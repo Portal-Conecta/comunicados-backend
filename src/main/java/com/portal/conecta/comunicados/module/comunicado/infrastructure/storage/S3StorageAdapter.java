@@ -6,6 +6,10 @@ import java.util.Optional;
 import java.util.Set;
 import java.util.UUID;
 
+import software.amazon.awssdk.services.s3.model.GetObjectRequest;
+import software.amazon.awssdk.services.s3.presigner.model.GetObjectPresignRequest;
+import software.amazon.awssdk.services.s3.presigner.model.PresignedGetObjectRequest;
+
 import org.springframework.boot.autoconfigure.condition.ConditionalOnProperty;
 import org.springframework.stereotype.Component;
 
@@ -89,6 +93,19 @@ public class S3StorageAdapter implements StoragePort {
         );
 
         return new PresignedUpload(presigned.url().toString(), Map.of(), s3Key, bucket);
+    }
+
+    @Override
+    public String presignDownload(String bucket, String key, Duration expiry) {
+        return presigner.presignGetObject(
+                GetObjectPresignRequest.builder()
+                        .signatureDuration(expiry)
+                        .getObjectRequest(GetObjectRequest.builder()
+                                .bucket(bucket)
+                                .key(key)
+                                .build())
+                        .build()
+        ).url().toString();
     }
 
     @Override
