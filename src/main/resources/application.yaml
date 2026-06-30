@@ -54,6 +54,15 @@ storage:
   mock-enabled: ${STORAGE_MOCK_ENABLED:true}
   max-files-per-announcement: ${STORAGE_MAX_FILES:5}
   max-file-size-mb: ${STORAGE_MAX_FILE_SIZE_MB:10}
+  # Limites por tipo de arquivo (usados na validação do presign)
+  max-image-size-mb: ${STORAGE_MAX_IMAGE_SIZE_MB:10}
+  max-document-size-mb: ${STORAGE_MAX_DOCUMENT_SIZE_MB:20}
+  max-video-size-mb: ${STORAGE_MAX_VIDEO_SIZE_MB:200}
+  # Bucket A: recebe raw images via presign; Lambda é triggerada aqui para comprimir
+  images-bucket: ${STORAGE_IMAGES_BUCKET:}
+  # Bucket B: destino de imagens processadas pela Lambda + upload direto de pdf/mp4/webm/svg
+  files-bucket: ${STORAGE_FILES_BUCKET:}
+  region: ${STORAGE_REGION:us-east-1}
 
 hub:
   api:

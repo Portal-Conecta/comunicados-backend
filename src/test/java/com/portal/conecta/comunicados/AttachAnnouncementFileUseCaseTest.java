@@ -243,7 +243,7 @@ class AttachAnnouncementFileUseCaseTest {
             TransactionSynchronizationManager.clearSynchronization();
         }
 
-        verify(storagePort).delete("key-123");
+        verify(storagePort).delete("key-123", "bucket");
     }
 
     private void mockContext(UserType userType, UUID id) {

@@ -86,7 +86,7 @@ public class AttachAnnouncementFileUseCase {
         }
 
         StorageUploadResult upload = storagePort.upload(command.contentType(), command.content());
-        registerStorageRollbackCompensation(upload.s3Key());
+        registerStorageRollbackCompensation(upload.s3Key(), upload.s3Bucket());
 
         AnnouncementFile file = command.toEntity(announcement, upload.s3Key(), upload.s3Bucket(), fileType, Instant.now());
         return fileRepository.save(file);
@@ -97,7 +97,7 @@ public class AttachAnnouncementFileUseCase {
      * não é transacional: um upload seguido de falha no {@code save} ou no commit deixaria um
      * arquivo órfão. A compensação cobre os dois casos via {@code afterCompletion(ROLLED_BACK)}.
      */
-    private void registerStorageRollbackCompensation(String s3Key) {
+    private void registerStorageRollbackCompensation(String s3Key, String s3Bucket) {
         if (!TransactionSynchronizationManager.isSynchronizationActive()) {
             return;
         }
@@ -105,7 +105,7 @@ public class AttachAnnouncementFileUseCase {
             @Override
             public void afterCompletion(int status) {
                 if (status == STATUS_ROLLED_BACK) {
-                    storagePort.delete(s3Key);
+                    storagePort.delete(s3Key, s3Bucket);
                 }
             }
         });
