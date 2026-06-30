@@ -14,7 +14,7 @@ public record AnnouncementNotificationPayload(
         String body,
         List<NotificationScopePayload> scope,
         List<NotificationFilterPayload> filters,
-        Map<String, String> metadata
+        Map<String, Object> metadata
 ) {
 
     public record NotificationScopePayload(
