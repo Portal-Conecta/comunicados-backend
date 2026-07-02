@@ -249,15 +249,12 @@ O adapter HTTP repassa o header `Authorization` da request atual para o Hub. Use
 
 ---
 
-## 7. Endpoints ainda NÃO implementados (não testar como feature)
-
-Retornam corpo vazio/`null` ou não possuem regra de negócio — **stubs** para documentação futura:
+## 7. Endpoints removidos (não testar como feature)
 
 | Método | Rota | Observação |
 |--------|------|------------|
-| `PATCH` | `/api/posts/{id}` | Atualização parcial ainda não implementada |
-| `PATCH` | `/api/posts/{id}/cancel-schedule` | Cancelamento de agendamento ainda não implementado |
-| `GET` | `/api/posts/pinned` | Listagem de comunicados fixados ainda não implementada |
+| `PATCH` | `/api/posts/{id}` | Removido (#137 won't-do) — edição parcial é coberta pelo `PUT /api/posts/{id}` |
+| `PATCH` | `/api/posts/{id}/cancel-schedule` | Removido (#134) — cancelamento de agendamento é coberto por `DELETE /api/posts/{id}` |
 | `POST` | `/api/posts` | Removido — criação só via `POST /api/posts/publish` ou `POST /api/posts/schedule` |
 
 ---

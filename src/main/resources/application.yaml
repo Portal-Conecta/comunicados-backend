@@ -27,6 +27,10 @@ app:
     auto-publish:
       enabled: ${AUTO_PUBLISH_ENABLED:true}
       cron: ${AUTO_PUBLISH_CRON:0 * * * * *}
+    cleanup-orphans:
+      enabled: ${CLEANUP_ORPHANS_ENABLED:true}
+      cron: ${CLEANUP_ORPHANS_CRON:0 0 * * * *}
+      max-age-hours: ${CLEANUP_ORPHANS_MAX_AGE_HOURS:24}
   messaging:
     enabled: ${MESSAGING_ENABLED:false}
     core:
@@ -68,11 +72,13 @@ storage:
   max-image-size-mb: ${STORAGE_MAX_IMAGE_SIZE_MB:10}
   max-document-size-mb: ${STORAGE_MAX_DOCUMENT_SIZE_MB:20}
   max-video-size-mb: ${STORAGE_MAX_VIDEO_SIZE_MB:200}
-  # Bucket A: recebe raw images via presign; Lambda é triggerada aqui para comprimir
+  # Bucket A: recebe todo upload raw via presign (imagem, pdf, video, svg); Lambda é
+  # triggerada aqui — comprime imagens raster e preserva os demais tipos como estão
   images-bucket: ${STORAGE_IMAGES_BUCKET:}
-  # Bucket B: destino de imagens processadas pela Lambda + upload direto de pdf/mp4/webm/svg
+  # Bucket B: destino exclusivo da Lambda — imagens comprimidas e demais tipos
+  # preservados, ambos copiados para .../processed/{fileId}. Nada é enviado direto aqui
   files-bucket: ${STORAGE_FILES_BUCKET:}
-  region: ${STORAGE_REGION:us-east-1}
+  region: ${STORAGE_REGION:sa-east-1}
 
 hub:
   api:

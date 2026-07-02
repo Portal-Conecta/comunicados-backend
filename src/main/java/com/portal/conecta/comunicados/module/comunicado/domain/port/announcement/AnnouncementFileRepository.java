@@ -1,5 +1,6 @@
 package com.portal.conecta.comunicados.module.comunicado.domain.port.announcement;
 
+import java.time.Instant;
 import java.util.List;
 import java.util.Optional;
 import java.util.UUID;
@@ -9,6 +10,7 @@ import org.springframework.data.jpa.repository.Modifying;
 import org.springframework.data.jpa.repository.Query;
 import org.springframework.data.repository.query.Param;
 
+import com.portal.conecta.comunicados.module.comunicado.domain.enums.AnnouncementFileStatus;
 import com.portal.conecta.comunicados.module.comunicado.domain.enums.AnnouncementFileType;
 import com.portal.conecta.comunicados.module.comunicado.domain.model.AnnouncementFile;
 
@@ -26,4 +28,6 @@ public interface AnnouncementFileRepository extends JpaRepository<AnnouncementFi
     @Modifying
     @Query("UPDATE AnnouncementFile f SET f.isThumbnail = false WHERE f.announcement.id = :announcementId")
     void clearAllThumbnailsByAnnouncementId(@Param("announcementId") UUID announcementId);
+
+    List<AnnouncementFile> findByFileStatusAndCreatedAtBefore(AnnouncementFileStatus status, Instant cutoff);
 }

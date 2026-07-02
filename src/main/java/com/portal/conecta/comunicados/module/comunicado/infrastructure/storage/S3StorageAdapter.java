@@ -3,7 +3,6 @@ package com.portal.conecta.comunicados.module.comunicado.infrastructure.storage;
 import java.time.Duration;
 import java.util.Map;
 import java.util.Optional;
-import java.util.Set;
 import java.util.UUID;
 
 import software.amazon.awssdk.services.s3.model.GetObjectRequest;
@@ -32,11 +31,6 @@ import software.amazon.awssdk.services.s3.presigner.model.PutObjectPresignReques
 @ConditionalOnProperty(prefix = "storage", name = "mock-enabled", havingValue = "false")
 public class S3StorageAdapter implements StoragePort {
 
-    // Imagens que passam por processamento Lambda (bucket A)
-    private static final Set<String> IMAGE_BUCKET_TYPES = Set.of(
-            "image/jpeg", "image/png", "image/gif", "image/webp"
-    );
-
     private static final Duration PRESIGN_DURATION = Duration.ofMinutes(15);
     private static final String KEY_PREFIX = "comunicados/";
 
@@ -54,7 +48,7 @@ public class S3StorageAdapter implements StoragePort {
     @Override
     public StorageUploadResult upload(String contentType, byte[] content) {
         String s3Key = KEY_PREFIX + UUID.randomUUID();
-        String bucket = resolveBucket(contentType);
+        String bucket = properties.imagesBucket();
 
         s3Client.putObject(
                 PutObjectRequest.builder()
@@ -75,11 +69,13 @@ public class S3StorageAdapter implements StoragePort {
 
     /**
      * Gera presigned PUT válido por 15 min, com Content-Type obrigatório na requisição.
-     * Roteamento: jpeg/png/gif/webp → imagesBucket (Lambda); demais → filesBucket (direto).
+     * Todo upload vai para o imagesBucket (bucket A): a Lambda triggerada lá processa
+     * imagens raster (compressão para webp) e preserva os demais tipos como estão,
+     * copiando ambos os casos para o filesBucket (bucket B) em {@code .../processed/{fileId}}.
      */
     @Override
     public PresignedUpload presignUpload(String s3Key, String contentType, long maxBytes) {
-        String bucket = resolveBucket(contentType);
+        String bucket = properties.imagesBucket();
 
         PresignedPutObjectRequest presigned = presigner.presignPutObject(
                 PutObjectPresignRequest.builder()
@@ -119,12 +115,6 @@ public class S3StorageAdapter implements StoragePort {
         } catch (NoSuchKeyException e) {
             return Optional.empty();
         }
-    }
-
-    private String resolveBucket(String contentType) {
-        return IMAGE_BUCKET_TYPES.contains(contentType)
-                ? properties.imagesBucket()
-                : properties.filesBucket();
     }
 
     private Integer parseIntOrNull(String value) {
