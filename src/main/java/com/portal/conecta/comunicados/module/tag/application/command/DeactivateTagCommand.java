@@ -30,7 +30,7 @@ public record DeactivateTagCommand(
 
         return switch (entityType.trim().toLowerCase()) {
             case "course" -> TagEntityType.COURSE;
-            case "turma" -> TagEntityType.CLASS;
+            case "class" -> TagEntityType.CLASS;
             default -> throw new InvalidCoreEntityEventException("entityType não suportado: " + entityType);
         };
     }

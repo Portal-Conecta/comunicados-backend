@@ -46,6 +46,7 @@ import com.portal.conecta.comunicados.module.comunicado.domain.enums.Announcemen
 import com.portal.conecta.comunicados.module.comunicado.domain.enums.AnnouncementStatus;
 import com.portal.conecta.comunicados.module.comunicado.domain.model.Announcement;
 import com.portal.conecta.comunicados.module.comunicado.domain.model.AnnouncementHistory;
+import com.portal.conecta.comunicados.module.comunicado.domain.port.AnnouncementNotificationPublisher;
 import com.portal.conecta.comunicados.module.comunicado.domain.port.announcement.AnnouncementDestinationRepository;
 import com.portal.conecta.comunicados.module.comunicado.domain.port.announcement.AnnouncementHistoryRepository;
 import com.portal.conecta.comunicados.module.comunicado.domain.port.announcement.AnnouncementRepository;
@@ -74,6 +75,7 @@ class PublishAnnouncementFlowTest {
     private RequestContextProvider requestContextProvider;
     private HubClassPort hubClassPort;
     private AutoLinkTagsByDestinationUseCase autoLinkTagsUseCase;
+    private AnnouncementNotificationPublisher notificationPublisher;
     private ListAnnouncementsUseCase listAnnouncementsUseCase;
     private ListPinnedAnnouncementsUseCase listPinnedAnnouncementsUseCase;
     private GetAnnouncementByIdUseCase getAnnouncementByIdUseCase;
@@ -95,6 +97,7 @@ class PublishAnnouncementFlowTest {
         requestContextProvider = mock(RequestContextProvider.class);
         hubClassPort = mock(HubClassPort.class);
         autoLinkTagsUseCase = mock(AutoLinkTagsByDestinationUseCase.class);
+        notificationPublisher = mock(AnnouncementNotificationPublisher.class);
         listAnnouncementsUseCase = mock(ListAnnouncementsUseCase.class);
         listPinnedAnnouncementsUseCase = mock(ListPinnedAnnouncementsUseCase.class);
         getAnnouncementByIdUseCase = mock(GetAnnouncementByIdUseCase.class);
@@ -109,7 +112,8 @@ class PublishAnnouncementFlowTest {
                 announcementHistoryRepository,
                 requestContextProvider,
                 new AnnouncementPermissionValidator(hubClassPort),
-                autoLinkTagsUseCase
+                autoLinkTagsUseCase,
+                notificationPublisher
         );
         scheduleAnnouncementUseCase = mock(ScheduleAnnouncementUseCase.class);
         pinAnnouncementUseCase = mock(PinAnnouncementUseCase.class);

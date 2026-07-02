@@ -10,6 +10,7 @@ import com.portal.conecta.comunicados.module.comunicado.application.command.Publ
 import com.portal.conecta.comunicados.module.comunicado.domain.exception.AnnouncementPermissionDeniedException;
 import com.portal.conecta.comunicados.module.comunicado.domain.model.Announcement;
 import com.portal.conecta.comunicados.module.comunicado.domain.model.AnnouncementDestination;
+import com.portal.conecta.comunicados.module.comunicado.domain.port.AnnouncementNotificationPublisher;
 import com.portal.conecta.comunicados.module.comunicado.domain.port.announcement.AnnouncementDestinationRepository;
 import com.portal.conecta.comunicados.module.comunicado.domain.port.announcement.AnnouncementHistoryRepository;
 import com.portal.conecta.comunicados.module.comunicado.domain.port.announcement.AnnouncementRepository;
@@ -21,12 +22,14 @@ import com.portal.conecta.comunicados.shared.context.RequestContextProvider;
 import com.portal.conecta.comunicados.shared.exception.UnauthorizedUserException;
 
 import lombok.RequiredArgsConstructor;
+import lombok.extern.slf4j.Slf4j;
 
 /**
  * Criação + publicação atômica (#107): cria o comunicado já {@code PUBLISHED}, com destinos e
  * histórico (CREATION + PUBLICATION), numa única transação. O autor/publicador é o usuário
  * autenticado.
  */
+@Slf4j
 @Service
 @RequiredArgsConstructor
 public class PublishAnnouncementUseCase {
@@ -37,6 +40,7 @@ public class PublishAnnouncementUseCase {
     private final RequestContextProvider requestContextProvider;
     private final AnnouncementPermissionValidator permissionValidator;
     private final AutoLinkTagsByDestinationUseCase autoLinkTagsUseCase;
+    private final AnnouncementNotificationPublisher notificationPublisher;
 
     @Transactional
     public Announcement execute(PublishAnnouncementCommand command) {
@@ -50,6 +54,12 @@ public class PublishAnnouncementUseCase {
         Announcement announcement = announcementRepository.save(command.toEntity(now));
         List<AnnouncementDestination> destinations = announcementDestinationRepository.saveAll(command.toDestinations(announcement));
         autoLinkTagsUseCase.execute(announcement, toTagCommands(destinations), command.tagIds());
+
+        try {
+            notificationPublisher.publish(announcement, destinations);
+        } catch (Exception e) {
+            log.error("Falha ao publicar notificação do comunicado {}. A publicação não será revertida.", announcement.getId(), e);
+        }
 
         announcementHistoryRepository.save(command.toCreationHistory(announcement, now));
         announcementHistoryRepository.save(command.toPublicationHistory(announcement, now));

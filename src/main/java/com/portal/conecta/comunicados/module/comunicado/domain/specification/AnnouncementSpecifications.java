@@ -34,6 +34,10 @@ public class AnnouncementSpecifications {
         return (root, query, cb) -> cb.isTrue(root.get("pinned"));
     }
 
+    public static Specification<Announcement> isNotPinned() {
+        return (root, query, cb) -> cb.isFalse(root.get("pinned"));
+    }
+
     public static Specification<Announcement> hasOrigin(AnnouncementOrigin origin) {
         return (root, query, cb) -> {
             if (origin == null) {
