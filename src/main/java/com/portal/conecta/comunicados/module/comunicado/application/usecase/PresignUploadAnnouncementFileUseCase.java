@@ -77,17 +77,19 @@ public class PresignUploadAnnouncementFileUseCase {
             throw new AnnouncementFileTooLargeException();
         }
 
-        // Pré-gera o UUID e usa como ID da entidade E parte da chave S3.
-        // Chave no formato esperado pelo Lambda: {domain}/{ownerId}/raw/{fileId}.{ext}
-        // Lambda deriva a chave processada como: {domain}/{ownerId}/processed/{fileId}
-        UUID fileId = UUID.randomUUID();
+        // keyId é o UUID da CHAVE S3, não o ID da entidade. NÃO atribua o ID manualmente aqui:
+        // com o ID já preenchido, o save() do Spring Data vira merge()→UPDATE numa linha
+        // inexistente → StaleObjectStateException (HTTP 500). O PK é gerado pelo JPA no save,
+        // como na flow multipart. A reconciliação (#172/#174) e a Lambda correlacionam arquivo
+        // e registro pela s3Key (transformação de string), não pelo PK — por isso não coincidem.
+        // Chave esperada pelo Lambda: {domain}/{ownerId}/raw/{keyId}.{ext}; processada: .../processed/{keyId}.
+        UUID keyId = UUID.randomUUID();
         String ext = CONTENT_TYPE_TO_EXT.getOrDefault(command.contentType(), "bin");
-        String s3Key = S3_KEY_PREFIX + command.uploadedByUserId() + "/raw/" + fileId + "." + ext;
+        String s3Key = S3_KEY_PREFIX + command.uploadedByUserId() + "/raw/" + keyId + "." + ext;
 
         PresignedUpload presignedUpload = storagePort.presignUpload(s3Key, command.contentType(), maxBytes);
 
         AnnouncementFile file = AnnouncementFile.builder()
-                .id(fileId)
                 .announcement(announcement)
                 .originalName(command.originalName())
                 .s3Key(s3Key)
