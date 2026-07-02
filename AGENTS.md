@@ -300,8 +300,8 @@ Chave natural: `(entity_type, hub_entity_id)`. Campo `active` para desativação
 | PATCH | `/api/posts/{id}/pin` | Implementado (fixa comunicado) |
 | PATCH | `/api/posts/{id}/unpin` | Implementado (desafixa comunicado) |
 | PATCH | `/api/posts/{id}` | **Removido** (#137 won't-do) — edição parcial é coberta pelo `PUT /api/posts/{id}` |
-| PATCH | `/api/posts/{id}/cancel-schedule` | **Stub** — cancelamento de agendamento ainda não implementado |
-| GET | `/api/posts/pinned` | **Stub** — listagem de fixados ainda não implementada |
+| PATCH | `/api/posts/{id}/cancel-schedule` | **Removido** (#134) — cancelamento de agendamento é coberto por `DELETE /api/posts/{id}` |
+| GET | `/api/posts/pinned` | Implementado (lista comunicados publicados e fixados, ordenados por `pinnedOrder`) |
 | POST | `/api/posts` | **Removido** — retorna 405; usar `POST /publish` ou `POST /schedule` |
 
 ### Imagens e arquivos (`PostImageController` — `/api/posts/{postId}/images`)
