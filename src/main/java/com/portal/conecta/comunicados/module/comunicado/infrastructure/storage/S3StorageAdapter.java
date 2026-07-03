@@ -111,7 +111,7 @@ public class S3StorageAdapter implements StoragePort {
             Map<String, String> meta = response.metadata();
             Integer width = parseIntOrNull(meta.get("width"));
             Integer height = parseIntOrNull(meta.get("height"));
-            return Optional.of(new StorageObjectMetadata(response.contentLength(), width, height));
+            return Optional.of(new StorageObjectMetadata(response.contentLength(), width, height, response.contentType()));
         } catch (NoSuchKeyException e) {
             return Optional.empty();
         }

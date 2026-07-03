@@ -71,7 +71,7 @@ class CleanOrphanedFilesUseCaseTest {
                 .thenReturn(List.of(file));
         when(storageProperties.filesBucket()).thenReturn("comunicados-processed-sa");
         when(storagePort.headObject(eq("comunicados-processed-sa"), eq("comunicados/" + userId + "/processed/" + fileId)))
-                .thenReturn(Optional.of(new StorageObjectMetadata(80_000L, 1200, 800)));
+                .thenReturn(Optional.of(new StorageObjectMetadata(80_000L, 1200, 800, "image/webp")));
 
         int count = useCase.execute(24);
 
@@ -109,7 +109,7 @@ class CleanOrphanedFilesUseCaseTest {
         when(storagePort.headObject(eq("comunicados-processed-sa"), eq("comunicados/" + userId + "/processed/" + fileId2)))
                 .thenReturn(Optional.empty());
         when(storagePort.headObject(eq("comunicados-processed-sa"), eq("comunicados/" + userId + "/processed/" + fileId3)))
-                .thenReturn(Optional.of(new StorageObjectMetadata(50_000L, null, null)));
+                .thenReturn(Optional.of(new StorageObjectMetadata(50_000L, null, null, "image/webp")));
 
         int count = useCase.execute(24);
 

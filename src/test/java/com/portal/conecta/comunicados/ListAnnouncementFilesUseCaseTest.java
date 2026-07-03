@@ -74,7 +74,7 @@ class ListAnnouncementFilesUseCaseTest {
         when(fileRepository.findByAnnouncementId(announcementId)).thenReturn(List.of(pending));
         when(storageProperties.filesBucket()).thenReturn("comunicados-processed-sa");
         when(storagePort.headObject(eq("comunicados-processed-sa"), eq("comunicados/" + userId + "/processed/" + fileId)))
-                .thenReturn(Optional.of(new StorageObjectMetadata(80_000L, 1200, 800)));
+                .thenReturn(Optional.of(new StorageObjectMetadata(80_000L, 1200, 800, "image/webp")));
         when(storagePort.presignDownload(eq("comunicados-processed-sa"), any(), any(Duration.class)))
                 .thenReturn("https://s3.example.com/signed");
 
@@ -85,6 +85,7 @@ class ListAnnouncementFilesUseCaseTest {
         assertThat(view.file().getFileStatus()).isEqualTo(AnnouncementFileStatus.READY);
         assertThat(view.file().getProcessedS3Key()).isEqualTo("comunicados/" + userId + "/processed/" + fileId);
         assertThat(view.file().getSizeBytes()).isEqualTo(80_000L);
+        assertThat(view.file().getContentType()).isEqualTo("image/webp");
         assertThat(view.displayUrl()).isEqualTo("https://s3.example.com/signed");
         verify(fileRepository).save(pending);
     }

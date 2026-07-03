@@ -51,6 +51,9 @@ public class ListAnnouncementFilesUseCase {
                     file.setFileStatus(AnnouncementFileStatus.READY);
                     file.setProcessedS3Key(processedKey);
                     file.setSizeBytes(meta.sizeBytes());
+                    if (meta.contentType() != null && !meta.contentType().isBlank()) {
+                        file.setContentType(meta.contentType());
+                    }
                     fileRepository.save(file);
                 });
     }
