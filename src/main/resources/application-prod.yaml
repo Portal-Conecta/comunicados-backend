@@ -23,6 +23,13 @@ logging:
   level:
     root: INFO
 
+# API docs desabilitados em prod (a documentação não deve ficar pública).
+springdoc:
+  api-docs:
+    enabled: false
+  swagger-ui:
+    enabled: false
+
 app:
   jwt:
     secret: ${JWT_SECRET}
