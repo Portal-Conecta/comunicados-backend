@@ -19,7 +19,7 @@
 							"bearer": [
 								{
 									"key": "token",
-									"value": "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJzdWIiOiIxMTExMTExMS0xMTExLTExMTEtMTExMS0xMTExMTExMTExMTEiLCJ1c2VyVHlwZSI6IlNFTkFJIiwiY2xhc3NlcyI6W10sImV4cCI6MTg5MzQ1NjAwMH0.Nj1unAad7Pc8G9zJrSH_2vt6KW3RitehElcFhQ6MI8k",
+									"value": "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJzdWIiOiIxMTExMTExMS0xMTExLTExMTEtMTExMS0xMTExMTExMTExMTEiLCJ1c2VyVHlwZSI6IlNFTkFJIiwiY2xhc3NlcyI6W10sImV4cCI6MTg5MzQ1NjAwMH0.AbfOmC73ntfwzA3zWgTVGO8SDrCyo3RmdWiIM0WBx7w",
 									"type": "string"
 								}
 							]
@@ -75,7 +75,7 @@
 							"bearer": [
 								{
 									"key": "token",
-									"value": "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJzdWIiOiIxMTExMTExMS0xMTExLTExMTEtMTExMS0xMTExMTExMTExMTEiLCJ1c2VyVHlwZSI6IlNFTkFJIiwiY2xhc3NlcyI6W10sImV4cCI6MTg5MzQ1NjAwMH0.Nj1unAad7Pc8G9zJrSH_2vt6KW3RitehElcFhQ6MI8k",
+									"value": "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJzdWIiOiIxMTExMTExMS0xMTExLTExMTEtMTExMS0xMTExMTExMTExMTEiLCJ1c2VyVHlwZSI6IlNFTkFJIiwiY2xhc3NlcyI6W10sImV4cCI6MTg5MzQ1NjAwMH0.AbfOmC73ntfwzA3zWgTVGO8SDrCyo3RmdWiIM0WBx7w",
 									"type": "string"
 								}
 							]
@@ -213,7 +213,7 @@
 							"bearer": [
 								{
 									"key": "token",
-									"value": "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJzdWIiOiIxMTExMTExMS0xMTExLTExMTEtMTExMS0xMTExMTExMTExMTEiLCJ1c2VyVHlwZSI6IlNFTkFJIiwiY2xhc3NlcyI6W10sImV4cCI6MTg5MzQ1NjAwMH0.Nj1unAad7Pc8G9zJrSH_2vt6KW3RitehElcFhQ6MI8k",
+									"value": "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJzdWIiOiIxMTExMTExMS0xMTExLTExMTEtMTExMS0xMTExMTExMTExMTEiLCJ1c2VyVHlwZSI6IlNFTkFJIiwiY2xhc3NlcyI6W10sImV4cCI6MTg5MzQ1NjAwMH0.AbfOmC73ntfwzA3zWgTVGO8SDrCyo3RmdWiIM0WBx7w",
 									"type": "string"
 								}
 							]
@@ -248,7 +248,7 @@
 							"bearer": [
 								{
 									"key": "token",
-									"value": "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJzdWIiOiIxMTExMTExMS0xMTExLTExMTEtMTExMS0xMTExMTExMTExMTEiLCJ1c2VyVHlwZSI6IlNFTkFJIiwiY2xhc3NlcyI6W10sImV4cCI6MTg5MzQ1NjAwMH0.Nj1unAad7Pc8G9zJrSH_2vt6KW3RitehElcFhQ6MI8k",
+									"value": "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJzdWIiOiIxMTExMTExMS0xMTExLTExMTEtMTExMS0xMTExMTExMTExMTEiLCJ1c2VyVHlwZSI6IlNFTkFJIiwiY2xhc3NlcyI6W10sImV4cCI6MTg5MzQ1NjAwMH0.AbfOmC73ntfwzA3zWgTVGO8SDrCyo3RmdWiIM0WBx7w",
 									"type": "string"
 								}
 							]
@@ -333,7 +333,7 @@
 							"bearer": [
 								{
 									"key": "token",
-									"value": "{{tokenSenai}}",
+									"value": "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJzdWIiOiIxMTExMTExMS0xMTExLTExMTEtMTExMS0xMTExMTExMTExMTEiLCJ1c2VyVHlwZSI6IlNFTkFJIiwiY2xhc3NlcyI6W10sImV4cCI6MTg5MzQ1NjAwMH0.AbfOmC73ntfwzA3zWgTVGO8SDrCyo3RmdWiIM0WBx7w",
 									"type": "string"
 								}
 							]
@@ -390,7 +390,7 @@
 							"bearer": [
 								{
 									"key": "token",
-									"value": "{{tokenSenai}}",
+									"value": "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJzdWIiOiIxMTExMTExMS0xMTExLTExMTEtMTExMS0xMTExMTExMTExMTEiLCJ1c2VyVHlwZSI6IlNFTkFJIiwiY2xhc3NlcyI6W10sImV4cCI6MTg5MzQ1NjAwMH0.AbfOmC73ntfwzA3zWgTVGO8SDrCyo3RmdWiIM0WBx7w",
 									"type": "string"
 								}
 							]
@@ -437,7 +437,7 @@
 							"bearer": [
 								{
 									"key": "token",
-									"value": "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJzdWIiOiIxMTExMTExMS0xMTExLTExMTEtMTExMS0xMTExMTExMTExMTEiLCJ1c2VyVHlwZSI6IlNFTkFJIiwiY2xhc3NlcyI6W10sImV4cCI6MTg5MzQ1NjAwMH0.Nj1unAad7Pc8G9zJrSH_2vt6KW3RitehElcFhQ6MI8k",
+									"value": "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJzdWIiOiIxMTExMTExMS0xMTExLTExMTEtMTExMS0xMTExMTExMTExMTEiLCJ1c2VyVHlwZSI6IlNFTkFJIiwiY2xhc3NlcyI6W10sImV4cCI6MTg5MzQ1NjAwMH0.AbfOmC73ntfwzA3zWgTVGO8SDrCyo3RmdWiIM0WBx7w",
 									"type": "string"
 								}
 							]
@@ -910,7 +910,7 @@
 							"bearer": [
 								{
 									"key": "token",
-									"value": "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJzdWIiOiIxMTExMTExMS0xMTExLTExMTEtMTExMS0xMTExMTExMTExMTEiLCJ1c2VyVHlwZSI6IlNFTkFJIiwiY2xhc3NlcyI6W10sImV4cCI6MTg5MzQ1NjAwMH0.Nj1unAad7Pc8G9zJrSH_2vt6KW3RitehElcFhQ6MI8k",
+									"value": "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJzdWIiOiIxMTExMTExMS0xMTExLTExMTEtMTExMS0xMTExMTExMTExMTEiLCJ1c2VyVHlwZSI6IlNFTkFJIiwiY2xhc3NlcyI6W10sImV4cCI6MTg5MzQ1NjAwMH0.AbfOmC73ntfwzA3zWgTVGO8SDrCyo3RmdWiIM0WBx7w",
 									"type": "string"
 								}
 							]
@@ -984,6 +984,209 @@
 					"response": []
 				}
 			]
+		},
+		{
+			"name": "06 - Upload de imagens (presign)",
+			"description": "Fluxo de upload direto ao S3 via URL pré-assinada.\n\nPré-requisito: subir a API com S3 real (STORAGE_MOCK_ENABLED=false) e as credenciais do usuário comunicados-presigner (AWS_ACCESS_KEY_ID / AWS_SECRET_ACCESS_KEY), STORAGE_IMAGES_BUCKET=comunicados-raw-sa e STORAGE_FILES_BUCKET=comunicados-processed-sa.\n\nOrdem: 1) Publicar (GENERAL) para gerar {{postId}}; 2) Presign - solicitar URL; 3) Upload direto ao S3 (PUT).",
+			"item": [
+				{
+					"name": "0 - Publicar comunicado (gera postId)",
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"exec": [
+									"pm.test('Status 201', () => pm.response.to.have.status(201));",
+									"if (pm.response.code === 201) {",
+									"    const body = pm.response.json();",
+									"    pm.collectionVariables.set('postId', body.id);",
+									"    console.log('postId salvo:', body.id);",
+									"}"
+								],
+								"type": "text/javascript",
+								"packages": {}
+							}
+						}
+					],
+					"request": {
+						"auth": {
+							"type": "bearer",
+							"bearer": [
+								{
+									"key": "token",
+									"value": "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJzdWIiOiIxMTExMTExMS0xMTExLTExMTEtMTExMS0xMTExMTExMTExMTEiLCJ1c2VyVHlwZSI6IlNFTkFJIiwiY2xhc3NlcyI6W10sImV4cCI6MTg5MzQ1NjAwMH0.AbfOmC73ntfwzA3zWgTVGO8SDrCyo3RmdWiIM0WBx7w",
+									"type": "string"
+								}
+							]
+						},
+						"method": "POST",
+						"header": [
+							{
+								"key": "Content-Type",
+								"value": "application/json"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n  \"title\": \"Comunicado para teste de upload\",\n  \"description\": \"Gerado pelo passo 0 do fluxo de presign.\",\n  \"origin\": \"SENAI\",\n  \"destinations\": [\n    { \"type\": \"GENERAL\", \"referenceId\": null }\n  ],\n  \"pinned\": false,\n  \"tagIds\": []\n}"
+						},
+						"url": {
+							"raw": "{{baseUrl}}/api/posts/publish",
+							"host": [
+								"{{baseUrl}}"
+							],
+							"path": [
+								"api",
+								"posts",
+								"publish"
+							]
+						},
+						"description": "Cria e publica um comunicado GENERAL com o usuário SENAI e salva postId como variável de collection. Rode ANTES do presign, com No Environment selecionado."
+					},
+					"response": []
+				},
+				{
+					"name": "Presign - solicitar URL",
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"exec": [
+									"pm.test('Status 201', () => pm.response.to.have.status(201));",
+									"if (pm.response.code === 201) {",
+									"    const body = pm.response.json();",
+									"    pm.collectionVariables.set('fileId', body.fileId);",
+									"    pm.collectionVariables.set('uploadUrl', body.uploadUrl);",
+									"    try {",
+									"        const reqBody = JSON.parse(pm.request.body.raw);",
+									"        pm.collectionVariables.set('presignContentType', reqBody.contentType);",
+									"    } catch (e) { console.log('Nao foi possivel ler contentType da request', e); }",
+									"    pm.test('Retornou uploadUrl', () => pm.expect(body.uploadUrl).to.be.a('string').and.not.empty);",
+									"    pm.test('Retornou fileId', () => pm.expect(body.fileId).to.be.a('string').and.not.empty);",
+									"    console.log('uploadUrl salvo. Rode agora \"Upload direto ao S3 (PUT)\".');",
+									"}"
+								],
+								"type": "text/javascript",
+								"packages": {}
+							}
+						}
+					],
+					"request": {
+						"auth": {
+							"type": "bearer",
+							"bearer": [
+								{
+									"key": "token",
+									"value": "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJzdWIiOiIxMTExMTExMS0xMTExLTExMTEtMTExMS0xMTExMTExMTExMTEiLCJ1c2VyVHlwZSI6IlNFTkFJIiwiY2xhc3NlcyI6W10sImV4cCI6MTg5MzQ1NjAwMH0.AbfOmC73ntfwzA3zWgTVGO8SDrCyo3RmdWiIM0WBx7w",
+									"type": "string"
+								}
+							]
+						},
+						"method": "POST",
+						"header": [
+							{
+								"key": "Content-Type",
+								"value": "application/json"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n  \"contentType\": \"image/png\",\n  \"sizeBytes\": 12345,\n  \"originalName\": \"foto.png\",\n  \"thumbnail\": false\n}"
+						},
+						"url": {
+							"raw": "{{baseUrl}}/api/posts/{{postId}}/images/presign",
+							"host": [
+								"{{baseUrl}}"
+							],
+							"path": [
+								"api",
+								"posts",
+								"{{postId}}",
+								"images",
+								"presign"
+							]
+						},
+						"description": "Gera URL pré-assinada (PUT, válida 15 min) para o bucket comunicados-raw-sa. Requer usuário com permissão de edição do comunicado ({{postId}}). Salva uploadUrl, fileId e presignContentType no environment.\n\nEsperado: 201. Erros: 400 (limite de 5 arquivos / tipo / tamanho), 403 (sem permissão), 404 (comunicado não encontrado)."
+					},
+					"response": []
+				},
+				{
+					"name": "Upload direto ao S3 (PUT)",
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"exec": [
+									"pm.test('Upload aceito (200)', () => pm.response.to.have.status(200));",
+									"if (pm.response.code === 403) {",
+									"    console.log('403 do S3: Content-Type diferente do presign, URL expirada (15 min) ou header Authorization enviado por engano.');",
+									"}"
+								],
+								"type": "text/javascript",
+								"packages": {}
+							}
+						}
+					],
+					"request": {
+						"auth": {
+							"type": "noauth"
+						},
+						"method": "PUT",
+						"header": [
+							{
+								"key": "Content-Type",
+								"value": "{{presignContentType}}",
+								"description": "Precisa ser IDÊNTICO ao contentType enviado no presign, senão o S3 retorna 403 SignatureDoesNotMatch."
+							}
+						],
+						"body": {
+							"mode": "file",
+							"file": {
+								"src": ""
+							}
+						},
+						"url": {
+							"raw": "{{uploadUrl}}",
+							"host": [
+								"{{uploadUrl}}"
+							]
+						},
+						"description": "PUT direto no S3 usando a URL pré-assinada gerada no passo anterior.\n\nATENÇÃO:\n- Auth deve ser None (não mande Bearer, quebra a assinatura).\n- Em Body > binary, selecione um arquivo .png real (o mesmo tipo do contentType do presign).\n- A URL expira em 15 min.\n\nEsperado: 200 (sem corpo). Depois disso, o objeto cai no comunicados-raw-sa e dispara a Lambda, que grava o processado no comunicados-processed-sa."
+					},
+					"response": []
+				},
+				{
+					"name": "Listar arquivos do comunicado",
+					"request": {
+						"auth": {
+							"type": "bearer",
+							"bearer": [
+								{
+									"key": "token",
+									"value": "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJzdWIiOiIxMTExMTExMS0xMTExLTExMTEtMTExMS0xMTExMTExMTExMTEiLCJ1c2VyVHlwZSI6IlNFTkFJIiwiY2xhc3NlcyI6W10sImV4cCI6MTg5MzQ1NjAwMH0.AbfOmC73ntfwzA3zWgTVGO8SDrCyo3RmdWiIM0WBx7w",
+									"type": "string"
+								}
+							]
+						},
+						"method": "GET",
+						"header": [],
+						"url": {
+							"raw": "{{baseUrl}}/api/posts/{{postId}}/images",
+							"host": [
+								"{{baseUrl}}"
+							],
+							"path": [
+								"api",
+								"posts",
+								"{{postId}}",
+								"images"
+							]
+						},
+						"description": "Lista os AnnouncementFile do comunicado. Use para conferir o status do arquivo após o upload."
+					},
+					"response": []
+				}
+			]
 		}
 	],
 	"auth": {
@@ -1000,6 +1203,22 @@
 		{
 			"key": "baseUrl",
 			"value": "http://localhost:8083"
+		},
+		{
+			"key": "postId",
+			"value": ""
+		},
+		{
+			"key": "uploadUrl",
+			"value": ""
+		},
+		{
+			"key": "fileId",
+			"value": ""
+		},
+		{
+			"key": "presignContentType",
+			"value": "image/png"
 		}
 	]
 }
