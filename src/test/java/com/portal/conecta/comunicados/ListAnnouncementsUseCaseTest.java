@@ -4,6 +4,7 @@ import com.portal.conecta.comunicados.module.comunicado.application.query.ListAn
 import com.portal.conecta.comunicados.module.comunicado.application.query.ListAnnouncementsResult;
 import com.portal.conecta.comunicados.module.comunicado.application.usecase.ListAnnouncementsUseCase;
 import com.portal.conecta.comunicados.module.comunicado.domain.enums.AnnouncementOrigin;
+import com.portal.conecta.comunicados.module.comunicado.domain.exception.AnnouncementPermissionDeniedException;
 import com.portal.conecta.comunicados.module.comunicado.domain.model.Announcement;
 import com.portal.conecta.comunicados.module.comunicado.domain.port.announcement.AnnouncementRepository;
 import com.portal.conecta.comunicados.module.comunicado.domain.port.hub.HubCoursePort;
@@ -30,6 +31,7 @@ import java.util.List;
 import java.util.UUID;
 
 import static org.assertj.core.api.Assertions.assertThat;
+import static org.assertj.core.api.Assertions.assertThatThrownBy;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.Mockito.never;
 import static org.mockito.Mockito.verify;
@@ -58,7 +60,7 @@ class ListAnnouncementsUseCaseTest {
     private ListAnnouncementsUseCase useCase;
 
     private PostFilterRequest filter() {
-        return PostFilterRequest.defaults();
+        return PostFilterRequest.builder().build();
     }
 
     private void stubRepository(List<Announcement> pinned, Page<Announcement> items) {
@@ -118,7 +120,7 @@ class ListAnnouncementsUseCaseTest {
         when(permissionValidator.canViewAll(UserType.WEG)).thenReturn(true);
         stubRepository(List.of(), new PageImpl<>(List.of()));
 
-        PostFilterRequest filterWithOrigin = PostFilterRequest.withOrigin(AnnouncementOrigin.WEG);
+        PostFilterRequest filterWithOrigin = PostFilterRequest.builder().origin(AnnouncementOrigin.WEG).build();
 
         ListAnnouncementsResult result = useCase.execute(new ListAnnouncementsQuery(filterWithOrigin, userId));
 
@@ -135,7 +137,7 @@ class ListAnnouncementsUseCaseTest {
         when(permissionValidator.canViewAll(UserType.ADMIN)).thenReturn(true);
         stubRepository(List.of(), new PageImpl<>(List.of()));
 
-        PostFilterRequest pagedFilter = PostFilterRequest.withPaging(2, 5);
+        PostFilterRequest pagedFilter = PostFilterRequest.builder().page(2).size(5).build();
 
         useCase.execute(new ListAnnouncementsQuery(pagedFilter, userId));
 
@@ -202,7 +204,7 @@ class ListAnnouncementsUseCaseTest {
         when(hubUserPort.findUserIdsByNameContaining("joão", context)).thenReturn(List.of(UUID.randomUUID()));
         stubRepository(List.of(), new PageImpl<>(List.of()));
 
-        PostFilterRequest searchFilter = PostFilterRequest.withSearch("joão");
+        PostFilterRequest searchFilter = PostFilterRequest.builder().search("joão").build();
 
         useCase.execute(new ListAnnouncementsQuery(searchFilter, userId));
 
@@ -220,7 +222,7 @@ class ListAnnouncementsUseCaseTest {
         when(permissionValidator.canViewAll(UserType.ADMIN)).thenReturn(true);
         stubRepository(List.of(), new PageImpl<>(List.of()));
 
-        PostFilterRequest blankSearchFilter = PostFilterRequest.withSearch("   ");
+        PostFilterRequest blankSearchFilter = PostFilterRequest.builder().search("   ").build();
 
         useCase.execute(new ListAnnouncementsQuery(blankSearchFilter, userId));
 
@@ -237,7 +239,7 @@ class ListAnnouncementsUseCaseTest {
         when(permissionValidator.canViewAll(UserType.ADMIN)).thenReturn(true);
         stubRepository(List.of(), new PageImpl<>(List.of()));
 
-        PostFilterRequest tagFilter = PostFilterRequest.withTagId(tagId);
+        PostFilterRequest tagFilter = PostFilterRequest.builder().tagId(tagId).build();
 
         useCase.execute(new ListAnnouncementsQuery(tagFilter, userId));
 
@@ -246,12 +248,52 @@ class ListAnnouncementsUseCaseTest {
     }
 
     @Test
+    void shouldScopeByAuthorAndBypassVisibility_WhenMineRequested() {
+        UUID userId = UUID.randomUUID();
+        RequestContext context = new RequestContext(userId, UserType.TEACHER, List.of());
+
+        when(contextProvider.getRequestContext()).thenReturn(context);
+        when(permissionValidator.canCreate(UserType.TEACHER)).thenReturn(true);
+        stubRepository(List.of(), new PageImpl<>(List.of()));
+
+        PostFilterRequest mineFilter = PostFilterRequest.builder().mine(true).build();
+
+        ListAnnouncementsResult result = useCase.execute(new ListAnnouncementsQuery(mineFilter, userId));
+
+        assertThat(result).isNotNull();
+        verify(permissionValidator).canCreate(UserType.TEACHER);
+        // ser autor dispensa a regra de visibilidade: canViewAll/hubCoursePort não são consultados
+        verify(permissionValidator, never()).canViewAll(any());
+        verifyNoInteractions(hubCoursePort);
+        verify(announcementRepository).findAll(any(Specification.class), any(Sort.class));
+        verify(announcementRepository).findAll(any(Specification.class), any(Pageable.class));
+    }
+
+    @Test
+    void shouldThrowPermissionDenied_WhenMineRequestedWithoutCreatePermission() {
+        UUID userId = UUID.randomUUID();
+        RequestContext context = new RequestContext(userId, UserType.STUDENT, List.of());
+
+        when(contextProvider.getRequestContext()).thenReturn(context);
+        when(permissionValidator.canCreate(UserType.STUDENT)).thenReturn(false);
+
+        PostFilterRequest mineFilter = PostFilterRequest.builder().mine(true).build();
+
+        assertThatThrownBy(() -> useCase.execute(new ListAnnouncementsQuery(mineFilter, userId)))
+                .isInstanceOf(AnnouncementPermissionDeniedException.class);
+
+        verifyNoInteractions(announcementRepository);
+    }
+
+    @Test
     void shouldMergeTagIdAndTagIds_WhenBothAreProvided() {
         UUID tagId = UUID.randomUUID();
         UUID otherTagId = UUID.randomUUID();
 
-        PostFilterRequest filter = new PostFilterRequest(
-                null, null, null, null, null, null, tagId, List.of(otherTagId, tagId), null, null);
+        PostFilterRequest filter = PostFilterRequest.builder()
+                .tagId(tagId)
+                .tagIds(List.of(otherTagId, tagId))
+                .build();
 
         assertThat(filter.resolvedTagIds()).containsExactly(tagId, otherTagId);
     }
