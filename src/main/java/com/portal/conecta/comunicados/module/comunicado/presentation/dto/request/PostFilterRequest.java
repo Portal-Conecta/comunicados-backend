@@ -4,6 +4,7 @@ import com.portal.conecta.comunicados.module.comunicado.domain.enums.Announcemen
 import io.swagger.v3.oas.annotations.media.Schema;
 import jakarta.validation.constraints.Max;
 import jakarta.validation.constraints.Min;
+import lombok.Builder;
 import org.springdoc.core.annotations.ParameterObject;
 
 import java.time.Instant;
@@ -11,6 +12,7 @@ import java.util.LinkedHashSet;
 import java.util.List;
 import java.util.UUID;
 
+@Builder
 @ParameterObject
 public record PostFilterRequest(
 
@@ -45,6 +47,15 @@ public record PostFilterRequest(
     )
     List<UUID> tagIds,
 
+    @Schema(
+            description = "Quando true, restringe a listagem aos comunicados criados pelo próprio "
+                    + "usuário autenticado (tela \"Meus Comunicados\"). Nesse modo os agendados "
+                    + "(SCHEDULED) também aparecem e a regra de visibilidade não se aplica. Exige "
+                    + "permissão de criação — perfis sem essa permissão recebem 403.",
+            example = "true"
+    )
+    Boolean mine,
+
     @Min(0)
     Integer page,
 
@@ -66,28 +77,9 @@ public record PostFilterRequest(
         }
     }
 
-    public static PostFilterRequest defaults() {
-        return new PostFilterRequest(null, null, null, null, null, null, null, null, null, null);
-    }
-
-    public static PostFilterRequest withOrigin(AnnouncementOrigin origin) {
-        return new PostFilterRequest(origin, null, null, null, null, null, null, null, null, null);
-    }
-
-    public static PostFilterRequest withPaging(int page, int size) {
-        return new PostFilterRequest(null, null, null, null, null, null, null, null, page, size);
-    }
-
-    public static PostFilterRequest withSearch(String search) {
-        return new PostFilterRequest(null, null, null, null, null, search, null, null, null, null);
-    }
-
-    public static PostFilterRequest withTagId(UUID tagId) {
-        return new PostFilterRequest(null, null, null, null, null, null, tagId, null, null, null);
-    }
-
-    public static PostFilterRequest withTagIds(List<UUID> tagIds) {
-        return new PostFilterRequest(null, null, null, null, null, null, null, tagIds, null, null);
+    /** Indica se a listagem deve ser restrita aos comunicados do próprio autor. */
+    public boolean mineRequested() {
+        return Boolean.TRUE.equals(mine);
     }
 
     public List<UUID> resolvedTagIds() {
