@@ -2,6 +2,7 @@ package com.portal.conecta.comunicados.module.comunicado.application.usecase;
 
 import com.portal.conecta.comunicados.module.comunicado.application.query.ListAnnouncementsQuery;
 import com.portal.conecta.comunicados.module.comunicado.application.query.ListAnnouncementsResult;
+import com.portal.conecta.comunicados.module.comunicado.domain.exception.AnnouncementPermissionDeniedException;
 import com.portal.conecta.comunicados.module.comunicado.domain.model.Announcement;
 import com.portal.conecta.comunicados.module.comunicado.domain.port.announcement.AnnouncementRepository;
 import com.portal.conecta.comunicados.module.comunicado.domain.port.hub.HubCoursePort;
@@ -53,11 +54,25 @@ public class ListAnnouncementsUseCase {
     }
 
     private Specification<Announcement> buildBaseSpecification(RequestContext context, PostFilterRequest filter) {
+        boolean mineRequested = filter.mineRequested();
+
+        if (mineRequested && !permissionValidator.canCreate(context.userType())) {
+            throw new AnnouncementPermissionDeniedException(
+                    "Usuário não tem permissão para listar seus comunicados.");
+        }
+
         Specification<Announcement> spec = AnnouncementSpecifications.notRemoved()
-                .and(AnnouncementSpecifications.isPublished())
                 .and(AnnouncementSpecifications.hasOrigin(filter.origin()))
                 .and(AnnouncementSpecifications.publishedBetween(filter.publishedFrom(), filter.publishedTo()))
                 .and(AnnouncementSpecifications.hasDestinationClass(filter.classId()));
+
+        if (mineRequested) {
+            // "Meus Comunicados": escopo por autoria. Inclui os agendados (SCHEDULED), então não
+            // exige publicação; e ser autor dispensa a regra de visibilidade (visibleTo).
+            spec = spec.and(AnnouncementSpecifications.createdBy(context.userId()));
+        } else {
+            spec = spec.and(AnnouncementSpecifications.isPublished());
+        }
 
         if (hasSearch(filter)) {
             String searchTerm = filter.search().trim();
@@ -70,7 +85,7 @@ public class ListAnnouncementsUseCase {
             spec = spec.and(AnnouncementSpecifications.hasAnyTag(tagIds));
         }
 
-        if (!permissionValidator.canViewAll(context.userType())) {
+        if (!mineRequested && !permissionValidator.canViewAll(context.userType())) {
             spec = spec.and(AnnouncementSpecifications.visibleTo(
                     classIds(context),
                     hubCoursePort.getCurrentUserCourseIds(),
