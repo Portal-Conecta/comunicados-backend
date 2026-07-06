@@ -30,6 +30,15 @@ public class AnnouncementSpecifications {
         return (root, query, cb) -> cb.isNotNull(root.get("publishedAt"));
     }
 
+    public static Specification<Announcement> createdBy(UUID userId) {
+        return (root, query, cb) -> {
+            if (userId == null) {
+                return cb.conjunction();
+            }
+            return cb.equal(root.get("createdByUserId"), userId);
+        };
+    }
+
     public static Specification<Announcement> isPinned() {
         return (root, query, cb) -> cb.isTrue(root.get("pinned"));
     }
