@@ -92,12 +92,16 @@ public class AnnouncementController {
                     + "`totalPages`) refere-se apenas a `items`. Comunicados removidos nunca aparecem. "
                     + "Aceita filtros por origem (WEG/SENAI/BOTH), turma, intervalo de publicação, tag "
                     + "(`tagId` ou `tagIds` com semântica OR) e termo de busca textual (`search`) — "
-                    + "aplicados a ambos os arrays. Tag inexistente retorna listas vazias."
+                    + "aplicados a ambos os arrays. Tag inexistente retorna listas vazias. Use "
+                    + "`mine=true` para a tela \"Meus Comunicados\": restringe aos comunicados do "
+                    + "próprio autor, inclui os agendados (SCHEDULED) e dispensa a regra de "
+                    + "visibilidade; exige permissão de criação (403 caso contrário)."
     )
     @ApiResponses({
             @ApiResponse(responseCode = "200", description = "Lista retornada"),
             @ApiResponse(responseCode = "400", description = "Parâmetros de filtro inválidos"),
-            @ApiResponse(responseCode = "401", description = "Não autenticado")
+            @ApiResponse(responseCode = "401", description = "Não autenticado"),
+            @ApiResponse(responseCode = "403", description = "Sem permissão de criação para `mine=true`")
     })
     @GetMapping
     public ResponseEntity<ListAnnouncementsResponse> list(@Valid @ModelAttribute PostFilterRequest filter) {
