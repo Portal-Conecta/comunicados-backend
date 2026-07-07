@@ -49,6 +49,10 @@ public record UpsertTagFromCoreCommand(
         existing.setUpdatedAt(now);
     }
 
+    public static UpsertTagFromCoreCommand forHubEntity(TagEntityType entityType, String hubEntityId, String name) {
+        return new UpsertTagFromCoreCommand(hubEntityId, entityType, name, true);
+    }
+
     private static String resolveName(CoreEntityEventEnvelope envelope) {
         if (envelope.name() != null && !envelope.name().isBlank()) {
             return envelope.name().trim();

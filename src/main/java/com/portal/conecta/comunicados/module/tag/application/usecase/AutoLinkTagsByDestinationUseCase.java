@@ -35,6 +35,7 @@ public class AutoLinkTagsByDestinationUseCase {
 
     private final TagRepository tagRepository;
     private final AnnouncementTagRepository announcementTagRepository;
+    private final ResolveTagForDestinationUseCase resolveTagForDestinationUseCase;
 
     public void execute(Announcement announcement, List<TagLinkDestinationCommand> destinations) {
         execute(announcement, destinations, null);
@@ -80,6 +81,10 @@ public class AutoLinkTagsByDestinationUseCase {
     }
 
     private Optional<Tag> findByTypeAndHubEntity(TagEntityType type, String hubEntityId) {
+        if (type == TagEntityType.COURSE || type == TagEntityType.CLASS) {
+            return resolveTagForDestinationUseCase.resolve(type, hubEntityId);
+        }
+
         Optional<Tag> tag = tagRepository.findByEntityTypeAndHubEntityIdAndActiveTrue(type, hubEntityId);
         if (tag.isEmpty()) {
             log.debug("Auto-link: tag ativa não encontrada para type={} hubEntityId={}", type, hubEntityId);

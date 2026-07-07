@@ -6,6 +6,7 @@ import com.portal.conecta.comunicados.module.comunicado.domain.exception.Announc
 import com.portal.conecta.comunicados.module.comunicado.domain.model.Announcement;
 import com.portal.conecta.comunicados.module.comunicado.domain.port.announcement.AnnouncementRepository;
 import com.portal.conecta.comunicados.module.comunicado.domain.port.hub.HubCoursePort;
+import com.portal.conecta.comunicados.module.comunicado.domain.port.hub.HubShiftPort;
 import com.portal.conecta.comunicados.module.comunicado.domain.port.support.HubUserPort;
 import com.portal.conecta.comunicados.module.comunicado.domain.specification.AnnouncementSpecifications;
 import com.portal.conecta.comunicados.module.comunicado.domain.validator.AnnouncementPermissionValidator;
@@ -33,6 +34,7 @@ public class ListAnnouncementsUseCase {
     private final RequestContextProvider contextProvider;
     private final AnnouncementPermissionValidator permissionValidator;
     private final HubCoursePort hubCoursePort;
+    private final HubShiftPort hubShiftPort;
     private final HubUserPort hubUserPort;
 
     @Transactional(readOnly = true)
@@ -86,10 +88,12 @@ public class ListAnnouncementsUseCase {
         }
 
         if (!mineRequested && !permissionValidator.canViewAll(context.userType())) {
+            List<UUID> classes = classIds(context);
             spec = spec.and(AnnouncementSpecifications.visibleTo(
-                    classIds(context),
+                    classes,
                     hubCoursePort.getCurrentUserCourseIds(),
-                    context.userId()
+                    context.userId(),
+                    hubShiftPort.getShiftCodesForClasses(classes)
             ));
         }
 

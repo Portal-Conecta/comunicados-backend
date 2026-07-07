@@ -4,6 +4,7 @@ import com.portal.conecta.comunicados.module.comunicado.application.usecase.List
 import com.portal.conecta.comunicados.module.comunicado.domain.model.Announcement;
 import com.portal.conecta.comunicados.module.comunicado.domain.port.announcement.AnnouncementRepository;
 import com.portal.conecta.comunicados.module.comunicado.domain.port.hub.HubCoursePort;
+import com.portal.conecta.comunicados.module.comunicado.domain.port.hub.HubShiftPort;
 import com.portal.conecta.comunicados.module.comunicado.domain.validator.AnnouncementPermissionValidator;
 import com.portal.conecta.comunicados.shared.context.ContextClass;
 import com.portal.conecta.comunicados.shared.context.RequestContext;
@@ -42,6 +43,9 @@ class ListPinnedAnnouncementsUseCaseTest {
     @Mock
     private HubCoursePort hubCoursePort;
 
+    @Mock
+    private HubShiftPort hubShiftPort;
+
     @InjectMocks
     private ListPinnedAnnouncementsUseCase useCase;
 
@@ -55,6 +59,7 @@ class ListPinnedAnnouncementsUseCaseTest {
         when(contextProvider.getRequestContext()).thenReturn(context);
         when(permissionValidator.canViewAll(UserType.STUDENT)).thenReturn(false);
         when(hubCoursePort.getCurrentUserCourseIds()).thenReturn(List.of(UUID.randomUUID()));
+        when(hubShiftPort.getShiftCodesForClasses(List.of(classId))).thenReturn(List.of());
         when(announcementRepository.findAll(any(Specification.class), any(Sort.class)))
                 .thenReturn(List.of());
 

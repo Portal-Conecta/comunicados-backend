@@ -7,6 +7,8 @@ import com.portal.conecta.comunicados.module.comunicado.domain.model.Announcemen
 import com.portal.conecta.comunicados.module.comunicado.domain.model.AnnouncementDestination;
 import com.portal.conecta.comunicados.module.comunicado.domain.port.announcement.AnnouncementRepository;
 import com.portal.conecta.comunicados.module.comunicado.domain.port.hub.HubCoursePort;
+import com.portal.conecta.comunicados.module.comunicado.domain.port.hub.HubShiftPort;
+import com.portal.conecta.comunicados.module.comunicado.domain.port.support.AnnouncementTagRepository;
 import com.portal.conecta.comunicados.module.comunicado.domain.validator.AnnouncementPermissionValidator;
 import com.portal.conecta.comunicados.shared.context.ContextClass;
 import com.portal.conecta.comunicados.shared.context.RequestContext;
@@ -26,6 +28,8 @@ public class GetAnnouncementByIdUseCase {
     private final RequestContextProvider contextProvider;
     private final AnnouncementPermissionValidator permissionValidator;
     private final HubCoursePort hubCoursePort;
+    private final HubShiftPort hubShiftPort;
+    private final AnnouncementTagRepository announcementTagRepository;
 
     @Transactional(readOnly = true)
     public Announcement execute(GetAnnouncementByIdQuery query) {
@@ -54,9 +58,25 @@ public class GetAnnouncementByIdUseCase {
         List<UUID> courseIds = hubCoursePort.getCurrentUserCourseIds();
         UUID viewerUserId = context.userId();
 
-        return announcement.getDestinations()
+        boolean destinationMatch = announcement.getDestinations()
                 .stream()
                 .anyMatch(destination -> matches(destination, classIds, courseIds, viewerUserId));
+
+        if (!destinationMatch) {
+            return false;
+        }
+
+        return matchesShiftRestriction(announcement.getId(), classIds);
+    }
+
+    private boolean matchesShiftRestriction(UUID announcementId, List<UUID> classIds) {
+        List<String> requiredShiftCodes = announcementTagRepository.findActiveShiftHubEntityIdsByAnnouncementId(announcementId);
+        if (requiredShiftCodes.isEmpty()) {
+            return true;
+        }
+
+        List<String> viewerShiftCodes = hubShiftPort.getShiftCodesForClasses(classIds);
+        return requiredShiftCodes.stream().anyMatch(viewerShiftCodes::contains);
     }
 
     private boolean matches(

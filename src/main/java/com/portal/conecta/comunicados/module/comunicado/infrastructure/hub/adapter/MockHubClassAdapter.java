@@ -2,6 +2,8 @@ package com.portal.conecta.comunicados.module.comunicado.infrastructure.hub.adap
 
 import java.util.Comparator;
 import java.util.List;
+import java.util.Map;
+import java.util.Optional;
 import java.util.Set;
 import java.util.UUID;
 import java.util.stream.Collectors;
@@ -10,6 +12,7 @@ import org.springframework.boot.autoconfigure.condition.ConditionalOnProperty;
 import org.springframework.stereotype.Component;
 import org.springframework.web.client.RestClientException;
 
+import com.portal.conecta.comunicados.module.comunicado.domain.model.hub.HubClassInfo;
 import com.portal.conecta.comunicados.module.comunicado.domain.model.hub.HubStudent;
 import com.portal.conecta.comunicados.module.comunicado.domain.port.support.HubClassPort;
 import com.portal.conecta.comunicados.module.comunicado.infrastructure.hub.exception.HubIntegrationException;
@@ -27,6 +30,18 @@ public class MockHubClassAdapter implements HubClassPort {
         this.classIds = properties.classIds().stream()
                 .map(UUID::fromString)
                 .collect(Collectors.toUnmodifiableSet());
+    }
+
+    @Override
+    public Optional<HubClassInfo> findClassById(UUID classId) {
+        if (!existsById(classId)) {
+            return Optional.empty();
+        }
+
+        String shiftCode = properties.shiftByClassId().get(classId.toString());
+        String name = properties.classNamesById().getOrDefault(classId.toString(), "Turma " + classId);
+
+        return Optional.of(new HubClassInfo(classId, name, shiftCode));
     }
 
     @Override

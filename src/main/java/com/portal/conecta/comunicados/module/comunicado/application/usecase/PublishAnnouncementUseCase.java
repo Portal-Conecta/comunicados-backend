@@ -17,6 +17,7 @@ import com.portal.conecta.comunicados.module.comunicado.domain.port.announcement
 import com.portal.conecta.comunicados.module.comunicado.domain.validator.AnnouncementPermissionValidator;
 import com.portal.conecta.comunicados.module.tag.application.dto.TagLinkDestinationCommand;
 import com.portal.conecta.comunicados.module.tag.application.usecase.AutoLinkTagsByDestinationUseCase;
+import com.portal.conecta.comunicados.module.tag.application.usecase.LinkShiftTagsUseCase;
 import com.portal.conecta.comunicados.shared.context.RequestContext;
 import com.portal.conecta.comunicados.shared.context.RequestContextProvider;
 import com.portal.conecta.comunicados.shared.exception.UnauthorizedUserException;
@@ -40,6 +41,7 @@ public class PublishAnnouncementUseCase {
     private final RequestContextProvider requestContextProvider;
     private final AnnouncementPermissionValidator permissionValidator;
     private final AutoLinkTagsByDestinationUseCase autoLinkTagsUseCase;
+    private final LinkShiftTagsUseCase linkShiftTagsUseCase;
     private final AnnouncementNotificationPublisher notificationPublisher;
 
     @Transactional
@@ -54,6 +56,7 @@ public class PublishAnnouncementUseCase {
         Announcement announcement = announcementRepository.save(command.toEntity(now));
         List<AnnouncementDestination> destinations = announcementDestinationRepository.saveAll(command.toDestinations(announcement));
         autoLinkTagsUseCase.execute(announcement, toTagCommands(destinations), command.tagIds());
+        linkShiftTagsUseCase.execute(announcement, command.shiftCodes());
 
         try {
             notificationPublisher.publish(announcement, destinations);

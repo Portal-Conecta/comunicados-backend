@@ -92,3 +92,6 @@ hub:
     students-by-class: {}
     accessible-class-ids-by-user: {}
     user-types-by-id: {}
+    shift-by-class-id: {}
+    class-names-by-id: {}
+    course-names-by-id: {}

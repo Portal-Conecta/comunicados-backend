@@ -5,6 +5,7 @@ import com.portal.conecta.comunicados.module.comunicado.domain.enums.Announcemen
 import com.portal.conecta.comunicados.module.comunicado.domain.model.Announcement;
 import com.portal.conecta.comunicados.module.comunicado.domain.model.AnnouncementDestination;
 import com.portal.conecta.comunicados.module.comunicado.domain.model.AnnouncementTag;
+import com.portal.conecta.comunicados.module.tag.domain.enums.TagEntityType;
 import com.portal.conecta.comunicados.module.tag.domain.model.Tag;
 import jakarta.persistence.criteria.Join;
 import jakarta.persistence.criteria.Predicate;
@@ -162,6 +163,16 @@ public class AnnouncementSpecifications {
         };
     }
 
+    public static Specification<Announcement> visibleTo(
+            List<UUID> classIds,
+            List<UUID> courseIds,
+            UUID viewerUserId,
+            List<String> viewerShiftCodes
+    ) {
+        return visibleTo(classIds, courseIds, viewerUserId)
+                .and(visibleForShiftCodes(viewerShiftCodes));
+    }
+
     public static Specification<Announcement> visibleTo(List<UUID> classIds, List<UUID> courseIds, UUID viewerUserId) {
         return (root, query, cb) -> {
             Subquery<UUID> subquery = query.subquery(UUID.class);
@@ -182,6 +193,39 @@ public class AnnouncementSpecifications {
 
             subquery.where(cb.and(linked, cb.or(general, classMatch, courseMatch, userMatch)));
             return cb.exists(subquery);
+        };
+    }
+
+    public static Specification<Announcement> visibleForShiftCodes(List<String> viewerShiftCodes) {
+        return (root, query, cb) -> {
+            Subquery<UUID> hasShiftTags = query.subquery(UUID.class);
+            Root<AnnouncementTag> shiftTagLink = hasShiftTags.from(AnnouncementTag.class);
+            Join<AnnouncementTag, Tag> shiftTag = shiftTagLink.join("tag");
+            hasShiftTags.select(shiftTagLink.get("id"));
+            hasShiftTags.where(cb.and(
+                    cb.equal(shiftTagLink.get("announcement"), root),
+                    cb.equal(shiftTag.get("entityType"), TagEntityType.SHIFT),
+                    cb.isTrue(shiftTag.get("active"))
+            ));
+
+            Predicate noShiftRestriction = cb.not(cb.exists(hasShiftTags));
+
+            if (viewerShiftCodes == null || viewerShiftCodes.isEmpty()) {
+                return noShiftRestriction;
+            }
+
+            Subquery<UUID> matchingShift = query.subquery(UUID.class);
+            Root<AnnouncementTag> matchLink = matchingShift.from(AnnouncementTag.class);
+            Join<AnnouncementTag, Tag> matchTag = matchLink.join("tag");
+            matchingShift.select(matchLink.get("id"));
+            matchingShift.where(cb.and(
+                    cb.equal(matchLink.get("announcement"), root),
+                    cb.equal(matchTag.get("entityType"), TagEntityType.SHIFT),
+                    cb.isTrue(matchTag.get("active")),
+                    matchTag.get("hubEntityId").in(viewerShiftCodes)
+            ));
+
+            return cb.or(noShiftRestriction, cb.exists(matchingShift));
         };
     }
 

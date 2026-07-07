@@ -4,5 +4,6 @@ public enum TagEntityType {
     COURSE,
     CLASS,
     USER,
-    GENERAL
+    GENERAL,
+    SHIFT
 }

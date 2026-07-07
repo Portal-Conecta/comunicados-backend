@@ -24,6 +24,7 @@ import com.portal.conecta.comunicados.module.comunicado.domain.model.Announcemen
 import com.portal.conecta.comunicados.module.comunicado.domain.port.support.AnnouncementTagRepository;
 import com.portal.conecta.comunicados.module.tag.application.dto.TagLinkDestinationCommand;
 import com.portal.conecta.comunicados.module.tag.application.usecase.AutoLinkTagsByDestinationUseCase;
+import com.portal.conecta.comunicados.module.tag.application.usecase.ResolveTagForDestinationUseCase;
 import com.portal.conecta.comunicados.module.tag.domain.enums.TagEntityType;
 import com.portal.conecta.comunicados.module.tag.domain.model.Tag;
 import com.portal.conecta.comunicados.module.tag.domain.port.TagRepository;
@@ -32,6 +33,7 @@ class AutoLinkTagsByDestinationUseCaseTest {
 
     private TagRepository tagRepository;
     private AnnouncementTagRepository announcementTagRepository;
+    private ResolveTagForDestinationUseCase resolveTagForDestinationUseCase;
     private AutoLinkTagsByDestinationUseCase useCase;
 
     private Announcement announcement;
@@ -40,7 +42,9 @@ class AutoLinkTagsByDestinationUseCaseTest {
     void setUp() {
         tagRepository = mock(TagRepository.class);
         announcementTagRepository = mock(AnnouncementTagRepository.class);
-        useCase = new AutoLinkTagsByDestinationUseCase(tagRepository, announcementTagRepository);
+        resolveTagForDestinationUseCase = mock(ResolveTagForDestinationUseCase.class);
+        useCase = new AutoLinkTagsByDestinationUseCase(
+                tagRepository, announcementTagRepository, resolveTagForDestinationUseCase);
 
         announcement = Announcement.builder()
                 .id(UUID.randomUUID())
@@ -61,10 +65,8 @@ class AutoLinkTagsByDestinationUseCaseTest {
         UUID classId = UUID.randomUUID();
         Tag tag = activeTag(TagEntityType.CLASS, classId);
 
-        when(tagRepository.findByEntityTypeAndHubEntityIdAndActiveTrue(
-                TagEntityType.CLASS,
-                classId.toString()
-        )).thenReturn(Optional.of(tag));
+        when(resolveTagForDestinationUseCase.resolve(TagEntityType.CLASS, classId.toString()))
+                .thenReturn(Optional.of(tag));
 
         useCase.execute(announcement, List.of(command(AnnouncementDestinationType.CLASS, classId)));
 
@@ -80,10 +82,8 @@ class AutoLinkTagsByDestinationUseCaseTest {
         UUID courseId = UUID.randomUUID();
         Tag tag = activeTag(TagEntityType.COURSE, courseId);
 
-        when(tagRepository.findByEntityTypeAndHubEntityIdAndActiveTrue(
-                TagEntityType.COURSE,
-                courseId.toString()
-        )).thenReturn(Optional.of(tag));
+        when(resolveTagForDestinationUseCase.resolve(TagEntityType.COURSE, courseId.toString()))
+                .thenReturn(Optional.of(tag));
 
         useCase.execute(announcement, List.of(command(AnnouncementDestinationType.COURSE, courseId)));
 
@@ -147,10 +147,8 @@ class AutoLinkTagsByDestinationUseCaseTest {
     void shouldSkipWhenTagNotFound() {
         UUID classId = UUID.randomUUID();
 
-        when(tagRepository.findByEntityTypeAndHubEntityIdAndActiveTrue(
-                TagEntityType.CLASS,
-                classId.toString()
-        )).thenReturn(Optional.empty());
+        when(resolveTagForDestinationUseCase.resolve(TagEntityType.CLASS, classId.toString()))
+                .thenReturn(Optional.empty());
 
         useCase.execute(announcement, List.of(command(AnnouncementDestinationType.CLASS, classId)));
 
@@ -162,10 +160,8 @@ class AutoLinkTagsByDestinationUseCaseTest {
         UUID classId = UUID.randomUUID();
         Tag tag = activeTag(TagEntityType.CLASS, classId);
 
-        when(tagRepository.findByEntityTypeAndHubEntityIdAndActiveTrue(
-                TagEntityType.CLASS,
-                classId.toString()
-        )).thenReturn(Optional.of(tag));
+        when(resolveTagForDestinationUseCase.resolve(TagEntityType.CLASS, classId.toString()))
+                .thenReturn(Optional.of(tag));
 
         AnnouncementTag existing = AnnouncementTag.builder()
                 .announcement(announcement)
@@ -187,15 +183,11 @@ class AutoLinkTagsByDestinationUseCaseTest {
         Tag tag1 = activeTag(TagEntityType.CLASS, class1);
         Tag tag2 = activeTag(TagEntityType.CLASS, class2);
 
-        when(tagRepository.findByEntityTypeAndHubEntityIdAndActiveTrue(
-                TagEntityType.CLASS,
-                class1.toString()
-        )).thenReturn(Optional.of(tag1));
+        when(resolveTagForDestinationUseCase.resolve(TagEntityType.CLASS, class1.toString()))
+                .thenReturn(Optional.of(tag1));
 
-        when(tagRepository.findByEntityTypeAndHubEntityIdAndActiveTrue(
-                TagEntityType.CLASS,
-                class2.toString()
-        )).thenReturn(Optional.of(tag2));
+        when(resolveTagForDestinationUseCase.resolve(TagEntityType.CLASS, class2.toString()))
+                .thenReturn(Optional.of(tag2));
 
         useCase.execute(announcement, List.of(
                 command(AnnouncementDestinationType.CLASS, class1),
@@ -231,10 +223,8 @@ class AutoLinkTagsByDestinationUseCaseTest {
         UUID classId = UUID.randomUUID();
         Tag tag = activeTag(TagEntityType.CLASS, classId);
 
-        when(tagRepository.findByEntityTypeAndHubEntityIdAndActiveTrue(
-                TagEntityType.CLASS,
-                classId.toString()
-        )).thenReturn(Optional.of(tag));
+        when(resolveTagForDestinationUseCase.resolve(TagEntityType.CLASS, classId.toString()))
+                .thenReturn(Optional.of(tag));
         when(tagRepository.findAllById(List.of(tag.getId()))).thenReturn(List.of(tag));
 
         useCase.execute(announcement,

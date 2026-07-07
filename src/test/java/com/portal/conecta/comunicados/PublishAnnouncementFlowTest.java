@@ -43,6 +43,7 @@ import com.portal.conecta.comunicados.module.comunicado.application.usecase.Upda
 import com.portal.conecta.comunicados.module.comunicado.domain.enums.AnnouncementDestinationType;
 import com.portal.conecta.comunicados.module.comunicado.domain.enums.AnnouncementHistoryAction;
 import com.portal.conecta.comunicados.module.comunicado.domain.enums.AnnouncementOrigin;
+import com.portal.conecta.comunicados.module.comunicado.domain.enums.ShiftCode;
 import com.portal.conecta.comunicados.module.comunicado.domain.enums.AnnouncementStatus;
 import com.portal.conecta.comunicados.module.comunicado.domain.model.Announcement;
 import com.portal.conecta.comunicados.module.comunicado.domain.model.AnnouncementHistory;
@@ -56,6 +57,7 @@ import com.portal.conecta.comunicados.module.comunicado.presentation.controller.
 import com.portal.conecta.comunicados.module.comunicado.presentation.dto.request.CreateAnnouncementDestinationInput;
 import com.portal.conecta.comunicados.module.comunicado.presentation.dto.request.PublishAnnouncementRequest;
 import com.portal.conecta.comunicados.module.tag.application.usecase.AutoLinkTagsByDestinationUseCase;
+import com.portal.conecta.comunicados.module.tag.application.usecase.LinkShiftTagsUseCase;
 import com.portal.conecta.comunicados.shared.context.ClassRole;
 import com.portal.conecta.comunicados.shared.context.ContextClass;
 import com.portal.conecta.comunicados.shared.context.RequestContext;
@@ -75,6 +77,7 @@ class PublishAnnouncementFlowTest {
     private RequestContextProvider requestContextProvider;
     private HubClassPort hubClassPort;
     private AutoLinkTagsByDestinationUseCase autoLinkTagsUseCase;
+    private LinkShiftTagsUseCase linkShiftTagsUseCase;
     private AnnouncementNotificationPublisher notificationPublisher;
     private ListAnnouncementsUseCase listAnnouncementsUseCase;
     private ListPinnedAnnouncementsUseCase listPinnedAnnouncementsUseCase;
@@ -97,6 +100,7 @@ class PublishAnnouncementFlowTest {
         requestContextProvider = mock(RequestContextProvider.class);
         hubClassPort = mock(HubClassPort.class);
         autoLinkTagsUseCase = mock(AutoLinkTagsByDestinationUseCase.class);
+        linkShiftTagsUseCase = mock(LinkShiftTagsUseCase.class);
         notificationPublisher = mock(AnnouncementNotificationPublisher.class);
         listAnnouncementsUseCase = mock(ListAnnouncementsUseCase.class);
         listPinnedAnnouncementsUseCase = mock(ListPinnedAnnouncementsUseCase.class);
@@ -113,6 +117,7 @@ class PublishAnnouncementFlowTest {
                 requestContextProvider,
                 new AnnouncementPermissionValidator(hubClassPort),
                 autoLinkTagsUseCase,
+                linkShiftTagsUseCase,
                 notificationPublisher
         );
         scheduleAnnouncementUseCase = mock(ScheduleAnnouncementUseCase.class);
@@ -279,7 +284,7 @@ class PublishAnnouncementFlowTest {
                 .thenReturn(createContext(UUID.randomUUID(), UserType.SENAI));
 
         PublishAnnouncementRequest request = new PublishAnnouncementRequest(
-                "", "Descricao", AnnouncementOrigin.SENAI, List.of(userDestination(UUID.randomUUID())), null, null);
+                "", "Descricao", AnnouncementOrigin.SENAI, List.of(userDestination(UUID.randomUUID())), null, null, null);
 
         perform(request).andExpect(status().isBadRequest());
         verify(announcementRepository, never()).save(any());
@@ -291,7 +296,7 @@ class PublishAnnouncementFlowTest {
                 .thenReturn(createContext(UUID.randomUUID(), UserType.SENAI));
 
         PublishAnnouncementRequest request = new PublishAnnouncementRequest(
-                "Titulo", "Descricao", AnnouncementOrigin.SENAI, List.of(), null, null);
+                "Titulo", "Descricao", AnnouncementOrigin.SENAI, List.of(), null, null, null);
 
         perform(request).andExpect(status().isBadRequest());
         verify(announcementRepository, never()).save(any());
@@ -311,6 +316,7 @@ class PublishAnnouncementFlowTest {
                 AnnouncementOrigin.SENAI,
                 List.of(userDestination(UUID.randomUUID())),
                 null,
+                null,
                 null
         );
 
@@ -324,6 +330,30 @@ class PublishAnnouncementFlowTest {
     }
 
     @Test
+    void shouldPublishWithShiftCodes() throws Exception {
+        UUID userId = UUID.randomUUID();
+
+        when(requestContextProvider.getRequestContext())
+                .thenReturn(createContext(userId, UserType.SENAI));
+
+        PublishAnnouncementRequest request = new PublishAnnouncementRequest(
+                "Comunicado de teste",
+                "Descricao do comunicado",
+                AnnouncementOrigin.SENAI,
+                List.of(userDestination(UUID.randomUUID())),
+                null,
+                null,
+                List.of(ShiftCode.FULL_AM_PM)
+        );
+
+        perform(request)
+                .andExpect(status().isCreated())
+                .andExpect(jsonPath("$.status").value(AnnouncementStatus.PUBLISHED.name()));
+
+        verify(linkShiftTagsUseCase).execute(any(), any());
+    }
+
+    @Test
     void shouldReturnBadRequestWhenTitleExceedsMaxLength() throws Exception {
         when(requestContextProvider.getRequestContext())
                 .thenReturn(createContext(UUID.randomUUID(), UserType.SENAI));
@@ -333,6 +363,7 @@ class PublishAnnouncementFlowTest {
                 "Descricao valida",
                 AnnouncementOrigin.SENAI,
                 List.of(userDestination(UUID.randomUUID())),
+                null,
                 null,
                 null
         );
@@ -359,6 +390,7 @@ class PublishAnnouncementFlowTest {
                 "Descricao do comunicado",
                 AnnouncementOrigin.SENAI,
                 List.of(destinations),
+                null,
                 null,
                 null
         );
@@ -462,6 +494,7 @@ class PublishAnnouncementWebMvcTest {
                 "Descricao",
                 AnnouncementOrigin.SENAI,
                 List.of(new CreateAnnouncementDestinationInput(AnnouncementDestinationType.USER, UUID.randomUUID())),
+                null,
                 null,
                 null
         );

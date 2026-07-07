@@ -2,6 +2,7 @@ package com.portal.conecta.comunicados.module.comunicado.infrastructure.hub.adap
 
 import java.util.Arrays;
 import java.util.List;
+import java.util.Optional;
 import java.util.UUID;
 
 import org.springframework.beans.factory.annotation.Qualifier;
@@ -12,8 +13,10 @@ import org.springframework.web.client.HttpClientErrorException;
 import org.springframework.web.client.RestClient;
 import org.springframework.web.client.RestClientException;
 
+import com.portal.conecta.comunicados.module.comunicado.domain.model.hub.HubClassInfo;
 import com.portal.conecta.comunicados.module.comunicado.domain.model.hub.HubStudent;
 import com.portal.conecta.comunicados.module.comunicado.domain.port.support.HubClassPort;
+import com.portal.conecta.comunicados.module.comunicado.infrastructure.hub.dto.HubClassResponse;
 import com.portal.conecta.comunicados.module.comunicado.infrastructure.hub.dto.HubStudentResponse;
 import com.portal.conecta.comunicados.module.comunicado.infrastructure.hub.exception.HubIntegrationException;
 import com.portal.conecta.comunicados.module.comunicado.infrastructure.hub.properties.HubApiProperties;
@@ -29,6 +32,26 @@ public class HttpHubClassAdapter implements HubClassPort {
             @Qualifier("hubRestClientBuilder") RestClient.Builder restClientBuilder
     ) {
         this.restClient = restClientBuilder.baseUrl(properties.url()).build();
+    }
+
+    @Override
+    public Optional<HubClassInfo> findClassById(UUID classId) {
+        try {
+            HubClassResponse response = restClient.get()
+                    .uri("/classes/{classId}", classId)
+                    .retrieve()
+                    .body(HubClassResponse.class);
+
+            if (response == null || response.id() == null) {
+                return Optional.empty();
+            }
+
+            return Optional.of(new HubClassInfo(response.id(), response.name(), response.shift()));
+        } catch (HttpClientErrorException.NotFound exception) {
+            return Optional.empty();
+        } catch (RestClientException exception) {
+            throw new HubIntegrationException("Serviço de turmas do Hub indisponível.", exception);
+        }
     }
 
     @Override

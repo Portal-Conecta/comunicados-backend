@@ -7,6 +7,7 @@ import java.util.UUID;
 import com.portal.conecta.comunicados.module.comunicado.domain.enums.AnnouncementHistoryAction;
 import com.portal.conecta.comunicados.module.comunicado.domain.enums.AnnouncementOrigin;
 import com.portal.conecta.comunicados.module.comunicado.domain.enums.AnnouncementStatus;
+import com.portal.conecta.comunicados.module.comunicado.domain.enums.ShiftCode;
 import com.portal.conecta.comunicados.module.comunicado.domain.model.Announcement;
 import com.portal.conecta.comunicados.module.comunicado.domain.model.AnnouncementDestination;
 import com.portal.conecta.comunicados.module.comunicado.domain.model.AnnouncementHistory;
@@ -29,7 +30,8 @@ public record ScheduleAnnouncementCommand(
     UUID authorUserId,
     UserType authorUserType,
     List<CreateAnnouncementDestinationInput> destinations,
-    List<UUID> tagIds
+    List<UUID> tagIds,
+    List<ShiftCode> shiftCodes
 
 ) {
 
@@ -43,7 +45,8 @@ public record ScheduleAnnouncementCommand(
                 context.userId(),
                 context.userType(),
                 request.destinations(),
-                request.tagIds()
+                request.tagIds(),
+                request.resolvedShiftCodes()
         );
     }
 

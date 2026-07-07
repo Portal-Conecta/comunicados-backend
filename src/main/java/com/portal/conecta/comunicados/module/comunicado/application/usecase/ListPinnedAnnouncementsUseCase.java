@@ -3,6 +3,7 @@ package com.portal.conecta.comunicados.module.comunicado.application.usecase;
 import com.portal.conecta.comunicados.module.comunicado.domain.model.Announcement;
 import com.portal.conecta.comunicados.module.comunicado.domain.port.announcement.AnnouncementRepository;
 import com.portal.conecta.comunicados.module.comunicado.domain.port.hub.HubCoursePort;
+import com.portal.conecta.comunicados.module.comunicado.domain.port.hub.HubShiftPort;
 import com.portal.conecta.comunicados.module.comunicado.domain.specification.AnnouncementSpecifications;
 import com.portal.conecta.comunicados.module.comunicado.domain.validator.AnnouncementPermissionValidator;
 import com.portal.conecta.comunicados.shared.context.ContextClass;
@@ -27,6 +28,7 @@ public class ListPinnedAnnouncementsUseCase {
     private final RequestContextProvider contextProvider;
     private final AnnouncementPermissionValidator permissionValidator;
     private final HubCoursePort hubCoursePort;
+    private final HubShiftPort hubShiftPort;
 
     @Transactional(readOnly = true)
     public List<Announcement> execute() {
@@ -37,10 +39,12 @@ public class ListPinnedAnnouncementsUseCase {
                 .and(AnnouncementSpecifications.isPinned());
 
         if (!permissionValidator.canViewAll(context.userType())) {
+            List<UUID> classes = classIds(context);
             spec = spec.and(AnnouncementSpecifications.visibleTo(
-                    classIds(context),
+                    classes,
                     hubCoursePort.getCurrentUserCourseIds(),
-                    context.userId()
+                    context.userId(),
+                    hubShiftPort.getShiftCodesForClasses(classes)
             ));
         }
 

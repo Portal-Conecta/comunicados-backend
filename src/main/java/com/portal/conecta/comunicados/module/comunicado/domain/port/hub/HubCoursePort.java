@@ -1,6 +1,7 @@
 package com.portal.conecta.comunicados.module.comunicado.domain.port.hub;
 
 import java.util.List;
+import java.util.Optional;
 import java.util.UUID;
 
 /**
@@ -15,4 +16,6 @@ public interface HubCoursePort {
      * vínculos ou quando o Hub está indisponível (degrada sem derrubar a leitura).
      */
     List<UUID> getCurrentUserCourseIds();
+
+    Optional<String> findCourseNameById(UUID courseId);
 }

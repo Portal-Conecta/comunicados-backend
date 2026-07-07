@@ -13,7 +13,10 @@ public record HubMockProperties(
         List<String> userRoomLinks,
         Map<String, List<MockStudent>> studentsByClass,
         Map<String, List<String>> accessibleClassIdsByUser,
-        Map<String, String> userTypesById
+        Map<String, String> userTypesById,
+        Map<String, String> shiftByClassId,
+        Map<String, String> classNamesById,
+        Map<String, String> courseNamesById
 ) {
 
     public HubMockProperties {
@@ -24,6 +27,9 @@ public record HubMockProperties(
         studentsByClass = studentsByClass == null ? Map.of() : Map.copyOf(studentsByClass);
         accessibleClassIdsByUser = accessibleClassIdsByUser == null ? Map.of() : Map.copyOf(accessibleClassIdsByUser);
         userTypesById = userTypesById == null ? Map.of() : Map.copyOf(userTypesById);
+        shiftByClassId = shiftByClassId == null ? Map.of() : Map.copyOf(shiftByClassId);
+        classNamesById = classNamesById == null ? Map.of() : Map.copyOf(classNamesById);
+        courseNamesById = courseNamesById == null ? Map.of() : Map.copyOf(courseNamesById);
     }
 
     public record MockStudent(

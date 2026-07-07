@@ -62,6 +62,7 @@ import com.portal.conecta.comunicados.module.comunicado.presentation.controller.
 import com.portal.conecta.comunicados.module.comunicado.presentation.dto.request.CreateAnnouncementDestinationInput;
 import com.portal.conecta.comunicados.module.comunicado.presentation.dto.request.ScheduleAnnouncementRequest;
 import com.portal.conecta.comunicados.module.tag.application.usecase.AutoLinkTagsByDestinationUseCase;
+import com.portal.conecta.comunicados.module.tag.application.usecase.LinkShiftTagsUseCase;
 import com.portal.conecta.comunicados.shared.context.ClassRole;
 import com.portal.conecta.comunicados.shared.context.ContextClass;
 import com.portal.conecta.comunicados.shared.context.RequestContext;
@@ -83,6 +84,7 @@ class ScheduleAnnouncementFlowTest {
     private RequestContextProvider requestContextProvider;
     private HubClassPort hubClassPort;
     private AutoLinkTagsByDestinationUseCase autoLinkTagsUseCase;
+    private LinkShiftTagsUseCase linkShiftTagsUseCase;
     private ListAnnouncementsUseCase listAnnouncementsUseCase;
     private ListPinnedAnnouncementsUseCase listPinnedAnnouncementsUseCase;
     private GetAnnouncementByIdUseCase getAnnouncementByIdUseCase;
@@ -104,6 +106,7 @@ class ScheduleAnnouncementFlowTest {
         requestContextProvider = mock(RequestContextProvider.class);
         hubClassPort = mock(HubClassPort.class);
         autoLinkTagsUseCase = mock(AutoLinkTagsByDestinationUseCase.class);
+        linkShiftTagsUseCase = mock(LinkShiftTagsUseCase.class);
         listAnnouncementsUseCase = mock(ListAnnouncementsUseCase.class);
         listPinnedAnnouncementsUseCase = mock(ListPinnedAnnouncementsUseCase.class);
         getAnnouncementByIdUseCase = mock(GetAnnouncementByIdUseCase.class);
@@ -121,7 +124,8 @@ class ScheduleAnnouncementFlowTest {
                 announcementHistoryRepository,
                 requestContextProvider,
                 new AnnouncementPermissionValidator(hubClassPort),
-                autoLinkTagsUseCase
+                autoLinkTagsUseCase,
+                linkShiftTagsUseCase
         );
 
         AnnouncementController controller = new AnnouncementController(
@@ -259,7 +263,7 @@ class ScheduleAnnouncementFlowTest {
 
         ScheduleAnnouncementCommand command = new ScheduleAnnouncementCommand(
                 "Titulo", "Descricao", AnnouncementOrigin.SENAI, false, past, userId, UserType.SENAI,
-                List.of(classDestination(UUID.randomUUID())), null
+                List.of(classDestination(UUID.randomUUID())), null, List.of()
         );
 
         assertThrows(AnnouncementMustBeInTheFutureException.class, () -> scheduleAnnouncementUseCase.execute(command));
@@ -296,6 +300,7 @@ class ScheduleAnnouncementFlowTest {
                 AnnouncementOrigin.SENAI,
                 scheduledFor,
                 List.of(destinations),
+                null,
                 null,
                 null
         );
@@ -404,6 +409,7 @@ class ScheduleAnnouncementWebMvcTest {
                 AnnouncementOrigin.SENAI,
                 scheduledFor,
                 List.of(new CreateAnnouncementDestinationInput(AnnouncementDestinationType.CLASS, UUID.randomUUID())),
+                null,
                 null,
                 null
         );

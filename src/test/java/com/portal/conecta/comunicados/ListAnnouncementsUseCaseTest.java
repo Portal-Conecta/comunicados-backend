@@ -8,6 +8,7 @@ import com.portal.conecta.comunicados.module.comunicado.domain.exception.Announc
 import com.portal.conecta.comunicados.module.comunicado.domain.model.Announcement;
 import com.portal.conecta.comunicados.module.comunicado.domain.port.announcement.AnnouncementRepository;
 import com.portal.conecta.comunicados.module.comunicado.domain.port.hub.HubCoursePort;
+import com.portal.conecta.comunicados.module.comunicado.domain.port.hub.HubShiftPort;
 import com.portal.conecta.comunicados.module.comunicado.domain.port.support.HubUserPort;
 import com.portal.conecta.comunicados.module.comunicado.domain.validator.AnnouncementPermissionValidator;
 import com.portal.conecta.comunicados.module.comunicado.presentation.dto.request.PostFilterRequest;
@@ -54,6 +55,9 @@ class ListAnnouncementsUseCaseTest {
     private HubCoursePort hubCoursePort;
 
     @Mock
+    private HubShiftPort hubShiftPort;
+
+    @Mock
     private HubUserPort hubUserPort;
 
     @InjectMocks
@@ -80,6 +84,7 @@ class ListAnnouncementsUseCaseTest {
         when(contextProvider.getRequestContext()).thenReturn(context);
         when(permissionValidator.canViewAll(UserType.STUDENT)).thenReturn(false);
         when(hubCoursePort.getCurrentUserCourseIds()).thenReturn(List.of(UUID.randomUUID()));
+        when(hubShiftPort.getShiftCodesForClasses(List.of(classId))).thenReturn(List.of());
         stubRepository(List.of(), new PageImpl<>(List.of()));
 
         ListAnnouncementsResult result = useCase.execute(new ListAnnouncementsQuery(filter(), userId));

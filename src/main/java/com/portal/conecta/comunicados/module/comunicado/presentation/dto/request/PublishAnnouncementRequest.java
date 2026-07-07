@@ -4,6 +4,7 @@ import java.util.List;
 import java.util.UUID;
 
 import com.portal.conecta.comunicados.module.comunicado.domain.enums.AnnouncementOrigin;
+import com.portal.conecta.comunicados.module.comunicado.domain.enums.ShiftCode;
 
 import io.swagger.v3.oas.annotations.media.Schema;
 import jakarta.validation.Valid;
@@ -36,11 +37,22 @@ public record PublishAnnouncementRequest(
 
     Boolean pinned,
 
-    List<UUID> tagIds
+    @Schema(description = "UUIDs internos da tabela tag (tag.id), não hub_entity_id do Core. Opcional.")
+    List<UUID> tagIds,
+
+    @Schema(
+            description = "Turnos do comunicado (enum Shift do Core). Opcional; vazio = sem restrição de turno.",
+            example = "[\"FULL_AM_PM\"]"
+    )
+    List<ShiftCode> shiftCodes
 
 ) {
 
     public boolean isPinned() {
         return Boolean.TRUE.equals(pinned);
+    }
+
+    public List<ShiftCode> resolvedShiftCodes() {
+        return shiftCodes == null ? List.of() : shiftCodes;
     }
 }
