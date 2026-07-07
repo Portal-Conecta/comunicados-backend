@@ -26,7 +26,7 @@ import lombok.extern.slf4j.Slf4j;
 @RequiredArgsConstructor
 public class AnnouncementNotificationPublisherAdapter implements AnnouncementNotificationPublisher {
 
-    private static final String SOURCE = "comunicados-api";
+    private static final String SOURCE = "comunicados-service";
     private static final String EVENT_TYPE = "announcement.published";
 
     private final RabbitTemplate rabbitTemplate;
