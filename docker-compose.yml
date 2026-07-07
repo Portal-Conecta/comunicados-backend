@@ -67,7 +67,7 @@ services:
       MESSAGING_ENABLED: ${MESSAGING_ENABLED:-true}
       # Storage S3 — default seguro em mock; para testar S3 real, defina no .env:
       # STORAGE_MOCK_ENABLED=false + AWS_ACCESS_KEY_ID/AWS_SECRET_ACCESS_KEY (usuário comunicados-presigner)
-      STORAGE_MOCK_ENABLED: ${STORAGE_MOCK_ENABLED:-true}
+      STORAGE_MOCK_ENABLED: ${STORAGE_MOCK_ENABLED:-false}
       STORAGE_IMAGES_BUCKET: ${STORAGE_IMAGES_BUCKET:-comunicados-raw-sa}
       STORAGE_FILES_BUCKET: ${STORAGE_FILES_BUCKET:-comunicados-processed-sa}
       STORAGE_REGION: ${STORAGE_REGION:-sa-east-1}

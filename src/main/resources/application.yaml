@@ -1,4 +1,6 @@
 spring:
+  config:
+    import: optional:file:.env[.properties]
   application:
     name: comunicados
   servlet:
@@ -6,7 +8,7 @@ spring:
       max-file-size: ${STORAGE_MAX_FILE_SIZE_MB:10}MB
       max-request-size: ${STORAGE_MAX_FILE_SIZE_MB:10}MB
   profiles:
-    active: dev
+    active: ${SPRING_PROFILES_ACTIVE:dev}
   jpa:
     open-in-view: false
   flyway:
@@ -65,7 +67,7 @@ management:
       enabled: true
 
 storage:
-  mock-enabled: ${STORAGE_MOCK_ENABLED:true}
+  mock-enabled: ${STORAGE_MOCK_ENABLED:false}
   max-files-per-announcement: ${STORAGE_MAX_FILES:5}
   max-file-size-mb: ${STORAGE_MAX_FILE_SIZE_MB:10}
   # Limites por tipo de arquivo (usados na validação do presign)
@@ -74,10 +76,10 @@ storage:
   max-video-size-mb: ${STORAGE_MAX_VIDEO_SIZE_MB:200}
   # Bucket A: recebe todo upload raw via presign (imagem, pdf, video, svg); Lambda é
   # triggerada aqui — comprime imagens raster e preserva os demais tipos como estão
-  images-bucket: ${STORAGE_IMAGES_BUCKET:}
+  images-bucket: ${STORAGE_IMAGES_BUCKET:comunicados-raw-sa}
   # Bucket B: destino exclusivo da Lambda — imagens comprimidas e demais tipos
   # preservados, ambos copiados para .../processed/{fileId}. Nada é enviado direto aqui
-  files-bucket: ${STORAGE_FILES_BUCKET:}
+  files-bucket: ${STORAGE_FILES_BUCKET:comunicados-processed-sa}
   region: ${STORAGE_REGION:sa-east-1}
 
 hub:
