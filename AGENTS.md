@@ -100,8 +100,8 @@ ListAnnouncementsResponse.fromPinnedAndPage(pinned, page);
 
 ## 4. Mapeamento de objetos — SEM MapStruct
 
-- `mapstruct` está no `pom.xml` mas **nenhum `@Mapper` é usado**.
 - Mapeamento **100% manual** via métodos estáticos em records: `fromEntity`, `fromRequest`, `toEntity`, `applyTo`.
+- `mapstruct` não está mais no `pom.xml` (removido — nenhum `@Mapper` era usado).
 - **Não introduzir MapStruct** sem alinhamento explícito — siga o padrão existente.
 
 ---
@@ -220,7 +220,8 @@ domain/port/*Port  →  infrastructure/hub/adapter/Http*Adapter | Mock*Adapter
 
 ## 10. Mensageria RabbitMQ (tags)
 
-Sincroniza entidades do Core como tags locais. Contrato completo: [`docs/tags-por-eventos.md`](./docs/tags-por-eventos.md) (oficial). O arquivo `docs/core-entity-events.md` está **depreciado** — será removido após #142 e #143.
+Sincroniza entidades do Core como tags locais. Contrato completo: [`docs/tags-por-eventos.md`](./docs/tags-por-eventos.md) (oficial).
+
 ### Feature flag
 
 ```yaml
@@ -231,25 +232,30 @@ Quando `true`, exige RabbitMQ em `localhost:5672` (ou `RABBITMQ_*` no `.env`).
 
 ### Infraestrutura
 
+Dois exchanges topic separados (course e class), ambos roteados para a mesma queue. Config em `RabbitMqConfig.java` + `application.yaml` (`app.messaging.core.*`) — fonte de verdade, não os `.md` (histórico de drift: até `docs/tags-por-eventos.md` já divergiu do código real; sempre conferir contra o código antes de confiar num doc).
+
 | Recurso | Nome |
 |---------|------|
-| Exchange (topic) | `portal.core.events` |
+| Exchange curso (topic) | `course-events.exchange` |
+| Exchange turma (topic) | `class-events.exchange` |
 | Queue | `comunicados.core-entities` |
 | DLQ | `comunicados.core-entities.dlq` |
-| Routing keys | `core.course.#`, `core.class.#`, `core.user.#` |
+| Routing keys curso | `course.created`, `course.updated`, `course.deleted` |
+| Routing keys turma | `class.created`, `class.deleted` (**não existe** `class.updated`) |
 
 ### Fluxo
 
 ```text
 CoreEntityTagConsumer (@RabbitListener)
   → idempotência (ProcessedEventRepository por eventId)
-  → core.*.created|updated → UpsertTagFromCoreUseCase
-  → core.*.deactivated     → DeactivateTagUseCase
+  → course.created | course.updated | class.created → UpsertTagFromCoreUseCase
+  → course.deleted  | class.deleted                 → DeactivateTagUseCase
 ```
 
 - `payload.entityId` = `tag.hub_entity_id` (mesmo UUID de `announcement_destination.reference_id` para auto-vinculação #110).
-- Payload inválido → `InvalidCoreEntityEventException` → DLQ (`defaultRequeueRejected=false`).
+- Payload inválido ou `eventType` não suportado → `InvalidCoreEntityEventException` → DLQ (`defaultRequeueRejected=false`).
 - Beans de messaging: `@ConditionalOnProperty(app.messaging.enabled=true)`.
+- Bindings dinâmicos (`classEntityBindings`/`courseEntityBindings` em `RabbitMqConfig.java`) devem retornar `Declarables`, não `Binding[]`/`List<Binding>` — um array/lista simples não é auto-declarado pelo `RabbitAdmin` no broker (bug real já visto em produção local: exchange e queue existiam, mas sem nenhum binding real, mensagens eram descartadas silenciosamente pelo RabbitMQ).
 
 **Referência:** `module/tag/infrastructure/messaging/`
 

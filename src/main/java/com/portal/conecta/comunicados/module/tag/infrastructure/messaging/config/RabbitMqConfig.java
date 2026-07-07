@@ -1,7 +1,8 @@
 package com.portal.conecta.comunicados.module.tag.infrastructure.messaging.config;
 
-import org.springframework.amqp.core.Binding;
 import org.springframework.amqp.core.BindingBuilder;
+import org.springframework.amqp.core.Declarable;
+import org.springframework.amqp.core.Declarables;
 import org.springframework.amqp.core.Queue;
 import org.springframework.amqp.core.QueueBuilder;
 import org.springframework.amqp.core.TopicExchange;
@@ -45,31 +46,31 @@ public class RabbitMqConfig {
     }
 
     @Bean
-    Binding[] classEntityBindings(
+    Declarables classEntityBindings(
             Queue coreEntitiesQueue,
             TopicExchange classEventsExchange,
             MessagingProperties properties
     ) {
-        return properties.core().classExchange().routingKeys().stream()
-                .map(routingKey -> BindingBuilder
+        return new Declarables(properties.core().classExchange().routingKeys().stream()
+                .map(routingKey -> (Declarable) BindingBuilder
                         .bind(coreEntitiesQueue)
                         .to(classEventsExchange)
                         .with(routingKey))
-                .toArray(Binding[]::new);
+                .toList());
     }
 
     @Bean
-    Binding[] courseEntityBindings(
+    Declarables courseEntityBindings(
             Queue coreEntitiesQueue,
             TopicExchange courseEventsExchange,
             MessagingProperties properties
     ) {
-        return properties.core().courseExchange().routingKeys().stream()
-                .map(routingKey -> BindingBuilder
+        return new Declarables(properties.core().courseExchange().routingKeys().stream()
+                .map(routingKey -> (Declarable) BindingBuilder
                         .bind(coreEntitiesQueue)
                         .to(courseEventsExchange)
                         .with(routingKey))
-                .toArray(Binding[]::new);
+                .toList());
     }
 
     @Bean

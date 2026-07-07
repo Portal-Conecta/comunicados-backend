@@ -268,9 +268,9 @@ Investigação do código (#151) mostrou que o "tag USER via Core" era premissa 
 
 | Aspecto | Contrato oficial (PDF) | Implementação atual |
 |---------|------------------------|---------------------|
-| Formato envelope | Campos na raiz | Objeto aninhado `payload` |
-| `eventType` | `course.created`, `turma.created` | `core.course.created`, `core.class.created` |
-| Remoção | `*.deleted` | `*.deactivated` |
+| Formato envelope | Campos na raiz | Campos na raiz (`CoreEntityEventEnvelope`) |
+| `eventType` | `course.created`, `turma.created` | `course.created`, `class.created` (sem prefixo `core.`) |
+| Remoção | `*.deleted` | `*.deleted` (`course.deleted`, `class.deleted`) |
 | Vocabulário turma | `turma` | `class` / `CLASS` |
 | `correlationId` | Obrigatório | Ausente |
 | Auto-link `USER` | ~~Necessário~~ Descartado (#151) | Intencionalmente não é tag (ver §5) |
@@ -282,14 +282,16 @@ Investigação do código (#151) mostrou que o "tag USER via Core" era premissa 
 
 ## 7. Infraestrutura RabbitMQ (referência)
 
-Configuração atual em `application.yaml` (pode ser ajustada no alinhamento):
+Configuração real em `RabbitMqConfig.java` + `application.yaml` (`app.messaging.core.*`) — dois exchanges topic separados, ambos roteados para a mesma queue:
 
-| Item | Valor sugerido |
-|------|----------------|
-| Exchange | `portal.core.events` (topic) |
+| Item | Valor |
+|------|-------|
+| Exchange curso (topic) | `course-events.exchange` |
+| Exchange turma (topic) | `class-events.exchange` |
 | Queue Comunicados | `comunicados.core-entities` |
 | DLQ | `comunicados.core-entities.dlq` |
-| Routing keys | `course.#`, `turma.#` |
+| Routing keys curso | `course.created`, `course.updated`, `course.deleted` |
+| Routing keys turma | `class.created`, `class.deleted` |
 | Feature flag | `MESSAGING_ENABLED=true` |
 
 ---
@@ -331,7 +333,7 @@ Ou via IDE, setando `MESSAGING_ENABLED=true` nas variáveis de ambiente do run c
 
 ### 4. Publicar um evento de teste manualmente
 
-Pelo painel do RabbitMQ (`http://localhost:15672` → Exchanges → `portal.core.events` → Publish message):
+Pelo painel do RabbitMQ (`http://localhost:15672` → Exchanges → `course-events.exchange` → Publish message):
 
 - **Routing key:** `course.created`
 - **Payload:**
@@ -348,6 +350,8 @@ Pelo painel do RabbitMQ (`http://localhost:15672` → Exchanges → `portal.core
   "name": "MIDS"
 }
 ```
+
+Pra eventos de turma, usar o exchange `class-events.exchange` com routing key `class.created`/`class.deleted` (o payload de turma não tem campo `code`).
 
 A tag deve aparecer em `GET /api/tags` após o consumo.
 
