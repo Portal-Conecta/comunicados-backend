@@ -6,11 +6,13 @@ import java.util.UUID;
 
 import com.portal.conecta.comunicados.module.comunicado.domain.enums.AnnouncementOrigin;
 
+import io.swagger.v3.oas.annotations.media.Schema;
 import jakarta.validation.Valid;
 import jakarta.validation.constraints.Future;
 import jakarta.validation.constraints.NotBlank;
 import jakarta.validation.constraints.NotEmpty;
 import jakarta.validation.constraints.NotNull;
+import jakarta.validation.constraints.Size;
 
 /**
  * Body de {@code POST /api/posts/schedule} (#108): cria e agenda o comunicado numa única
@@ -20,9 +22,12 @@ import jakarta.validation.constraints.NotNull;
 public record ScheduleAnnouncementRequest(
 
     @NotBlank
+    @Size(max = 255)
+    @Schema(description = "Título do comunicado.", example = "Reunião de alinhamento", maxLength = 255)
     String title,
 
     @NotBlank
+    @Schema(description = "Conteúdo do comunicado em texto livre, sem limite de tamanho.")
     String description,
 
     @NotNull

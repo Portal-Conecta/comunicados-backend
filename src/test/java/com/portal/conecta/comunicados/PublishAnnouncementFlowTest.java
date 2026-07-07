@@ -297,6 +297,50 @@ class PublishAnnouncementFlowTest {
         verify(announcementRepository, never()).save(any());
     }
 
+    @Test
+    void shouldPublishWithLongDescription() throws Exception {
+        UUID userId = UUID.randomUUID();
+        String longDescription = "x".repeat(500);
+
+        when(requestContextProvider.getRequestContext())
+                .thenReturn(createContext(userId, UserType.SENAI));
+
+        PublishAnnouncementRequest request = new PublishAnnouncementRequest(
+                "Comunicado de teste",
+                longDescription,
+                AnnouncementOrigin.SENAI,
+                List.of(userDestination(UUID.randomUUID())),
+                null,
+                null
+        );
+
+        perform(request)
+                .andExpect(status().isCreated())
+                .andExpect(jsonPath("$.status").value(AnnouncementStatus.PUBLISHED.name()));
+
+        ArgumentCaptor<Announcement> announcementCaptor = ArgumentCaptor.forClass(Announcement.class);
+        verify(announcementRepository).save(announcementCaptor.capture());
+        assertEquals(500, announcementCaptor.getValue().getDescription().length());
+    }
+
+    @Test
+    void shouldReturnBadRequestWhenTitleExceedsMaxLength() throws Exception {
+        when(requestContextProvider.getRequestContext())
+                .thenReturn(createContext(UUID.randomUUID(), UserType.SENAI));
+
+        PublishAnnouncementRequest request = new PublishAnnouncementRequest(
+                "t".repeat(256),
+                "Descricao valida",
+                AnnouncementOrigin.SENAI,
+                List.of(userDestination(UUID.randomUUID())),
+                null,
+                null
+        );
+
+        perform(request).andExpect(status().isBadRequest());
+        verify(announcementRepository, never()).save(any());
+    }
+
     private RequestContext createContext(UUID userId, UserType userType, ContextClass... classes) {
         return new RequestContext(userId, userType, List.of(classes));
     }

@@ -7,6 +7,7 @@ import com.portal.conecta.comunicados.module.comunicado.domain.enums.Announcemen
 import com.portal.conecta.comunicados.module.comunicado.domain.enums.AnnouncementStatus;
 import com.portal.conecta.comunicados.module.comunicado.domain.model.Announcement;
 
+import io.swagger.v3.oas.annotations.media.Schema;
 import jakarta.validation.Valid;
 import jakarta.validation.constraints.Min;
 import jakarta.validation.constraints.Size;
@@ -14,8 +15,10 @@ import jakarta.validation.constraints.Size;
 public record UpdateAnnouncementRequest(
 
         @Size(max = 255)
+        @Schema(description = "Título do comunicado.", example = "Reunião de alinhamento", maxLength = 255)
         String title,
 
+        @Schema(description = "Conteúdo do comunicado em texto livre, sem limite de tamanho.")
         String description,
 
         AnnouncementOrigin origin,

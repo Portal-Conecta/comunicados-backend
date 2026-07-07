@@ -8,10 +8,14 @@ import com.portal.conecta.comunicados.module.comunicado.domain.enums.Announcemen
 import com.portal.conecta.comunicados.module.comunicado.domain.enums.AnnouncementStatus;
 import com.portal.conecta.comunicados.module.comunicado.domain.model.Announcement;
 
+import io.swagger.v3.oas.annotations.media.Schema;
+
 public record AnnouncementResponse(
 
     UUID id,
+    @Schema(description = "Título do comunicado.", maxLength = 255)
     String title,
+    @Schema(description = "Conteúdo do comunicado em texto livre, sem limite de tamanho.")
     String description,
     AnnouncementOrigin origin,
     AnnouncementStatus status,
