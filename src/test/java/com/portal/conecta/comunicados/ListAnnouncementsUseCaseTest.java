@@ -3,14 +3,19 @@ package com.portal.conecta.comunicados;
 import com.portal.conecta.comunicados.module.comunicado.application.query.ListAnnouncementsQuery;
 import com.portal.conecta.comunicados.module.comunicado.application.query.ListAnnouncementsResult;
 import com.portal.conecta.comunicados.module.comunicado.application.usecase.ListAnnouncementsUseCase;
+import com.portal.conecta.comunicados.module.comunicado.domain.enums.AnnouncementFileStatus;
 import com.portal.conecta.comunicados.module.comunicado.domain.enums.AnnouncementOrigin;
 import com.portal.conecta.comunicados.module.comunicado.domain.exception.AnnouncementPermissionDeniedException;
 import com.portal.conecta.comunicados.module.comunicado.domain.model.Announcement;
+import com.portal.conecta.comunicados.module.comunicado.domain.model.AnnouncementFile;
+import com.portal.conecta.comunicados.module.comunicado.domain.port.announcement.AnnouncementFileRepository;
 import com.portal.conecta.comunicados.module.comunicado.domain.port.announcement.AnnouncementRepository;
 import com.portal.conecta.comunicados.module.comunicado.domain.port.hub.HubCoursePort;
 import com.portal.conecta.comunicados.module.comunicado.domain.port.hub.HubShiftPort;
+import com.portal.conecta.comunicados.module.comunicado.domain.port.storage.StoragePort;
 import com.portal.conecta.comunicados.module.comunicado.domain.port.support.HubUserPort;
 import com.portal.conecta.comunicados.module.comunicado.domain.validator.AnnouncementPermissionValidator;
+import com.portal.conecta.comunicados.module.comunicado.infrastructure.storage.StorageProperties;
 import com.portal.conecta.comunicados.module.comunicado.presentation.dto.request.PostFilterRequest;
 import com.portal.conecta.comunicados.shared.context.ContextClass;
 import com.portal.conecta.comunicados.shared.context.RequestContext;
@@ -46,6 +51,9 @@ class ListAnnouncementsUseCaseTest {
     private AnnouncementRepository announcementRepository;
 
     @Mock
+    private AnnouncementFileRepository announcementFileRepository;
+
+    @Mock
     private RequestContextProvider contextProvider;
 
     @Mock
@@ -60,6 +68,12 @@ class ListAnnouncementsUseCaseTest {
     @Mock
     private HubUserPort hubUserPort;
 
+    @Mock
+    private StoragePort storagePort;
+
+    @Mock
+    private StorageProperties storageProperties;
+
     @InjectMocks
     private ListAnnouncementsUseCase useCase;
 
@@ -72,6 +86,10 @@ class ListAnnouncementsUseCaseTest {
                 .thenReturn(pinned);
         when(announcementRepository.findAll(any(Specification.class), any(Pageable.class)))
                 .thenReturn(items);
+        if (!pinned.isEmpty() || !items.getContent().isEmpty()) {
+            when(announcementFileRepository.findThumbnailsByAnnouncementIdIn(any()))
+                    .thenReturn(List.of());
+        }
     }
 
     @Test
@@ -197,6 +215,41 @@ class ListAnnouncementsUseCaseTest {
 
         assertThat(result.pinned()).containsExactly(pinned);
         assertThat(result.items().getContent()).containsExactly(feedItem);
+    }
+
+    @Test
+    void shouldResolveThumbnailUrls_WhenReadyThumbnailExists() {
+        UUID userId = UUID.randomUUID();
+        UUID announcementId = UUID.randomUUID();
+        RequestContext context = new RequestContext(userId, UserType.ADMIN, List.of());
+
+        when(contextProvider.getRequestContext()).thenReturn(context);
+        when(permissionValidator.canViewAll(UserType.ADMIN)).thenReturn(true);
+
+        Announcement announcement = Announcement.builder().id(announcementId).title("Com imagem").build();
+        when(announcementRepository.findAll(any(Specification.class), any(Sort.class)))
+                .thenReturn(List.of());
+        when(announcementRepository.findAll(any(Specification.class), any(Pageable.class)))
+                .thenReturn(new PageImpl<>(List.of(announcement)));
+
+        AnnouncementFile thumbnail = AnnouncementFile.builder()
+                .id(UUID.randomUUID())
+                .announcement(announcement)
+                .s3Key("comunicados/" + userId + "/raw/" + UUID.randomUUID() + ".jpg")
+                .s3Bucket("comunicados-raw-sa")
+                .processedS3Key("comunicados/" + userId + "/processed/" + UUID.randomUUID())
+                .fileStatus(AnnouncementFileStatus.READY)
+                .isThumbnail(true)
+                .build();
+        when(announcementFileRepository.findThumbnailsByAnnouncementIdIn(any()))
+                .thenReturn(List.of(thumbnail));
+        when(storageProperties.filesBucket()).thenReturn("comunicados-processed-sa");
+        when(storagePort.presignDownload(any(), any(), any())).thenReturn("https://cdn.example/thumb.jpg");
+
+        ListAnnouncementsResult result = useCase.execute(new ListAnnouncementsQuery(filter(), userId));
+
+        assertThat(result.thumbnailUrlsByAnnouncementId())
+                .containsEntry(announcementId, "https://cdn.example/thumb.jpg");
     }
 
     @Test

@@ -1,6 +1,7 @@
 package com.portal.conecta.comunicados.module.comunicado.domain.port.announcement;
 
 import java.time.Instant;
+import java.util.Collection;
 import java.util.List;
 import java.util.Optional;
 import java.util.UUID;
@@ -24,6 +25,14 @@ public interface AnnouncementFileRepository extends JpaRepository<AnnouncementFi
 
     @Query("SELECT f FROM AnnouncementFile f WHERE f.announcement.id = :announcementId AND f.isThumbnail = true")
     Optional<AnnouncementFile> findThumbnailByAnnouncementId(@Param("announcementId") UUID announcementId);
+
+    @Query("""
+            SELECT f FROM AnnouncementFile f
+            JOIN FETCH f.announcement
+            WHERE f.announcement.id IN :announcementIds AND f.isThumbnail = true
+            """)
+    List<AnnouncementFile> findThumbnailsByAnnouncementIdIn(
+            @Param("announcementIds") Collection<UUID> announcementIds);
 
     @Modifying
     @Query("UPDATE AnnouncementFile f SET f.isThumbnail = false WHERE f.announcement.id = :announcementId")

@@ -110,7 +110,11 @@ public class AnnouncementController {
         ListAnnouncementsQuery query = new ListAnnouncementsQuery(filter, userId);
         ListAnnouncementsResult result = listAnnouncementsUseCase.execute(query);
 
-        return ResponseEntity.ok(ListAnnouncementsResponse.fromPinnedAndPage(result.pinned(), result.items()));
+        return ResponseEntity.ok(ListAnnouncementsResponse.fromPinnedAndPage(
+                result.pinned(),
+                result.items(),
+                result.thumbnailUrlsByAnnouncementId()
+        ));
     }
 
     @Operation(summary = "Buscar comunicado por ID")
