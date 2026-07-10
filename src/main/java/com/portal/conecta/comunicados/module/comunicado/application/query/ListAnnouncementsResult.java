@@ -4,11 +4,14 @@ import com.portal.conecta.comunicados.module.comunicado.domain.model.Announcemen
 import org.springframework.data.domain.Page;
 
 import java.util.List;
+import java.util.Map;
+import java.util.UUID;
 
 public record ListAnnouncementsResult(
 
     List<Announcement> pinned,
-    Page<Announcement> items
+    Page<Announcement> items,
+    Map<UUID, String> thumbnailUrlsByAnnouncementId
 
 ) {
 }

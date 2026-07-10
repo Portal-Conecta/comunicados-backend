@@ -35,6 +35,7 @@ import org.springframework.test.web.servlet.MockMvc;
 import org.springframework.data.domain.PageRequest;
 
 import java.util.List;
+import java.util.Map;
 import java.util.UUID;
 import java.time.Instant;
 
@@ -111,14 +112,16 @@ class AnnouncementControllerTest {
         when(listAnnouncementsUseCase.execute(any()))
                 .thenReturn(new ListAnnouncementsResult(
                         List.of(),
-                        new PageImpl<>(List.of(announcement))
+                        new PageImpl<>(List.of(announcement)),
+                        Map.of(announcement.getId(), "https://cdn.example/thumb.jpg")
                 ));
 
         mockMvc.perform(get("/api/posts"))
                 .andExpect(status().isOk())
                 .andExpect(jsonPath("$.pinned").isArray())
                 .andExpect(jsonPath("$.items").isArray())
-                .andExpect(jsonPath("$.items[0].title").value("Comunicado"));
+                .andExpect(jsonPath("$.items[0].title").value("Comunicado"))
+                .andExpect(jsonPath("$.items[0].thumbnailUrl").value("https://cdn.example/thumb.jpg"));
     }
 
     @Test
@@ -165,7 +168,7 @@ class AnnouncementControllerTest {
         stubContext();
 
         when(listAnnouncementsUseCase.execute(any()))
-                .thenReturn(new ListAnnouncementsResult(List.of(), new PageImpl<>(List.of())));
+                .thenReturn(new ListAnnouncementsResult(List.of(), new PageImpl<>(List.of()), Map.of()));
 
         mockMvc.perform(get("/api/posts").param("search", "retirada"))
                 .andExpect(status().isOk())
@@ -178,7 +181,7 @@ class AnnouncementControllerTest {
         stubContext();
 
         when(listAnnouncementsUseCase.execute(any()))
-                .thenReturn(new ListAnnouncementsResult(List.of(), new PageImpl<>(List.of())));
+                .thenReturn(new ListAnnouncementsResult(List.of(), new PageImpl<>(List.of()), Map.of()));
 
         mockMvc.perform(get("/api/posts").param("tagId", UUID.randomUUID().toString()))
                 .andExpect(status().isOk())
@@ -205,7 +208,8 @@ class AnnouncementControllerTest {
         when(listAnnouncementsUseCase.execute(any()))
                 .thenReturn(new ListAnnouncementsResult(
                         List.of(pinned),
-                        new PageImpl<>(List.of(feedItem))
+                        new PageImpl<>(List.of(feedItem)),
+                        Map.of()
                 ));
 
         mockMvc.perform(get("/api/posts"))

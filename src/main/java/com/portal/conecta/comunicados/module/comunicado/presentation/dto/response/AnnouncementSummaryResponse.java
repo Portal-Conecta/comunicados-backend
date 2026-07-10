@@ -8,6 +8,7 @@ import io.swagger.v3.oas.annotations.media.Schema;
 
 import java.time.Instant;
 import java.util.List;
+import java.util.Map;
 import java.util.UUID;
 
 public record AnnouncementSummaryResponse(
@@ -23,11 +24,17 @@ public record AnnouncementSummaryResponse(
     Short pinnedOrder,
     Instant scheduledFor,
     Instant publishedAt,
-    Instant createdAt
+    Instant createdAt,
+    @Schema(description = "URL pré-assinada da miniatura do comunicado, se houver e estiver pronta.")
+    String thumbnailUrl
 
 ) {
 
     public static AnnouncementSummaryResponse fromEntity(Announcement entity) {
+        return fromEntity(entity, null);
+    }
+
+    public static AnnouncementSummaryResponse fromEntity(Announcement entity, String thumbnailUrl) {
         return new AnnouncementSummaryResponse(
                 entity.getId(),
                 entity.getTitle(),
@@ -38,14 +45,27 @@ public record AnnouncementSummaryResponse(
                 entity.getPinnedOrder(),
                 entity.getScheduledFor(),
                 entity.getPublishedAt(),
-                entity.getCreatedAt()
+                entity.getCreatedAt(),
+                thumbnailUrl
         );
     }
 
     public static List<AnnouncementSummaryResponse> fromEntities(List<Announcement> entities) {
+        return fromEntities(entities, Map.of());
+    }
+
+    public static List<AnnouncementSummaryResponse> fromEntities(
+            List<Announcement> entities,
+            Map<UUID, String> thumbnailUrlsByAnnouncementId
+    ) {
         if (entities == null || entities.isEmpty()) {
             return List.of();
         }
-        return entities.stream().map(AnnouncementSummaryResponse::fromEntity).toList();
+        Map<UUID, String> urls = thumbnailUrlsByAnnouncementId != null
+                ? thumbnailUrlsByAnnouncementId
+                : Map.of();
+        return entities.stream()
+                .map(entity -> fromEntity(entity, urls.get(entity.getId())))
+                .toList();
     }
 }
