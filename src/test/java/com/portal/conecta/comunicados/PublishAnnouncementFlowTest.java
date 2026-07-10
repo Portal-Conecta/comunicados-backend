@@ -130,6 +130,7 @@ class PublishAnnouncementFlowTest {
                 listAnnouncementsUseCase,
                 listPinnedAnnouncementsUseCase,
                 getAnnouncementByIdUseCase,
+                mock(com.portal.conecta.comunicados.module.comunicado.application.usecase.ListAnnouncementFilesUseCase.class),
                 deleteAnnouncementUseCase,
                 requestContextProvider,
                 pinAnnouncementUseCase,

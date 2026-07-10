@@ -99,11 +99,11 @@ public class ListAnnouncementsUseCase {
         if (file.getFileStatus() != AnnouncementFileStatus.READY) {
             return null;
         }
-        if (file.getProcessedS3Key() != null) {
-            return storagePort.presignDownload(
-                    storageProperties.filesBucket(), file.getProcessedS3Key(), THUMBNAIL_URL_EXPIRY);
+        if (file.getProcessedS3Key() == null || file.getProcessedS3Key().isBlank()) {
+            return null;
         }
-        return storagePort.presignDownload(file.getS3Bucket(), file.getS3Key(), THUMBNAIL_URL_EXPIRY);
+        return storagePort.presignDownload(
+                storageProperties.filesBucket(), file.getProcessedS3Key(), THUMBNAIL_URL_EXPIRY);
     }
 
     private void reconcile(AnnouncementFile file) {
