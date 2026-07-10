@@ -123,7 +123,7 @@ class AnnouncementNotificationPublisherAdapterTest {
         adapter.publish(announcement(), List.of(destination(AnnouncementDestinationType.GENERAL, null)));
 
         AnnouncementNotificationPayload payload = capturePayload();
-        assertThat(payload.source()).isEqualTo("comunicados-api");
+        assertThat(payload.source()).isEqualTo("comunicados-service");
         assertThat(payload.eventType()).isEqualTo("announcement.published");
     }
 
