@@ -23,12 +23,14 @@ import com.portal.conecta.comunicados.module.comunicado.application.command.Resc
 import com.portal.conecta.comunicados.module.comunicado.application.command.ScheduleAnnouncementCommand;
 import com.portal.conecta.comunicados.module.comunicado.application.command.UnpinAnnouncementCommand;
 import com.portal.conecta.comunicados.module.comunicado.application.command.UpdateAnnouncementCommand;
+import com.portal.conecta.comunicados.module.comunicado.application.dto.AnnouncementFileView;
 import com.portal.conecta.comunicados.module.comunicado.application.query.GetAnnouncementByIdQuery;
 import com.portal.conecta.comunicados.module.comunicado.application.query.ListAnnouncementHistoryQuery;
 import com.portal.conecta.comunicados.module.comunicado.application.query.ListAnnouncementsQuery;
 import com.portal.conecta.comunicados.module.comunicado.application.query.ListAnnouncementsResult;
 import com.portal.conecta.comunicados.module.comunicado.application.usecase.DeleteAnnouncementUseCase;
 import com.portal.conecta.comunicados.module.comunicado.application.usecase.GetAnnouncementByIdUseCase;
+import com.portal.conecta.comunicados.module.comunicado.application.usecase.ListAnnouncementFilesUseCase;
 import com.portal.conecta.comunicados.module.comunicado.application.usecase.ListAnnouncementHistoryUseCase;
 import com.portal.conecta.comunicados.module.comunicado.application.usecase.ListAnnouncementsUseCase;
 import com.portal.conecta.comunicados.module.comunicado.application.usecase.ListPinnedAnnouncementsUseCase;
@@ -75,6 +77,7 @@ public class AnnouncementController {
     private final ListAnnouncementsUseCase listAnnouncementsUseCase;
     private final ListPinnedAnnouncementsUseCase listPinnedAnnouncementsUseCase;
     private final GetAnnouncementByIdUseCase getAnnouncementByIdUseCase;
+    private final ListAnnouncementFilesUseCase listAnnouncementFilesUseCase;
     private final DeleteAnnouncementUseCase deleteAnnouncementUseCase;
     private final RequestContextProvider contextProvider;
     private final PinAnnouncementUseCase pinAnnouncementUseCase;
@@ -129,8 +132,9 @@ public class AnnouncementController {
 
         GetAnnouncementByIdQuery query = new GetAnnouncementByIdQuery(id, userId);
         Announcement announcement = getAnnouncementByIdUseCase.execute(query);
+        List<AnnouncementFileView> files = listAnnouncementFilesUseCase.execute(id);
 
-        return ResponseEntity.ok(AnnouncementDetailResponse.fromEntity(announcement));
+        return ResponseEntity.ok(AnnouncementDetailResponse.fromEntity(announcement, files));
     }
 
     @Operation(

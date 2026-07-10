@@ -125,18 +125,17 @@ class ListAnnouncementFilesUseCaseTest {
     }
 
     @Test
-    void shouldGenerateDisplayUrlFromRawKeyForReadyFileWithoutProcessedKey() {
+    void shouldReturnNullDisplayUrlForReadyFileWithoutProcessedKey() {
         UUID fileId = UUID.randomUUID();
         AnnouncementFile ready = readyFileWithoutProcessedKey(fileId, "comunicados/" + userId + "/raw/" + fileId + ".pdf", "comunicados-processed-sa");
 
         when(announcementRepository.findByIdAndRemovedAtIsNull(announcementId)).thenReturn(Optional.of(announcement));
         when(fileRepository.findByAnnouncementId(announcementId)).thenReturn(List.of(ready));
-        when(storagePort.presignDownload(eq("comunicados-processed-sa"), eq("comunicados/" + userId + "/raw/" + fileId + ".pdf"), any(Duration.class)))
-                .thenReturn("https://s3.example.com/raw-signed");
 
         List<AnnouncementFileView> result = useCase.execute(announcementId);
 
-        assertThat(result.get(0).displayUrl()).isEqualTo("https://s3.example.com/raw-signed");
+        assertThat(result.get(0).displayUrl()).isNull();
+        verify(storagePort, never()).presignDownload(any(), any(), any());
     }
 
     @Test

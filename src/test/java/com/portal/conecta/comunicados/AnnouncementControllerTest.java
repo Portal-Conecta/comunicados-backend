@@ -1,8 +1,10 @@
 package com.portal.conecta.comunicados;
 
+import com.portal.conecta.comunicados.module.comunicado.application.dto.AnnouncementFileView;
 import com.portal.conecta.comunicados.module.comunicado.application.usecase.DeleteAnnouncementUseCase;
 import com.portal.conecta.comunicados.module.comunicado.application.usecase.GetAnnouncementByIdUseCase;
 import com.portal.conecta.comunicados.module.comunicado.application.query.ListAnnouncementsResult;
+import com.portal.conecta.comunicados.module.comunicado.application.usecase.ListAnnouncementFilesUseCase;
 import com.portal.conecta.comunicados.module.comunicado.application.usecase.ListAnnouncementsUseCase;
 import com.portal.conecta.comunicados.module.comunicado.application.usecase.ListPinnedAnnouncementsUseCase;
 import com.portal.conecta.comunicados.module.comunicado.application.usecase.PublishAnnouncementUseCase;
@@ -14,7 +16,10 @@ import com.portal.conecta.comunicados.module.comunicado.application.usecase.PinA
 import com.portal.conecta.comunicados.module.comunicado.application.usecase.RescheduleAnnouncementUseCase;
 import com.portal.conecta.comunicados.module.comunicado.application.usecase.UnpinAnnouncementUseCase;
 import com.portal.conecta.comunicados.module.comunicado.domain.model.Announcement;
+import com.portal.conecta.comunicados.module.comunicado.domain.model.AnnouncementFile;
 import com.portal.conecta.comunicados.module.comunicado.presentation.controller.AnnouncementController;
+import com.portal.conecta.comunicados.module.comunicado.domain.enums.AnnouncementFileStatus;
+import com.portal.conecta.comunicados.module.comunicado.domain.enums.AnnouncementFileType;
 import com.portal.conecta.comunicados.module.comunicado.domain.enums.AnnouncementHistoryAction;
 import com.portal.conecta.comunicados.module.comunicado.domain.model.AnnouncementHistory;
 import com.portal.conecta.comunicados.shared.context.RequestContext;
@@ -73,6 +78,9 @@ class AnnouncementControllerTest {
 
     @MockitoBean
     private GetAnnouncementByIdUseCase getAnnouncementByIdUseCase;
+
+    @MockitoBean
+    private ListAnnouncementFilesUseCase listAnnouncementFilesUseCase;
 
     @MockitoBean
     private DeleteAnnouncementUseCase deleteAnnouncementUseCase;
@@ -139,10 +147,50 @@ class AnnouncementControllerTest {
                 .build();
 
         when(getAnnouncementByIdUseCase.execute(any())).thenReturn(announcement);
+        when(listAnnouncementFilesUseCase.execute(id)).thenReturn(List.of());
 
         mockMvc.perform(get("/api/posts/{id}", id))
                 .andExpect(status().isOk())
                 .andExpect(jsonPath("$.announcement.id").value(id.toString()));
+    }
+
+    @Test
+    void shouldReturnProcessedDisplayUrl_WhenDetailHasReadyImage() throws Exception {
+        stubContext();
+
+        UUID id = UUID.randomUUID();
+        Announcement announcement = Announcement.builder()
+                .id(id)
+                .title("Comunicado")
+                .files(List.of())
+                .tags(List.of())
+                .mentions(List.of())
+                .destinations(List.of())
+                .build();
+        AnnouncementFile file = AnnouncementFile.builder()
+                .id(UUID.randomUUID())
+                .announcement(announcement)
+                .originalName("foto.webp")
+                .s3Key("comunicados/u/raw/f.jpg")
+                .s3Bucket("comunicados-raw-sa")
+                .processedS3Key("comunicados/u/processed/f")
+                .contentType("image/webp")
+                .type(AnnouncementFileType.IMAGE)
+                .fileStatus(AnnouncementFileStatus.READY)
+                .sizeBytes(10L)
+                .isThumbnail(true)
+                .uploadedByUserId(UUID.randomUUID())
+                .createdAt(Instant.now())
+                .build();
+
+        when(getAnnouncementByIdUseCase.execute(any())).thenReturn(announcement);
+        when(listAnnouncementFilesUseCase.execute(id))
+                .thenReturn(List.of(new AnnouncementFileView(file, "https://s3.example.com/processed")));
+
+        mockMvc.perform(get("/api/posts/{id}", id))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.files[0].displayUrl").value("https://s3.example.com/processed"))
+                .andExpect(jsonPath("$.files[0].processedS3Key").value("comunicados/u/processed/f"));
     }
 
     @Test
