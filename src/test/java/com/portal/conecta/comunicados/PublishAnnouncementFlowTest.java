@@ -31,6 +31,7 @@ import org.springframework.web.server.ResponseStatusException;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.portal.conecta.comunicados.module.comunicado.application.usecase.DeleteAnnouncementUseCase;
 import com.portal.conecta.comunicados.module.comunicado.application.usecase.GetAnnouncementByIdUseCase;
+import com.portal.conecta.comunicados.module.comunicado.application.usecase.ListAnnouncementFilesUseCase;
 import com.portal.conecta.comunicados.module.comunicado.application.usecase.ListAnnouncementHistoryUseCase;
 import com.portal.conecta.comunicados.module.comunicado.application.usecase.ListAnnouncementsUseCase;
 import com.portal.conecta.comunicados.module.comunicado.application.usecase.ListPinnedAnnouncementsUseCase;
@@ -427,6 +428,9 @@ class PublishAnnouncementWebMvcTest {
 
     @MockitoBean
     private GetAnnouncementByIdUseCase getAnnouncementByIdUseCase;
+
+    @MockitoBean
+    private ListAnnouncementFilesUseCase listAnnouncementFilesUseCase;
 
     @MockitoBean
     private DeleteAnnouncementUseCase deleteAnnouncementUseCase;
