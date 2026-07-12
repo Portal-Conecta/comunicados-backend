@@ -3,6 +3,9 @@ services:
     image: postgres:16-alpine
     container_name: portal-conecta-comunicados-postgres
     restart: unless-stopped
+    labels:
+      portal.service: comunicados-postgres
+      portal.environment: ${PORTAL_ENVIRONMENT:-local}
     environment:
       POSTGRES_DB: ${POSTGRES_DB:-comunicados}
       POSTGRES_USER: ${POSTGRES_USER:-comunicados}
@@ -22,6 +25,9 @@ services:
     image: rabbitmq:3.13-management-alpine
     container_name: portal-conecta-comunicados-rabbitmq
     restart: unless-stopped
+    labels:
+      portal.service: comunicados-rabbitmq
+      portal.environment: ${PORTAL_ENVIRONMENT:-local}
     environment:
       RABBITMQ_DEFAULT_USER: ${RABBITMQ_USERNAME:-guest}
       RABBITMQ_DEFAULT_PASS: ${RABBITMQ_PASSWORD:-guest}
@@ -42,6 +48,9 @@ services:
       dockerfile: Dockerfile
     container_name: portal-conecta-comunicados-api
     restart: unless-stopped
+    labels:
+      portal.service: comunicados
+      portal.environment: ${PORTAL_ENVIRONMENT:-local}
     depends_on:
       postgres:
         condition: service_healthy
