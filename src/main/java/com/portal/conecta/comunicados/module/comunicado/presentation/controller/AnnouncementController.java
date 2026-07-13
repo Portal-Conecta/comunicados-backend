@@ -116,7 +116,8 @@ public class AnnouncementController {
         return ResponseEntity.ok(ListAnnouncementsResponse.fromPinnedAndPage(
                 result.pinned(),
                 result.items(),
-                result.thumbnailUrlsByAnnouncementId()
+                result.thumbnailUrlsByAnnouncementId(),
+                result.tagsByAnnouncementId()
         ));
     }
 

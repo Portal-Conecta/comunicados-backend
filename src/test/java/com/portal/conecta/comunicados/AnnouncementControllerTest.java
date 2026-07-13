@@ -121,7 +121,8 @@ class AnnouncementControllerTest {
                 .thenReturn(new ListAnnouncementsResult(
                         List.of(),
                         new PageImpl<>(List.of(announcement)),
-                        Map.of(announcement.getId(), "https://cdn.example/thumb.jpg")
+                        Map.of(announcement.getId(), "https://cdn.example/thumb.jpg"),
+                        Map.of()
                 ));
 
         mockMvc.perform(get("/api/posts"))
@@ -129,7 +130,8 @@ class AnnouncementControllerTest {
                 .andExpect(jsonPath("$.pinned").isArray())
                 .andExpect(jsonPath("$.items").isArray())
                 .andExpect(jsonPath("$.items[0].title").value("Comunicado"))
-                .andExpect(jsonPath("$.items[0].thumbnailUrl").value("https://cdn.example/thumb.jpg"));
+                .andExpect(jsonPath("$.items[0].thumbnailUrl").value("https://cdn.example/thumb.jpg"))
+                .andExpect(jsonPath("$.items[0].tags").isArray());
     }
 
     @Test
@@ -216,7 +218,7 @@ class AnnouncementControllerTest {
         stubContext();
 
         when(listAnnouncementsUseCase.execute(any()))
-                .thenReturn(new ListAnnouncementsResult(List.of(), new PageImpl<>(List.of()), Map.of()));
+                .thenReturn(new ListAnnouncementsResult(List.of(), new PageImpl<>(List.of()), Map.of(), Map.of()));
 
         mockMvc.perform(get("/api/posts").param("search", "retirada"))
                 .andExpect(status().isOk())
@@ -229,7 +231,7 @@ class AnnouncementControllerTest {
         stubContext();
 
         when(listAnnouncementsUseCase.execute(any()))
-                .thenReturn(new ListAnnouncementsResult(List.of(), new PageImpl<>(List.of()), Map.of()));
+                .thenReturn(new ListAnnouncementsResult(List.of(), new PageImpl<>(List.of()), Map.of(), Map.of()));
 
         mockMvc.perform(get("/api/posts").param("tagId", UUID.randomUUID().toString()))
                 .andExpect(status().isOk())
@@ -257,6 +259,7 @@ class AnnouncementControllerTest {
                 .thenReturn(new ListAnnouncementsResult(
                         List.of(pinned),
                         new PageImpl<>(List.of(feedItem)),
+                        Map.of(),
                         Map.of()
                 ));
 

@@ -11,11 +11,13 @@ import com.portal.conecta.comunicados.module.comunicado.domain.port.announcement
 import com.portal.conecta.comunicados.module.comunicado.domain.port.hub.HubCoursePort;
 import com.portal.conecta.comunicados.module.comunicado.domain.port.hub.HubShiftPort;
 import com.portal.conecta.comunicados.module.comunicado.domain.port.storage.StoragePort;
+import com.portal.conecta.comunicados.module.comunicado.domain.port.support.AnnouncementTagRepository;
 import com.portal.conecta.comunicados.module.comunicado.domain.port.support.HubUserPort;
 import com.portal.conecta.comunicados.module.comunicado.domain.specification.AnnouncementSpecifications;
 import com.portal.conecta.comunicados.module.comunicado.domain.validator.AnnouncementPermissionValidator;
 import com.portal.conecta.comunicados.module.comunicado.infrastructure.storage.StorageProperties;
 import com.portal.conecta.comunicados.module.comunicado.presentation.dto.request.PostFilterRequest;
+import com.portal.conecta.comunicados.module.tag.domain.model.Tag;
 import com.portal.conecta.comunicados.shared.context.ContextClass;
 import com.portal.conecta.comunicados.shared.context.RequestContext;
 import com.portal.conecta.comunicados.shared.context.RequestContextProvider;
@@ -27,6 +29,7 @@ import org.springframework.stereotype.Component;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.time.Duration;
+import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -42,6 +45,7 @@ public class ListAnnouncementsUseCase {
 
     private final AnnouncementRepository announcementRepository;
     private final AnnouncementFileRepository announcementFileRepository;
+    private final AnnouncementTagRepository announcementTagRepository;
     private final RequestContextProvider contextProvider;
     private final AnnouncementPermissionValidator permissionValidator;
     private final HubCoursePort hubCoursePort;
@@ -66,7 +70,27 @@ public class ListAnnouncementsUseCase {
         );
 
         Map<UUID, String> thumbnailUrls = resolveThumbnailUrls(pinned, items.getContent());
-        return new ListAnnouncementsResult(pinned, items, thumbnailUrls);
+        Map<UUID, List<Tag>> tagsByAnnouncementId = resolveTags(pinned, items.getContent());
+        return new ListAnnouncementsResult(pinned, items, thumbnailUrls, tagsByAnnouncementId);
+    }
+
+    private Map<UUID, List<Tag>> resolveTags(List<Announcement> pinned, List<Announcement> items) {
+        List<UUID> announcementIds = Stream.concat(pinned.stream(), items.stream())
+                .map(Announcement::getId)
+                .distinct()
+                .toList();
+
+        if (announcementIds.isEmpty()) {
+            return Map.of();
+        }
+
+        Map<UUID, List<Tag>> tagsByAnnouncementId = new HashMap<>();
+        for (var link : announcementTagRepository.findByAnnouncementIdIn(announcementIds)) {
+            tagsByAnnouncementId
+                    .computeIfAbsent(link.getAnnouncement().getId(), id -> new ArrayList<>())
+                    .add(link.getTag());
+        }
+        return tagsByAnnouncementId;
     }
 
     private Map<UUID, String> resolveThumbnailUrls(List<Announcement> pinned, List<Announcement> items) {
