@@ -125,7 +125,7 @@ class CoreComunicadosRabbitMqE2ETest {
         NotificationRow row = pollForNotificationByCorrelationId(announcementId);
 
         assertThat(row).as("linha em notifications (Core) com correlation_id=%s", announcementId).isNotNull();
-        assertThat(row.source()).isEqualTo("comunicados-api");
+        assertThat(row.source()).isEqualTo("comunicados-service");
         assertThat(row.eventType()).isEqualTo("announcement.published");
         assertThat(row.title()).isEqualTo(title);
         assertThat(dlqDepth()).as("mensagens em notifications.dispatch.dlq").isZero();
