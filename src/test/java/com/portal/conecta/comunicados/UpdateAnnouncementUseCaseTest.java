@@ -86,6 +86,7 @@ class UpdateAnnouncementUseCaseTest {
                 announcementTagRepository,
                 contextProvider,
                 new AnnouncementPermissionValidator(org.mockito.Mockito.mock(HubClassPort.class)),
+                new com.portal.conecta.comunicados.module.comunicado.domain.service.AnnouncementDescriptionNormalizer(),
                 autoLinkTagsUseCase
         );
 
@@ -98,6 +99,7 @@ class UpdateAnnouncementUseCaseTest {
                 .id(announcementId)
                 .title("Titulo antigo")
                 .description("Descricao antiga")
+                .descriptionPlain("Descricao antiga")
                 .origin(AnnouncementOrigin.SENAI)
                 .status(AnnouncementStatus.SCHEDULED)
                 .pinned(false)

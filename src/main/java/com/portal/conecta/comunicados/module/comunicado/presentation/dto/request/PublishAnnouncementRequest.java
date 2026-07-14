@@ -25,7 +25,9 @@ public record PublishAnnouncementRequest(
     String title,
 
     @NotBlank
-    @Schema(description = "Conteúdo do comunicado em texto livre, sem limite de tamanho.")
+    @Schema(description = "Conteúdo do comunicado em HTML sanitizado (allowlist TipTap: "
+            + "p, br, strong/b, em/i, u, ul/ol/li, a[href]). O servidor strip tags perigosas "
+            + "e deriva descriptionPlain automaticamente.")
     String description,
 
     @NotNull

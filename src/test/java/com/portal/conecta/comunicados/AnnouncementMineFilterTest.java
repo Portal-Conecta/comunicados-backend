@@ -40,6 +40,7 @@ class AnnouncementMineFilterTest {
         Announcement a = Announcement.builder()
                 .title("Aviso")
                 .description("Descrição")
+                .descriptionPlain("Descrição")
                 .origin(AnnouncementOrigin.BOTH)
                 .status(status)
                 .pinned(false)

@@ -48,9 +48,14 @@ public record PublishAnnouncementCommand(
     }
 
     public Announcement toEntity(Instant now) {
+        return toEntity(now, description, description);
+    }
+
+    public Announcement toEntity(Instant now, String sanitizedHtml, String descriptionPlain) {
         return Announcement.builder()
                 .title(title)
-                .description(description)
+                .description(sanitizedHtml)
+                .descriptionPlain(descriptionPlain)
                 .origin(origin)
                 .status(AnnouncementStatus.PUBLISHED)
                 .pinned(pinned)

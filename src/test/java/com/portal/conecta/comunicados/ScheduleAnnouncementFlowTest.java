@@ -124,6 +124,7 @@ class ScheduleAnnouncementFlowTest {
                 announcementHistoryRepository,
                 requestContextProvider,
                 new AnnouncementPermissionValidator(hubClassPort),
+                new com.portal.conecta.comunicados.module.comunicado.domain.service.AnnouncementDescriptionNormalizer(),
                 autoLinkTagsUseCase,
                 linkShiftTagsUseCase
         );

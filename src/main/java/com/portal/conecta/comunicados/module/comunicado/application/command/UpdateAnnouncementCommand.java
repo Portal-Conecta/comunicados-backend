@@ -38,8 +38,24 @@ public record UpdateAnnouncementCommand(
     }
 
     public Announcement toEntity(Announcement existing, Instant now) {
+        return toEntity(existing, now, null, null);
+    }
+
+    /**
+     * @param sanitizedHtml HTML sanitizado; null = não altera description
+     * @param descriptionPlain plain derivado; obrigatório junto com sanitizedHtml quando description muda
+     */
+    public Announcement toEntity(
+            Announcement existing,
+            Instant now,
+            String sanitizedHtml,
+            String descriptionPlain
+    ) {
         if (data.title() != null) existing.setTitle(data.title());
-        if (data.description() != null) existing.setDescription(data.description());
+        if (sanitizedHtml != null) {
+            existing.setDescription(sanitizedHtml);
+            existing.setDescriptionPlain(descriptionPlain != null ? descriptionPlain : "");
+        }
         if (data.origin() != null) existing.setOrigin(data.origin());
         if (data.status() != null) existing.setStatus(data.status());
         if (data.pinned() != null) existing.setPinned(data.pinned());

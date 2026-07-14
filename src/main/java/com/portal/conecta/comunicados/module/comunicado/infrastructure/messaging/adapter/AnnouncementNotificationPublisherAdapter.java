@@ -57,7 +57,9 @@ public class AnnouncementNotificationPublisherAdapter implements AnnouncementNot
                 EVENT_TYPE,
                 Instant.now(),
                 announcement.getTitle(),
-                announcement.getDescription(),
+                announcement.getDescriptionPlain() != null
+                        ? announcement.getDescriptionPlain()
+                        : announcement.getDescription(),
                 toScopes(destinations),
                 List.of(),
                 Map.of("announcementId", announcement.getId().toString())

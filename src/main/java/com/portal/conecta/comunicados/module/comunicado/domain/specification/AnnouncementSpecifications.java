@@ -100,7 +100,7 @@ public class AnnouncementSpecifications {
 
             List<Predicate> matches = new ArrayList<>();
             matches.add(cb.like(cb.lower(root.get("title")), pattern));
-            matches.add(cb.like(cb.lower(root.get("description")), pattern));
+            matches.add(cb.like(cb.lower(root.get("descriptionPlain")), pattern));
             matches.add(tagNameMatches(root, query, cb, pattern));
 
             if (matchingUserIds != null && !matchingUserIds.isEmpty()) {

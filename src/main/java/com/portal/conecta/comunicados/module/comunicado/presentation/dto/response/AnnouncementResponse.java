@@ -15,8 +15,10 @@ public record AnnouncementResponse(
     UUID id,
     @Schema(description = "Título do comunicado.", maxLength = 255)
     String title,
-    @Schema(description = "Conteúdo do comunicado em texto livre, sem limite de tamanho.")
+    @Schema(description = "Conteúdo do comunicado em HTML sanitizado (TipTap).")
     String description,
+    @Schema(description = "Versão plain-text da descrição, sem HTML — gerada no servidor.")
+    String descriptionPlain,
     AnnouncementOrigin origin,
     AnnouncementStatus status,
     Boolean pinned,
@@ -36,6 +38,7 @@ public record AnnouncementResponse(
                 entity.getId(),
                 entity.getTitle(),
                 entity.getDescription(),
+                entity.getDescriptionPlain(),
                 entity.getOrigin(),
                 entity.getStatus(),
                 entity.isPinned(),
