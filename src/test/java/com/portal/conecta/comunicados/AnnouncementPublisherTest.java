@@ -1,11 +1,10 @@
 package com.portal.conecta.comunicados;
 
+import com.portal.conecta.comunicados.module.comunicado.application.service.AnnouncementNotificationDispatcher;
 import com.portal.conecta.comunicados.module.comunicado.application.usecase.AnnouncementPublisher;
 import com.portal.conecta.comunicados.module.comunicado.domain.enums.AnnouncementHistoryAction;
 import com.portal.conecta.comunicados.module.comunicado.domain.model.Announcement;
-import com.portal.conecta.comunicados.module.comunicado.domain.model.AnnouncementDestination;
 import com.portal.conecta.comunicados.module.comunicado.domain.model.AnnouncementHistory;
-import com.portal.conecta.comunicados.module.comunicado.domain.port.AnnouncementNotificationPublisher;
 import com.portal.conecta.comunicados.module.comunicado.domain.port.announcement.AnnouncementDestinationRepository;
 import com.portal.conecta.comunicados.module.comunicado.domain.port.announcement.AnnouncementHistoryRepository;
 import com.portal.conecta.comunicados.module.comunicado.domain.port.announcement.AnnouncementRepository;
@@ -45,7 +44,7 @@ class AnnouncementPublisherTest {
     private AnnouncementTagRepository announcementTagRepository;
 
     @Mock
-    private AnnouncementNotificationPublisher notificationPublisher;
+    private AnnouncementNotificationDispatcher notificationDispatcher;
 
     @InjectMocks
     private AnnouncementPublisher publisher;
@@ -85,7 +84,7 @@ class AnnouncementPublisherTest {
         assertThat(history.getSnapshot()).contains("Aviso de prova");
 
         verify(announcementDestinationRepository).findByAnnouncementId(id);
-        verify(notificationPublisher).publish(eq(announcement), any(List.class), any(List.class));
+        verify(notificationDispatcher).dispatchAfterCommit(eq(announcement), any(List.class), any(List.class));
     }
 
     @Test
@@ -102,6 +101,6 @@ class AnnouncementPublisherTest {
         verify(announcementHistoryRepository, never()).save(any());
         verify(announcementRepository, never()).getReferenceById(any());
         verify(announcementDestinationRepository, never()).findByAnnouncementId(any());
-        verify(notificationPublisher, never()).publish(any(), any(), any());
+        verify(notificationDispatcher, never()).dispatchAfterCommit(any(), any(), any());
     }
 }

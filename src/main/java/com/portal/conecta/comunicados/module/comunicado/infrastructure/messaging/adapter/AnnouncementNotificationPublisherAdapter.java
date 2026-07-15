@@ -31,6 +31,8 @@ public class AnnouncementNotificationPublisherAdapter implements AnnouncementNot
     private static final String SOURCE = "comunicados-service";
     private static final String EVENT_TYPE = "announcement.published";
     private static final String ROLE_FILTER_TYPE = "ROLE";
+    private static final int MAX_ATTEMPTS = 3;
+    private static final long BACKOFF_MS = 200L;
 
     private final RabbitTemplate rabbitTemplate;
     private final NotificationPublisherProperties properties;
@@ -39,14 +41,39 @@ public class AnnouncementNotificationPublisherAdapter implements AnnouncementNot
     public void publish(Announcement announcement, List<AnnouncementDestination> destinations, List<UserType> roles) {
         AnnouncementNotificationPayload payload = buildPayload(announcement, destinations, roles);
 
-        rabbitTemplate.convertAndSend(properties.exchange(), properties.routingKey(), payload);
-
-        log.info(
-                "Notificação de comunicado publicada. messageId={}, announcementId={}, scopes={}",
-                payload.messageId(),
-                announcement.getId(),
-                payload.scope().size()
-        );
+        Exception last = null;
+        for (int attempt = 1; attempt <= MAX_ATTEMPTS; attempt++) {
+            try {
+                rabbitTemplate.convertAndSend(properties.exchange(), properties.routingKey(), payload);
+                log.info(
+                        "Notificação de comunicado publicada. messageId={}, announcementId={}, scopes={}, attempt={}",
+                        payload.messageId(),
+                        announcement.getId(),
+                        payload.scope().size(),
+                        attempt
+                );
+                return;
+            } catch (Exception e) {
+                last = e;
+                log.warn(
+                        "Tentativa {}/{} de notificação falhou. announcementId={}",
+                        attempt,
+                        MAX_ATTEMPTS,
+                        announcement.getId(),
+                        e
+                );
+                if (attempt < MAX_ATTEMPTS) {
+                    try {
+                        Thread.sleep(BACKOFF_MS * attempt);
+                    } catch (InterruptedException ie) {
+                        Thread.currentThread().interrupt();
+                        throw new IllegalStateException("Interrompido ao republicar notificação.", ie);
+                    }
+                }
+            }
+        }
+        throw new IllegalStateException(
+                "Falha ao publicar notificação após " + MAX_ATTEMPTS + " tentativas.", last);
     }
 
     private AnnouncementNotificationPayload buildPayload(
@@ -61,9 +88,7 @@ public class AnnouncementNotificationPublisherAdapter implements AnnouncementNot
                 EVENT_TYPE,
                 Instant.now(),
                 announcement.getTitle(),
-                announcement.getDescriptionPlain() != null
-                        ? announcement.getDescriptionPlain()
-                        : announcement.getDescription(),
+                announcement.getDescriptionPlain() != null ? announcement.getDescriptionPlain() : "",
                 toScopes(destinations),
                 toFilters(roles),
                 Map.of("announcementId", announcement.getId().toString())

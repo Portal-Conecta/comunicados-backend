@@ -7,11 +7,11 @@ import java.util.UUID;
 import org.springframework.stereotype.Component;
 import org.springframework.transaction.annotation.Transactional;
 
+import com.portal.conecta.comunicados.module.comunicado.application.service.AnnouncementNotificationDispatcher;
 import com.portal.conecta.comunicados.module.comunicado.domain.enums.AnnouncementHistoryAction;
 import com.portal.conecta.comunicados.module.comunicado.domain.model.Announcement;
 import com.portal.conecta.comunicados.module.comunicado.domain.model.AnnouncementDestination;
 import com.portal.conecta.comunicados.module.comunicado.domain.model.AnnouncementHistory;
-import com.portal.conecta.comunicados.module.comunicado.domain.port.AnnouncementNotificationPublisher;
 import com.portal.conecta.comunicados.module.comunicado.domain.port.announcement.AnnouncementDestinationRepository;
 import com.portal.conecta.comunicados.module.comunicado.domain.port.announcement.AnnouncementHistoryRepository;
 import com.portal.conecta.comunicados.module.comunicado.domain.port.announcement.AnnouncementRepository;
@@ -35,7 +35,7 @@ public class AnnouncementPublisher {
     private final AnnouncementHistoryRepository announcementHistoryRepository;
     private final AnnouncementDestinationRepository announcementDestinationRepository;
     private final AnnouncementTagRepository announcementTagRepository;
-    private final AnnouncementNotificationPublisher notificationPublisher;
+    private final AnnouncementNotificationDispatcher notificationDispatcher;
 
     /**
      * Tenta publicar o comunicado agendado via compare-and-swap. Só grava o histórico
@@ -64,11 +64,7 @@ public class AnnouncementPublisher {
         List<AnnouncementDestination> destinations =
                 announcementDestinationRepository.findByAnnouncementId(announcement.getId());
 
-        try {
-            notificationPublisher.publish(announcement, destinations, resolveRoles(announcement.getId()));
-        } catch (Exception e) {
-            log.error("Falha ao publicar notificação do comunicado {}. A publicação não será revertida.", announcement.getId(), e);
-        }
+        notificationDispatcher.dispatchAfterCommit(announcement, destinations, resolveRoles(announcement.getId()));
 
         return true;
     }
