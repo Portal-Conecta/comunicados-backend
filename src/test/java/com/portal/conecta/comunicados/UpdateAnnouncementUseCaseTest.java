@@ -4,6 +4,7 @@ import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.anyList;
+import static org.mockito.Mockito.lenient;
 import static org.mockito.Mockito.never;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
@@ -312,7 +313,7 @@ class UpdateAnnouncementUseCaseTest {
         when(announcementRepository.save(any(Announcement.class)))
                 .thenAnswer(invocation -> invocation.getArgument(0));
 
-        when(destinationRepository.saveAll(anyList()))
+        lenient().when(destinationRepository.saveAll(anyList()))
                 .thenAnswer(invocation -> invocation.getArgument(0));
 
         when(historyRepository.save(any(AnnouncementHistory.class)))
