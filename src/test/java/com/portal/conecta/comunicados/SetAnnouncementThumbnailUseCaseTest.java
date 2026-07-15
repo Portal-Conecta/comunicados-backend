@@ -25,7 +25,7 @@ import com.portal.conecta.comunicados.module.comunicado.application.usecase.SetA
 import com.portal.conecta.comunicados.module.comunicado.domain.enums.AnnouncementOrigin;
 import com.portal.conecta.comunicados.module.comunicado.domain.enums.AnnouncementStatus;
 import com.portal.conecta.comunicados.module.comunicado.domain.exception.AnnouncementFileNotFoundException;
-import com.portal.conecta.comunicados.module.comunicado.domain.exception.AnnouncementPermissionDeniedException;
+import com.portal.conecta.comunicados.module.comunicado.domain.exception.AnnouncementNotFoundException;
 import com.portal.conecta.comunicados.module.comunicado.domain.model.Announcement;
 import com.portal.conecta.comunicados.module.comunicado.domain.model.AnnouncementFile;
 import com.portal.conecta.comunicados.module.comunicado.domain.port.announcement.AnnouncementFileRepository;
@@ -131,7 +131,7 @@ class SetAnnouncementThumbnailUseCaseTest {
         when(announcementRepository.findByIdAndRemovedAtIsNull(announcementId)).thenReturn(Optional.of(announcement));
 
         assertThatThrownBy(() -> useCase.execute(SetAnnouncementThumbnailCommand.of(announcementId, fileId, otherId)))
-                .isInstanceOf(AnnouncementPermissionDeniedException.class);
+                .isInstanceOf(AnnouncementNotFoundException.class);
 
         verify(fileRepository, never()).clearAllThumbnailsByAnnouncementId(any());
     }

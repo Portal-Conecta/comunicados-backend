@@ -5,7 +5,7 @@ import org.springframework.transaction.annotation.Transactional;
 
 import com.portal.conecta.comunicados.module.comunicado.application.command.RemoveAnnouncementFileCommand;
 import com.portal.conecta.comunicados.module.comunicado.domain.exception.AnnouncementFileNotFoundException;
-import com.portal.conecta.comunicados.module.comunicado.domain.exception.AnnouncementPermissionDeniedException;
+import com.portal.conecta.comunicados.module.comunicado.domain.exception.AnnouncementNotFoundException;
 import com.portal.conecta.comunicados.module.comunicado.domain.model.AnnouncementFile;
 import com.portal.conecta.comunicados.module.comunicado.domain.port.announcement.AnnouncementFileRepository;
 import com.portal.conecta.comunicados.module.comunicado.domain.port.storage.StoragePort;
@@ -32,7 +32,7 @@ public class RemoveAnnouncementFileUseCase {
                 .orElseThrow(AnnouncementFileNotFoundException::new);
 
         if (!permissionValidator.canUpdate(context.userType(), context.userId(), file.getAnnouncement())) {
-            throw new AnnouncementPermissionDeniedException();
+            throw new AnnouncementNotFoundException();
         }
 
         storagePort.delete(file.getS3Key(), file.getS3Bucket());

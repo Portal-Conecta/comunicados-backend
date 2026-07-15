@@ -2,6 +2,7 @@ package com.portal.conecta.comunicados.module.comunicado.application.usecase;
 
 import com.portal.conecta.comunicados.module.comunicado.application.query.GetAnnouncementByIdQuery;
 import com.portal.conecta.comunicados.module.comunicado.domain.enums.AnnouncementDestinationType;
+import com.portal.conecta.comunicados.module.comunicado.domain.enums.AnnouncementStatus;
 import com.portal.conecta.comunicados.module.comunicado.domain.exception.AnnouncementNotFoundException;
 import com.portal.conecta.comunicados.module.comunicado.domain.model.Announcement;
 import com.portal.conecta.comunicados.module.comunicado.domain.model.AnnouncementDestination;
@@ -40,8 +41,7 @@ public class GetAnnouncementByIdUseCase {
         Announcement announcement = announcementRepository.findByIdAndRemovedAtIsNull(query.id())
                 .orElseThrow(AnnouncementNotFoundException::new);
 
-        if (!permissionValidator.canViewAll(context.userType())
-                && !isVisibleTo(announcement, context)) {
+        if (!canAccess(announcement, context)) {
             // Não vaza existência: fora do escopo responde como inexistente (404).
             throw new AnnouncementNotFoundException();
         }
@@ -53,6 +53,30 @@ public class GetAnnouncementByIdUseCase {
         announcement.getMentions().size();
 
         return announcement;
+    }
+
+    private boolean canAccess(Announcement announcement, RequestContext context) {
+        if (permissionValidator.canViewAll(context.userType())) {
+            return true;
+        }
+
+        boolean isAuthor = context.userId() != null
+                && context.userId().equals(announcement.getCreatedByUserId());
+        if (isAuthor) {
+            return true;
+        }
+
+        // Demais perfis só veem PUBLISHED no próprio escopo.
+        if (!isPublished(announcement)) {
+            return false;
+        }
+
+        return isVisibleTo(announcement, context);
+    }
+
+    private boolean isPublished(Announcement announcement) {
+        return announcement.getStatus() == AnnouncementStatus.PUBLISHED
+                && announcement.getPublishedAt() != null;
     }
 
     private boolean isVisibleTo(Announcement announcement, RequestContext context) {

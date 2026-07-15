@@ -196,6 +196,20 @@ class AnnouncementPermissionValidatorTest {
         assertThat(validator.canUpdate(UserType.ADMIN, actorId, announcement)).isFalse();
     }
 
+    // --- canViewAll ---
+
+    @ParameterizedTest
+    @EnumSource(value = UserType.class, names = {"ADMIN", "SENAI", "WEG"})
+    void shouldAllowViewAllForPrivileged(UserType userType) {
+        assertThat(validator.canViewAll(userType)).isTrue();
+    }
+
+    @ParameterizedTest
+    @EnumSource(value = UserType.class, names = {"TEACHER", "REPRESENTATIVE", "STUDENT"})
+    void shouldDenyViewAllForScopedAndStudent(UserType userType) {
+        assertThat(validator.canViewAll(userType)).isFalse();
+    }
+
     // --- canCreateForDestinations ---
 
     @ParameterizedTest
