@@ -1,6 +1,7 @@
 package com.portal.conecta.comunicados.module.comunicado.domain.port.support;
 
 import com.portal.conecta.comunicados.module.comunicado.domain.model.AnnouncementTag;
+import com.portal.conecta.comunicados.module.tag.domain.enums.TagEntityType;
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.data.jpa.repository.Query;
 import org.springframework.data.repository.query.Param;
@@ -25,10 +26,12 @@ public interface AnnouncementTagRepository extends JpaRepository<AnnouncementTag
             SELECT t.hubEntityId FROM AnnouncementTag at
             JOIN at.tag t
             WHERE at.announcement.id = :announcementId
-              AND t.entityType = com.portal.conecta.comunicados.module.tag.domain.enums.TagEntityType.SHIFT
+              AND t.entityType = :entityType
               AND t.active = true
             """)
-    List<String> findActiveShiftHubEntityIdsByAnnouncementId(@Param("announcementId") UUID announcementId);
+    List<String> findActiveHubEntityIdsByAnnouncementIdAndEntityType(
+            @Param("announcementId") UUID announcementId,
+            @Param("entityType") TagEntityType entityType);
 
     void deleteByAnnouncementId(UUID announcementId);
 

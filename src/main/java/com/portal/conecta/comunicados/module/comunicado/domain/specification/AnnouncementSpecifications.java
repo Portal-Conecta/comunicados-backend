@@ -167,10 +167,13 @@ public class AnnouncementSpecifications {
             List<UUID> classIds,
             List<UUID> courseIds,
             UUID viewerUserId,
-            List<String> viewerShiftCodes
+            List<String> viewerShiftCodes,
+            String viewerRole
     ) {
+        List<String> viewerRoles = viewerRole == null ? List.of() : List.of(viewerRole);
         return visibleTo(classIds, courseIds, viewerUserId)
-                .and(visibleForShiftCodes(viewerShiftCodes));
+                .and(visibleForShiftCodes(viewerShiftCodes))
+                .and(visibleForTagRestriction(TagEntityType.ROLE, viewerRoles));
     }
 
     public static Specification<Announcement> visibleTo(List<UUID> classIds, List<UUID> courseIds, UUID viewerUserId) {
@@ -197,35 +200,43 @@ public class AnnouncementSpecifications {
     }
 
     public static Specification<Announcement> visibleForShiftCodes(List<String> viewerShiftCodes) {
+        return visibleForTagRestriction(TagEntityType.SHIFT, viewerShiftCodes);
+    }
+
+    /**
+     * Anúncios podem ser restritos por tags de enum fixo local (turno, papel de usuário): sem tag
+     * ativa do tipo, não há restrição; com tag ativa, o viewer precisa bater com algum valor.
+     */
+    public static Specification<Announcement> visibleForTagRestriction(TagEntityType entityType, List<String> viewerValues) {
         return (root, query, cb) -> {
-            Subquery<UUID> hasShiftTags = query.subquery(UUID.class);
-            Root<AnnouncementTag> shiftTagLink = hasShiftTags.from(AnnouncementTag.class);
-            Join<AnnouncementTag, Tag> shiftTag = shiftTagLink.join("tag");
-            hasShiftTags.select(shiftTagLink.get("id"));
-            hasShiftTags.where(cb.and(
-                    cb.equal(shiftTagLink.get("announcement"), root),
-                    cb.equal(shiftTag.get("entityType"), TagEntityType.SHIFT),
-                    cb.isTrue(shiftTag.get("active"))
+            Subquery<UUID> hasRestrictionTags = query.subquery(UUID.class);
+            Root<AnnouncementTag> restrictionTagLink = hasRestrictionTags.from(AnnouncementTag.class);
+            Join<AnnouncementTag, Tag> restrictionTag = restrictionTagLink.join("tag");
+            hasRestrictionTags.select(restrictionTagLink.get("id"));
+            hasRestrictionTags.where(cb.and(
+                    cb.equal(restrictionTagLink.get("announcement"), root),
+                    cb.equal(restrictionTag.get("entityType"), entityType),
+                    cb.isTrue(restrictionTag.get("active"))
             ));
 
-            Predicate noShiftRestriction = cb.not(cb.exists(hasShiftTags));
+            Predicate noRestriction = cb.not(cb.exists(hasRestrictionTags));
 
-            if (viewerShiftCodes == null || viewerShiftCodes.isEmpty()) {
-                return noShiftRestriction;
+            if (viewerValues == null || viewerValues.isEmpty()) {
+                return noRestriction;
             }
 
-            Subquery<UUID> matchingShift = query.subquery(UUID.class);
-            Root<AnnouncementTag> matchLink = matchingShift.from(AnnouncementTag.class);
+            Subquery<UUID> matching = query.subquery(UUID.class);
+            Root<AnnouncementTag> matchLink = matching.from(AnnouncementTag.class);
             Join<AnnouncementTag, Tag> matchTag = matchLink.join("tag");
-            matchingShift.select(matchLink.get("id"));
-            matchingShift.where(cb.and(
+            matching.select(matchLink.get("id"));
+            matching.where(cb.and(
                     cb.equal(matchLink.get("announcement"), root),
-                    cb.equal(matchTag.get("entityType"), TagEntityType.SHIFT),
+                    cb.equal(matchTag.get("entityType"), entityType),
                     cb.isTrue(matchTag.get("active")),
-                    matchTag.get("hubEntityId").in(viewerShiftCodes)
+                    matchTag.get("hubEntityId").in(viewerValues)
             ));
 
-            return cb.or(noShiftRestriction, cb.exists(matchingShift));
+            return cb.or(noRestriction, cb.exists(matching));
         };
     }
 

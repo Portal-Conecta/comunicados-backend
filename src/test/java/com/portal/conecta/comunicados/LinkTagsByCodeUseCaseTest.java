@@ -18,27 +18,26 @@ import org.mockito.ArgumentCaptor;
 
 import com.portal.conecta.comunicados.module.comunicado.domain.enums.AnnouncementOrigin;
 import com.portal.conecta.comunicados.module.comunicado.domain.enums.AnnouncementStatus;
-import com.portal.conecta.comunicados.module.comunicado.domain.enums.ShiftCode;
 import com.portal.conecta.comunicados.module.comunicado.domain.model.Announcement;
 import com.portal.conecta.comunicados.module.comunicado.domain.model.AnnouncementTag;
 import com.portal.conecta.comunicados.module.comunicado.domain.port.support.AnnouncementTagRepository;
-import com.portal.conecta.comunicados.module.tag.application.usecase.LinkShiftTagsUseCase;
+import com.portal.conecta.comunicados.module.tag.application.usecase.LinkTagsByCodeUseCase;
 import com.portal.conecta.comunicados.module.tag.domain.enums.TagEntityType;
 import com.portal.conecta.comunicados.module.tag.domain.model.Tag;
 import com.portal.conecta.comunicados.module.tag.domain.port.TagRepository;
 
-class LinkShiftTagsUseCaseTest {
+class LinkTagsByCodeUseCaseTest {
 
     private TagRepository tagRepository;
     private AnnouncementTagRepository announcementTagRepository;
-    private LinkShiftTagsUseCase useCase;
+    private LinkTagsByCodeUseCase useCase;
     private Announcement announcement;
 
     @BeforeEach
     void setUp() {
         tagRepository = mock(TagRepository.class);
         announcementTagRepository = mock(AnnouncementTagRepository.class);
-        useCase = new LinkShiftTagsUseCase(tagRepository, announcementTagRepository);
+        useCase = new LinkTagsByCodeUseCase(tagRepository, announcementTagRepository);
 
         announcement = Announcement.builder()
                 .id(UUID.randomUUID())
@@ -56,12 +55,12 @@ class LinkShiftTagsUseCaseTest {
 
     @Test
     void shouldLinkShiftTag() {
-        Tag tag = shiftTag("FULL_AM_PM");
+        Tag tag = tag(TagEntityType.SHIFT, "FULL_AM_PM");
 
         when(tagRepository.findByEntityTypeAndHubEntityIdAndActiveTrue(TagEntityType.SHIFT, "FULL_AM_PM"))
                 .thenReturn(Optional.of(tag));
 
-        useCase.execute(announcement, List.of(ShiftCode.FULL_AM_PM));
+        useCase.execute(announcement, TagEntityType.SHIFT, List.of("FULL_AM_PM"));
 
         ArgumentCaptor<List<AnnouncementTag>> captor = ArgumentCaptor.captor();
         verify(announcementTagRepository).saveAll(captor.capture());
@@ -70,17 +69,49 @@ class LinkShiftTagsUseCaseTest {
     }
 
     @Test
-    void shouldSkipWhenShiftCodesEmpty() {
-        useCase.execute(announcement, List.of());
+    void shouldLinkRoleTag() {
+        Tag tag = tag(TagEntityType.ROLE, "TEACHER");
+
+        when(tagRepository.findByEntityTypeAndHubEntityIdAndActiveTrue(TagEntityType.ROLE, "TEACHER"))
+                .thenReturn(Optional.of(tag));
+
+        useCase.execute(announcement, TagEntityType.ROLE, List.of("TEACHER"));
+
+        ArgumentCaptor<List<AnnouncementTag>> captor = ArgumentCaptor.captor();
+        verify(announcementTagRepository).saveAll(captor.capture());
+        assertThat(captor.getValue()).hasSize(1);
+        assertThat(captor.getValue().get(0).getTag()).isEqualTo(tag);
+    }
+
+    @Test
+    void shouldSkipWhenCodesEmpty() {
+        useCase.execute(announcement, TagEntityType.SHIFT, List.of());
 
         verify(announcementTagRepository, never()).saveAll(any());
     }
 
-    private Tag shiftTag(String code) {
+    @Test
+    void shouldSkipWhenCodesNull() {
+        useCase.execute(announcement, TagEntityType.ROLE, null);
+
+        verify(announcementTagRepository, never()).saveAll(any());
+    }
+
+    @Test
+    void shouldNotSaveWhenNoActiveTagFound() {
+        when(tagRepository.findByEntityTypeAndHubEntityIdAndActiveTrue(TagEntityType.ROLE, "ADMIN"))
+                .thenReturn(Optional.empty());
+
+        useCase.execute(announcement, TagEntityType.ROLE, List.of("ADMIN"));
+
+        verify(announcementTagRepository, never()).saveAll(any());
+    }
+
+    private Tag tag(TagEntityType entityType, String code) {
         return Tag.builder()
                 .id(UUID.randomUUID())
-                .name("Turno")
-                .entityType(TagEntityType.SHIFT)
+                .name(code)
+                .entityType(entityType)
                 .hubEntityId(code)
                 .active(true)
                 .createdAt(Instant.now())

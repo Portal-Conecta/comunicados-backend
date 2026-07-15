@@ -2,6 +2,7 @@ package com.portal.conecta.comunicados.module.comunicado.application.usecase;
 
 import java.time.Instant;
 import java.util.List;
+import java.util.UUID;
 
 import org.springframework.stereotype.Component;
 import org.springframework.transaction.annotation.Transactional;
@@ -14,6 +15,9 @@ import com.portal.conecta.comunicados.module.comunicado.domain.port.Announcement
 import com.portal.conecta.comunicados.module.comunicado.domain.port.announcement.AnnouncementDestinationRepository;
 import com.portal.conecta.comunicados.module.comunicado.domain.port.announcement.AnnouncementHistoryRepository;
 import com.portal.conecta.comunicados.module.comunicado.domain.port.announcement.AnnouncementRepository;
+import com.portal.conecta.comunicados.module.comunicado.domain.port.support.AnnouncementTagRepository;
+import com.portal.conecta.comunicados.module.tag.domain.enums.TagEntityType;
+import com.portal.conecta.comunicados.shared.context.UserType;
 
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
@@ -30,6 +34,7 @@ public class AnnouncementPublisher {
     private final AnnouncementRepository announcementRepository;
     private final AnnouncementHistoryRepository announcementHistoryRepository;
     private final AnnouncementDestinationRepository announcementDestinationRepository;
+    private final AnnouncementTagRepository announcementTagRepository;
     private final AnnouncementNotificationPublisher notificationPublisher;
 
     /**
@@ -60,11 +65,19 @@ public class AnnouncementPublisher {
                 announcementDestinationRepository.findByAnnouncementId(announcement.getId());
 
         try {
-            notificationPublisher.publish(announcement, destinations);
+            notificationPublisher.publish(announcement, destinations, resolveRoles(announcement.getId()));
         } catch (Exception e) {
             log.error("Falha ao publicar notificação do comunicado {}. A publicação não será revertida.", announcement.getId(), e);
         }
 
         return true;
+    }
+
+    private List<UserType> resolveRoles(UUID announcementId) {
+        return announcementTagRepository
+                .findActiveHubEntityIdsByAnnouncementIdAndEntityType(announcementId, TagEntityType.ROLE)
+                .stream()
+                .map(UserType::valueOf)
+                .toList();
     }
 }

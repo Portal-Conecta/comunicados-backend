@@ -10,9 +10,11 @@ import com.portal.conecta.comunicados.module.comunicado.domain.port.hub.HubCours
 import com.portal.conecta.comunicados.module.comunicado.domain.port.hub.HubShiftPort;
 import com.portal.conecta.comunicados.module.comunicado.domain.port.support.AnnouncementTagRepository;
 import com.portal.conecta.comunicados.module.comunicado.domain.validator.AnnouncementPermissionValidator;
+import com.portal.conecta.comunicados.module.tag.domain.enums.TagEntityType;
 import com.portal.conecta.comunicados.shared.context.ContextClass;
 import com.portal.conecta.comunicados.shared.context.RequestContext;
 import com.portal.conecta.comunicados.shared.context.RequestContextProvider;
+import com.portal.conecta.comunicados.shared.context.UserType;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Component;
 import org.springframework.transaction.annotation.Transactional;
@@ -66,17 +68,32 @@ public class GetAnnouncementByIdUseCase {
             return false;
         }
 
-        return matchesShiftRestriction(announcement.getId(), classIds);
+        if (!matchesShiftRestriction(announcement.getId(), classIds)) {
+            return false;
+        }
+
+        return matchesRoleRestriction(announcement.getId(), context.userType());
     }
 
     private boolean matchesShiftRestriction(UUID announcementId, List<UUID> classIds) {
-        List<String> requiredShiftCodes = announcementTagRepository.findActiveShiftHubEntityIdsByAnnouncementId(announcementId);
+        List<String> requiredShiftCodes = announcementTagRepository
+                .findActiveHubEntityIdsByAnnouncementIdAndEntityType(announcementId, TagEntityType.SHIFT);
         if (requiredShiftCodes.isEmpty()) {
             return true;
         }
 
         List<String> viewerShiftCodes = hubShiftPort.getShiftCodesForClasses(classIds);
         return requiredShiftCodes.stream().anyMatch(viewerShiftCodes::contains);
+    }
+
+    private boolean matchesRoleRestriction(UUID announcementId, UserType viewerType) {
+        List<String> requiredRoles = announcementTagRepository
+                .findActiveHubEntityIdsByAnnouncementIdAndEntityType(announcementId, TagEntityType.ROLE);
+        if (requiredRoles.isEmpty()) {
+            return true;
+        }
+
+        return viewerType != null && requiredRoles.contains(viewerType.name());
     }
 
     private boolean matches(

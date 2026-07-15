@@ -5,6 +5,7 @@ import java.util.UUID;
 
 import com.portal.conecta.comunicados.module.comunicado.domain.enums.AnnouncementOrigin;
 import com.portal.conecta.comunicados.module.comunicado.domain.enums.ShiftCode;
+import com.portal.conecta.comunicados.shared.context.UserType;
 
 import io.swagger.v3.oas.annotations.media.Schema;
 import jakarta.validation.Valid;
@@ -44,7 +45,13 @@ public record PublishAnnouncementRequest(
             description = "Turnos do comunicado (enum Shift do Core). Opcional; vazio = sem restrição de turno.",
             example = "[\"FULL_AM_PM\"]"
     )
-    List<ShiftCode> shiftCodes
+    List<ShiftCode> shiftCodes,
+
+    @Schema(
+            description = "Papéis de usuário que podem ver o comunicado. Opcional; vazio = sem restrição de papel.",
+            example = "[\"TEACHER\"]"
+    )
+    List<UserType> roles
 
 ) {
 
@@ -54,5 +61,9 @@ public record PublishAnnouncementRequest(
 
     public List<ShiftCode> resolvedShiftCodes() {
         return shiftCodes == null ? List.of() : shiftCodes;
+    }
+
+    public List<UserType> resolvedRoles() {
+        return roles == null ? List.of() : roles;
     }
 }

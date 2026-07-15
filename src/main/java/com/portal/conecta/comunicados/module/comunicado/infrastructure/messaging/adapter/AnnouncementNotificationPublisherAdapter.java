@@ -15,7 +15,9 @@ import com.portal.conecta.comunicados.module.comunicado.domain.model.Announcemen
 import com.portal.conecta.comunicados.module.comunicado.domain.port.AnnouncementNotificationPublisher;
 import com.portal.conecta.comunicados.module.comunicado.infrastructure.messaging.config.NotificationPublisherProperties;
 import com.portal.conecta.comunicados.module.comunicado.infrastructure.messaging.dto.AnnouncementNotificationPayload;
+import com.portal.conecta.comunicados.module.comunicado.infrastructure.messaging.dto.AnnouncementNotificationPayload.NotificationFilterPayload;
 import com.portal.conecta.comunicados.module.comunicado.infrastructure.messaging.dto.AnnouncementNotificationPayload.NotificationScopePayload;
+import com.portal.conecta.comunicados.shared.context.UserType;
 
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
@@ -28,13 +30,14 @@ public class AnnouncementNotificationPublisherAdapter implements AnnouncementNot
 
     private static final String SOURCE = "comunicados-service";
     private static final String EVENT_TYPE = "announcement.published";
+    private static final String ROLE_FILTER_TYPE = "ROLE";
 
     private final RabbitTemplate rabbitTemplate;
     private final NotificationPublisherProperties properties;
 
     @Override
-    public void publish(Announcement announcement, List<AnnouncementDestination> destinations) {
-        AnnouncementNotificationPayload payload = buildPayload(announcement, destinations);
+    public void publish(Announcement announcement, List<AnnouncementDestination> destinations, List<UserType> roles) {
+        AnnouncementNotificationPayload payload = buildPayload(announcement, destinations, roles);
 
         rabbitTemplate.convertAndSend(properties.exchange(), properties.routingKey(), payload);
 
@@ -48,7 +51,8 @@ public class AnnouncementNotificationPublisherAdapter implements AnnouncementNot
 
     private AnnouncementNotificationPayload buildPayload(
             Announcement announcement,
-            List<AnnouncementDestination> destinations
+            List<AnnouncementDestination> destinations,
+            List<UserType> roles
     ) {
         return new AnnouncementNotificationPayload(
                 UUID.randomUUID().toString(),
@@ -59,7 +63,7 @@ public class AnnouncementNotificationPublisherAdapter implements AnnouncementNot
                 announcement.getTitle(),
                 announcement.getDescription(),
                 toScopes(destinations),
-                List.of(),
+                toFilters(roles),
                 Map.of("announcementId", announcement.getId().toString())
         );
     }
@@ -78,5 +82,14 @@ public class AnnouncementNotificationPublisherAdapter implements AnnouncementNot
                 destination.getType().name(),
                 destination.getReferenceId().toString()
         );
+    }
+
+    private List<NotificationFilterPayload> toFilters(List<UserType> roles) {
+        if (roles == null) {
+            return List.of();
+        }
+        return roles.stream()
+                .map(role -> new NotificationFilterPayload(ROLE_FILTER_TYPE, role.name()))
+                .toList();
     }
 }

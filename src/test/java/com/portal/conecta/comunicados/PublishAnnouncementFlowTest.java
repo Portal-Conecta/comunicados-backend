@@ -10,6 +10,7 @@ import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.mockito.ArgumentCaptor;
 import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.never;
 import static org.mockito.Mockito.times;
@@ -57,7 +58,8 @@ import com.portal.conecta.comunicados.module.comunicado.presentation.controller.
 import com.portal.conecta.comunicados.module.comunicado.presentation.dto.request.CreateAnnouncementDestinationInput;
 import com.portal.conecta.comunicados.module.comunicado.presentation.dto.request.PublishAnnouncementRequest;
 import com.portal.conecta.comunicados.module.tag.application.usecase.AutoLinkTagsByDestinationUseCase;
-import com.portal.conecta.comunicados.module.tag.application.usecase.LinkShiftTagsUseCase;
+import com.portal.conecta.comunicados.module.tag.application.usecase.LinkTagsByCodeUseCase;
+import com.portal.conecta.comunicados.module.tag.domain.enums.TagEntityType;
 import com.portal.conecta.comunicados.shared.context.ClassRole;
 import com.portal.conecta.comunicados.shared.context.ContextClass;
 import com.portal.conecta.comunicados.shared.context.RequestContext;
@@ -77,7 +79,7 @@ class PublishAnnouncementFlowTest {
     private RequestContextProvider requestContextProvider;
     private HubClassPort hubClassPort;
     private AutoLinkTagsByDestinationUseCase autoLinkTagsUseCase;
-    private LinkShiftTagsUseCase linkShiftTagsUseCase;
+    private LinkTagsByCodeUseCase linkTagsByCodeUseCase;
     private AnnouncementNotificationPublisher notificationPublisher;
     private ListAnnouncementsUseCase listAnnouncementsUseCase;
     private ListPinnedAnnouncementsUseCase listPinnedAnnouncementsUseCase;
@@ -100,7 +102,7 @@ class PublishAnnouncementFlowTest {
         requestContextProvider = mock(RequestContextProvider.class);
         hubClassPort = mock(HubClassPort.class);
         autoLinkTagsUseCase = mock(AutoLinkTagsByDestinationUseCase.class);
-        linkShiftTagsUseCase = mock(LinkShiftTagsUseCase.class);
+        linkTagsByCodeUseCase = mock(LinkTagsByCodeUseCase.class);
         notificationPublisher = mock(AnnouncementNotificationPublisher.class);
         listAnnouncementsUseCase = mock(ListAnnouncementsUseCase.class);
         listPinnedAnnouncementsUseCase = mock(ListPinnedAnnouncementsUseCase.class);
@@ -117,7 +119,7 @@ class PublishAnnouncementFlowTest {
                 requestContextProvider,
                 new AnnouncementPermissionValidator(hubClassPort),
                 autoLinkTagsUseCase,
-                linkShiftTagsUseCase,
+                linkTagsByCodeUseCase,
                 notificationPublisher
         );
         scheduleAnnouncementUseCase = mock(ScheduleAnnouncementUseCase.class);
@@ -285,7 +287,7 @@ class PublishAnnouncementFlowTest {
                 .thenReturn(createContext(UUID.randomUUID(), UserType.SENAI));
 
         PublishAnnouncementRequest request = new PublishAnnouncementRequest(
-                "", "Descricao", AnnouncementOrigin.SENAI, List.of(userDestination(UUID.randomUUID())), null, null, null);
+                "", "Descricao", AnnouncementOrigin.SENAI, List.of(userDestination(UUID.randomUUID())), null, null, null, null);
 
         perform(request).andExpect(status().isBadRequest());
         verify(announcementRepository, never()).save(any());
@@ -297,7 +299,7 @@ class PublishAnnouncementFlowTest {
                 .thenReturn(createContext(UUID.randomUUID(), UserType.SENAI));
 
         PublishAnnouncementRequest request = new PublishAnnouncementRequest(
-                "Titulo", "Descricao", AnnouncementOrigin.SENAI, List.of(), null, null, null);
+                "Titulo", "Descricao", AnnouncementOrigin.SENAI, List.of(), null, null, null, null);
 
         perform(request).andExpect(status().isBadRequest());
         verify(announcementRepository, never()).save(any());
@@ -316,6 +318,7 @@ class PublishAnnouncementFlowTest {
                 longDescription,
                 AnnouncementOrigin.SENAI,
                 List.of(userDestination(UUID.randomUUID())),
+                null,
                 null,
                 null,
                 null
@@ -344,14 +347,15 @@ class PublishAnnouncementFlowTest {
                 List.of(userDestination(UUID.randomUUID())),
                 null,
                 null,
-                List.of(ShiftCode.FULL_AM_PM)
+                List.of(ShiftCode.FULL_AM_PM),
+                null
         );
 
         perform(request)
                 .andExpect(status().isCreated())
                 .andExpect(jsonPath("$.status").value(AnnouncementStatus.PUBLISHED.name()));
 
-        verify(linkShiftTagsUseCase).execute(any(), any());
+        verify(linkTagsByCodeUseCase).execute(any(), eq(TagEntityType.SHIFT), any());
     }
 
     @Test
@@ -364,6 +368,7 @@ class PublishAnnouncementFlowTest {
                 "Descricao valida",
                 AnnouncementOrigin.SENAI,
                 List.of(userDestination(UUID.randomUUID())),
+                null,
                 null,
                 null,
                 null
@@ -391,6 +396,7 @@ class PublishAnnouncementFlowTest {
                 "Descricao do comunicado",
                 AnnouncementOrigin.SENAI,
                 List.of(destinations),
+                null,
                 null,
                 null,
                 null
@@ -495,6 +501,7 @@ class PublishAnnouncementWebMvcTest {
                 "Descricao",
                 AnnouncementOrigin.SENAI,
                 List.of(new CreateAnnouncementDestinationInput(AnnouncementDestinationType.USER, UUID.randomUUID())),
+                null,
                 null,
                 null,
                 null

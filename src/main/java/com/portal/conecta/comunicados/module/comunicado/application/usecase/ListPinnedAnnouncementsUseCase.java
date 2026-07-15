@@ -44,7 +44,8 @@ public class ListPinnedAnnouncementsUseCase {
                     classes,
                     hubCoursePort.getCurrentUserCourseIds(),
                     context.userId(),
-                    hubShiftPort.getShiftCodesForClasses(classes)
+                    hubShiftPort.getShiftCodesForClasses(classes),
+                    context.userType() == null ? null : context.userType().name()
             ));
         }
 

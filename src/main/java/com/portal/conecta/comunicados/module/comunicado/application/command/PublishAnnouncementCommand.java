@@ -29,7 +29,8 @@ public record PublishAnnouncementCommand(
     UserType authorUserType,
     List<CreateAnnouncementDestinationInput> destinations,
     List<UUID> tagIds,
-    List<ShiftCode> shiftCodes
+    List<ShiftCode> shiftCodes,
+    List<UserType> roles
 
 ) {
 
@@ -43,7 +44,8 @@ public record PublishAnnouncementCommand(
                 context.userType(),
                 request.destinations(),
                 request.tagIds(),
-                request.resolvedShiftCodes()
+                request.resolvedShiftCodes(),
+                request.resolvedRoles()
         );
     }
 

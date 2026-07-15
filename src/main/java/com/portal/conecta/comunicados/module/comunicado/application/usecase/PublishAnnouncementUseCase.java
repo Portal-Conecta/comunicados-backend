@@ -7,6 +7,7 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 import com.portal.conecta.comunicados.module.comunicado.application.command.PublishAnnouncementCommand;
+import com.portal.conecta.comunicados.module.comunicado.domain.enums.ShiftCode;
 import com.portal.conecta.comunicados.module.comunicado.domain.exception.AnnouncementPermissionDeniedException;
 import com.portal.conecta.comunicados.module.comunicado.domain.model.Announcement;
 import com.portal.conecta.comunicados.module.comunicado.domain.model.AnnouncementDestination;
@@ -17,9 +18,11 @@ import com.portal.conecta.comunicados.module.comunicado.domain.port.announcement
 import com.portal.conecta.comunicados.module.comunicado.domain.validator.AnnouncementPermissionValidator;
 import com.portal.conecta.comunicados.module.tag.application.dto.TagLinkDestinationCommand;
 import com.portal.conecta.comunicados.module.tag.application.usecase.AutoLinkTagsByDestinationUseCase;
-import com.portal.conecta.comunicados.module.tag.application.usecase.LinkShiftTagsUseCase;
+import com.portal.conecta.comunicados.module.tag.application.usecase.LinkTagsByCodeUseCase;
+import com.portal.conecta.comunicados.module.tag.domain.enums.TagEntityType;
 import com.portal.conecta.comunicados.shared.context.RequestContext;
 import com.portal.conecta.comunicados.shared.context.RequestContextProvider;
+import com.portal.conecta.comunicados.shared.context.UserType;
 import com.portal.conecta.comunicados.shared.exception.UnauthorizedUserException;
 
 import lombok.RequiredArgsConstructor;
@@ -41,7 +44,7 @@ public class PublishAnnouncementUseCase {
     private final RequestContextProvider requestContextProvider;
     private final AnnouncementPermissionValidator permissionValidator;
     private final AutoLinkTagsByDestinationUseCase autoLinkTagsUseCase;
-    private final LinkShiftTagsUseCase linkShiftTagsUseCase;
+    private final LinkTagsByCodeUseCase linkTagsByCodeUseCase;
     private final AnnouncementNotificationPublisher notificationPublisher;
 
     @Transactional
@@ -56,10 +59,11 @@ public class PublishAnnouncementUseCase {
         Announcement announcement = announcementRepository.save(command.toEntity(now));
         List<AnnouncementDestination> destinations = announcementDestinationRepository.saveAll(command.toDestinations(announcement));
         autoLinkTagsUseCase.execute(announcement, toTagCommands(destinations), command.tagIds());
-        linkShiftTagsUseCase.execute(announcement, command.shiftCodes());
+        linkTagsByCodeUseCase.execute(announcement, TagEntityType.SHIFT, command.shiftCodes().stream().map(ShiftCode::name).toList());
+        linkTagsByCodeUseCase.execute(announcement, TagEntityType.ROLE, command.roles().stream().map(UserType::name).toList());
 
         try {
-            notificationPublisher.publish(announcement, destinations);
+            notificationPublisher.publish(announcement, destinations, command.roles());
         } catch (Exception e) {
             log.error("Falha ao publicar notificação do comunicado {}. A publicação não será revertida.", announcement.getId(), e);
         }

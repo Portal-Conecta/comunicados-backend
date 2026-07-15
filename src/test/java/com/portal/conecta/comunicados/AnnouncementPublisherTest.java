@@ -9,6 +9,8 @@ import com.portal.conecta.comunicados.module.comunicado.domain.port.Announcement
 import com.portal.conecta.comunicados.module.comunicado.domain.port.announcement.AnnouncementDestinationRepository;
 import com.portal.conecta.comunicados.module.comunicado.domain.port.announcement.AnnouncementHistoryRepository;
 import com.portal.conecta.comunicados.module.comunicado.domain.port.announcement.AnnouncementRepository;
+import com.portal.conecta.comunicados.module.comunicado.domain.port.support.AnnouncementTagRepository;
+import com.portal.conecta.comunicados.module.tag.domain.enums.TagEntityType;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.ArgumentCaptor;
@@ -40,6 +42,9 @@ class AnnouncementPublisherTest {
     private AnnouncementDestinationRepository announcementDestinationRepository;
 
     @Mock
+    private AnnouncementTagRepository announcementTagRepository;
+
+    @Mock
     private AnnouncementNotificationPublisher notificationPublisher;
 
     @InjectMocks
@@ -63,6 +68,8 @@ class AnnouncementPublisherTest {
         when(announcementRepository.markScheduledAsPublished(eq(id), eq(now))).thenReturn(1);
         when(announcementRepository.getReferenceById(id)).thenReturn(announcement);
         when(announcementDestinationRepository.findByAnnouncementId(id)).thenReturn(List.of());
+        when(announcementTagRepository.findActiveHubEntityIdsByAnnouncementIdAndEntityType(id, TagEntityType.ROLE))
+                .thenReturn(List.of());
 
         boolean result = publisher.publish(announcement, now);
 
@@ -78,7 +85,7 @@ class AnnouncementPublisherTest {
         assertThat(history.getSnapshot()).contains("Aviso de prova");
 
         verify(announcementDestinationRepository).findByAnnouncementId(id);
-        verify(notificationPublisher).publish(eq(announcement), any(List.class));
+        verify(notificationPublisher).publish(eq(announcement), any(List.class), any(List.class));
     }
 
     @Test
@@ -95,6 +102,6 @@ class AnnouncementPublisherTest {
         verify(announcementHistoryRepository, never()).save(any());
         verify(announcementRepository, never()).getReferenceById(any());
         verify(announcementDestinationRepository, never()).findByAnnouncementId(any());
-        verify(notificationPublisher, never()).publish(any(), any());
+        verify(notificationPublisher, never()).publish(any(), any(), any());
     }
 }

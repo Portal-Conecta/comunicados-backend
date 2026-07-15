@@ -17,7 +17,7 @@ import com.portal.conecta.comunicados.module.comunicado.domain.model.hub.HubClas
 import com.portal.conecta.comunicados.module.comunicado.domain.model.hub.HubStudent;
 import com.portal.conecta.comunicados.module.comunicado.domain.port.support.HubClassPort;
 import com.portal.conecta.comunicados.module.comunicado.infrastructure.hub.dto.HubClassResponse;
-import com.portal.conecta.comunicados.module.comunicado.infrastructure.hub.dto.HubStudentResponse;
+import com.portal.conecta.comunicados.module.comunicado.infrastructure.hub.dto.HubClassMemberResponse;
 import com.portal.conecta.comunicados.module.comunicado.infrastructure.hub.exception.HubIntegrationException;
 import com.portal.conecta.comunicados.module.comunicado.infrastructure.hub.properties.HubApiProperties;
 
@@ -73,10 +73,10 @@ public class HttpHubClassAdapter implements HubClassPort {
     @Override
     public List<HubStudent> findStudentsByClassId(UUID classId) {
         try {
-            HubStudentResponse[] students = restClient.get()
-                    .uri("/classes/{classId}/students", classId)
+            HubClassMemberResponse[] students = restClient.get()
+                    .uri("/classes/{classId}/members?role=STUDENT", classId)
                     .retrieve()
-                    .body(new ParameterizedTypeReference<HubStudentResponse[]>() {});
+                    .body(new ParameterizedTypeReference<HubClassMemberResponse[]>() {});
 
             if (students == null) {
                 return List.of();
