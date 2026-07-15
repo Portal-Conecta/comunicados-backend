@@ -106,7 +106,7 @@ storage:
   max-image-size-mb: ${STORAGE_MAX_IMAGE_SIZE_MB:10}
   max-document-size-mb: ${STORAGE_MAX_DOCUMENT_SIZE_MB:20}
   max-video-size-mb: ${STORAGE_MAX_VIDEO_SIZE_MB:200}
-  # Bucket A: recebe todo upload raw via presign (imagem, pdf, video, svg); Lambda é
+  # Bucket A: recebe todo upload raw via presign (imagem raster, pdf, video); Lambda é
   # triggerada aqui — comprime imagens raster e preserva os demais tipos como estão
   images-bucket: ${STORAGE_IMAGES_BUCKET:comunicados-raw-sa}
   # Bucket B: destino exclusivo da Lambda — imagens comprimidas e demais tipos
