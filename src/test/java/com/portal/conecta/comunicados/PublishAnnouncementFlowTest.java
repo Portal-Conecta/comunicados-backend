@@ -206,6 +206,7 @@ class PublishAnnouncementFlowTest {
                 List.of(userDestination(UUID.randomUUID())),
                 null,
                 null,
+                null,
                 null
         );
 
