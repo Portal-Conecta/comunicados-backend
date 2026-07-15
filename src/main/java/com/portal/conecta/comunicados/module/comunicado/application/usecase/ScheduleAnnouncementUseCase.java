@@ -15,6 +15,8 @@ import com.portal.conecta.comunicados.module.comunicado.domain.model.Announcemen
 import com.portal.conecta.comunicados.module.comunicado.domain.port.announcement.AnnouncementDestinationRepository;
 import com.portal.conecta.comunicados.module.comunicado.domain.port.announcement.AnnouncementHistoryRepository;
 import com.portal.conecta.comunicados.module.comunicado.domain.port.announcement.AnnouncementRepository;
+import com.portal.conecta.comunicados.module.comunicado.domain.service.AnnouncementDescriptionNormalizer;
+import com.portal.conecta.comunicados.module.comunicado.domain.service.NormalizedAnnouncementDescription;
 import com.portal.conecta.comunicados.module.comunicado.domain.validator.AnnouncementPermissionValidator;
 import com.portal.conecta.comunicados.module.tag.application.dto.TagLinkDestinationCommand;
 import com.portal.conecta.comunicados.module.tag.application.usecase.AutoLinkTagsByDestinationUseCase;
@@ -40,6 +42,7 @@ public class ScheduleAnnouncementUseCase {
     private final AnnouncementHistoryRepository announcementHistoryRepository;
     private final RequestContextProvider requestContextProvider;
     private final AnnouncementPermissionValidator permissionValidator;
+    private final AnnouncementDescriptionNormalizer descriptionNormalizer;
     private final AutoLinkTagsByDestinationUseCase autoLinkTagsUseCase;
     private final LinkTagsByCodeUseCase linkTagsByCodeUseCase;
 
@@ -52,8 +55,10 @@ public class ScheduleAnnouncementUseCase {
         validatePermission(command, context);
 
         Instant now = Instant.now();
+        NormalizedAnnouncementDescription description = descriptionNormalizer.normalize(command.description());
 
-        Announcement announcement = announcementRepository.save(command.toEntity(now));
+        Announcement announcement = announcementRepository.save(
+                command.toEntity(now, description.html(), description.plain()));
         List<AnnouncementDestination> destinations = announcementDestinationRepository.saveAll(command.toDestinations(announcement));
         autoLinkTagsUseCase.execute(announcement, toTagCommands(destinations), command.tagIds());
         linkTagsByCodeUseCase.execute(announcement, TagEntityType.SHIFT, command.shiftCodes().stream().map(ShiftCode::name).toList());

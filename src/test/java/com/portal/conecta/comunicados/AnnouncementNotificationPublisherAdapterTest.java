@@ -126,6 +126,7 @@ class AnnouncementNotificationPublisherAdapterTest {
         AnnouncementNotificationPayload payload = capturePayload();
         assertThat(payload.source()).isEqualTo("comunicados-service");
         assertThat(payload.eventType()).isEqualTo("announcement.published");
+        assertThat(payload.body()).isEqualTo("Descrição do comunicado");
     }
 
     @Test
@@ -180,7 +181,8 @@ class AnnouncementNotificationPublisherAdapterTest {
         return Announcement.builder()
                 .id(UUID.randomUUID())
                 .title("Comunicado Teste")
-                .description("Descrição do comunicado")
+                .description("<p>Descrição do comunicado</p>")
+                .descriptionPlain("Descrição do comunicado")
                 .origin(AnnouncementOrigin.SENAI)
                 .status(AnnouncementStatus.PUBLISHED)
                 .pinned(false)

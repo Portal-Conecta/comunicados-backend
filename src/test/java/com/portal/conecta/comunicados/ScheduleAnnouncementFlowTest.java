@@ -37,6 +37,7 @@ import com.fasterxml.jackson.datatype.jsr310.JavaTimeModule;
 import com.portal.conecta.comunicados.module.comunicado.application.command.ScheduleAnnouncementCommand;
 import com.portal.conecta.comunicados.module.comunicado.application.usecase.DeleteAnnouncementUseCase;
 import com.portal.conecta.comunicados.module.comunicado.application.usecase.GetAnnouncementByIdUseCase;
+import com.portal.conecta.comunicados.module.comunicado.application.usecase.ListAnnouncementFilesUseCase;
 import com.portal.conecta.comunicados.module.comunicado.application.usecase.ListAnnouncementHistoryUseCase;
 import com.portal.conecta.comunicados.module.comunicado.application.usecase.ListAnnouncementsUseCase;
 import com.portal.conecta.comunicados.module.comunicado.application.usecase.ListPinnedAnnouncementsUseCase;
@@ -124,6 +125,7 @@ class ScheduleAnnouncementFlowTest {
                 announcementHistoryRepository,
                 requestContextProvider,
                 new AnnouncementPermissionValidator(hubClassPort),
+                new com.portal.conecta.comunicados.module.comunicado.domain.service.AnnouncementDescriptionNormalizer(),
                 autoLinkTagsUseCase,
                 linkTagsByCodeUseCase
         );
@@ -340,6 +342,9 @@ class ScheduleAnnouncementWebMvcTest {
 
     @MockitoBean
     private GetAnnouncementByIdUseCase getAnnouncementByIdUseCase;
+
+    @MockitoBean
+    private ListAnnouncementFilesUseCase listAnnouncementFilesUseCase;
 
     @MockitoBean
     private DeleteAnnouncementUseCase deleteAnnouncementUseCase;

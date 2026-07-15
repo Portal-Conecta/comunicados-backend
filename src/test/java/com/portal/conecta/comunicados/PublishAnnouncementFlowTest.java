@@ -5,6 +5,7 @@ import java.util.List;
 import java.util.UUID;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
@@ -32,6 +33,7 @@ import org.springframework.web.server.ResponseStatusException;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.portal.conecta.comunicados.module.comunicado.application.usecase.DeleteAnnouncementUseCase;
 import com.portal.conecta.comunicados.module.comunicado.application.usecase.GetAnnouncementByIdUseCase;
+import com.portal.conecta.comunicados.module.comunicado.application.usecase.ListAnnouncementFilesUseCase;
 import com.portal.conecta.comunicados.module.comunicado.application.usecase.ListAnnouncementHistoryUseCase;
 import com.portal.conecta.comunicados.module.comunicado.application.usecase.ListAnnouncementsUseCase;
 import com.portal.conecta.comunicados.module.comunicado.application.usecase.ListPinnedAnnouncementsUseCase;
@@ -118,6 +120,7 @@ class PublishAnnouncementFlowTest {
                 announcementHistoryRepository,
                 requestContextProvider,
                 new AnnouncementPermissionValidator(hubClassPort),
+                new com.portal.conecta.comunicados.module.comunicado.domain.service.AnnouncementDescriptionNormalizer(),
                 autoLinkTagsUseCase,
                 linkTagsByCodeUseCase,
                 notificationPublisher
@@ -187,6 +190,36 @@ class PublishAnnouncementFlowTest {
         List<AnnouncementHistory> histories = historyCaptor.getAllValues();
         assertEquals(AnnouncementHistoryAction.CREATION, histories.get(0).getAction());
         assertEquals(AnnouncementHistoryAction.PUBLICATION, histories.get(1).getAction());
+    }
+
+    @Test
+    void shouldSanitizeHtmlAndDeriveDescriptionPlainOnPublish() throws Exception {
+        UUID userId = UUID.randomUUID();
+
+        when(requestContextProvider.getRequestContext())
+                .thenReturn(createContext(userId, UserType.SENAI));
+
+        PublishAnnouncementRequest request = new PublishAnnouncementRequest(
+                "Comunicado HTML",
+                "<p>Olá <strong>mundo</strong><script>alert(1)</script></p>",
+                AnnouncementOrigin.SENAI,
+                List.of(userDestination(UUID.randomUUID())),
+                null,
+                null,
+                null
+        );
+
+        perform(request)
+                .andExpect(status().isCreated())
+                .andExpect(jsonPath("$.description").value(org.hamcrest.Matchers.containsString("<strong>")))
+                .andExpect(jsonPath("$.description").value(org.hamcrest.Matchers.not(org.hamcrest.Matchers.containsString("script"))))
+                .andExpect(jsonPath("$.descriptionPlain").value("Olá mundo"));
+
+        ArgumentCaptor<Announcement> announcementCaptor = ArgumentCaptor.forClass(Announcement.class);
+        verify(announcementRepository).save(announcementCaptor.capture());
+        Announcement saved = announcementCaptor.getValue();
+        assertEquals("Olá mundo", saved.getDescriptionPlain());
+        assertFalse(saved.getDescription().contains("script"));
     }
 
     @Test
@@ -433,6 +466,9 @@ class PublishAnnouncementWebMvcTest {
 
     @MockitoBean
     private GetAnnouncementByIdUseCase getAnnouncementByIdUseCase;
+
+    @MockitoBean
+    private ListAnnouncementFilesUseCase listAnnouncementFilesUseCase;
 
     @MockitoBean
     private DeleteAnnouncementUseCase deleteAnnouncementUseCase;

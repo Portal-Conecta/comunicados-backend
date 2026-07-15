@@ -18,8 +18,11 @@ public record AnnouncementSummaryResponse(
     UUID id,
     @Schema(description = "Título do comunicado.", maxLength = 255)
     String title,
-    @Schema(description = "Conteúdo do comunicado em texto livre, sem limite de tamanho.")
+    @Schema(description = "Prévia plain-text da descrição (sem HTML) para mural/cards. "
+            + "Compatível: mesmo valor de descriptionPlain.")
     String description,
+    @Schema(description = "Versão plain-text da descrição, sem HTML — uso recomendado no mural.")
+    String descriptionPlain,
     AnnouncementOrigin origin,
     AnnouncementStatus status,
     Boolean pinned,
@@ -43,10 +46,14 @@ public record AnnouncementSummaryResponse(
             String thumbnailUrl,
             List<Tag> tags
     ) {
+        String plain = entity.getDescriptionPlain() != null
+                ? entity.getDescriptionPlain()
+                : entity.getDescription();
         return new AnnouncementSummaryResponse(
                 entity.getId(),
                 entity.getTitle(),
-                entity.getDescription(),
+                plain,
+                plain,
                 entity.getOrigin(),
                 entity.getStatus(),
                 entity.isPinned(),

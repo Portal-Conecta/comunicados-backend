@@ -28,7 +28,7 @@ public record PostFilterRequest(
     Instant publishedTo,
 
     @Schema(
-            description = "Termo de busca textual (título, descrição, nome de tag ou destinatário)",
+            description = "Termo de busca textual (título, descriptionPlain, nome de tag ou destinatário)",
             example = "retirada"
     )
     String search,

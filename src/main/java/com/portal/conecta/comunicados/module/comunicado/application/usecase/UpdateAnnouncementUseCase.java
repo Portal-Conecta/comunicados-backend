@@ -17,6 +17,8 @@ import com.portal.conecta.comunicados.module.comunicado.domain.port.announcement
 import com.portal.conecta.comunicados.module.comunicado.domain.port.announcement.AnnouncementHistoryRepository;
 import com.portal.conecta.comunicados.module.comunicado.domain.port.announcement.AnnouncementRepository;
 import com.portal.conecta.comunicados.module.comunicado.domain.port.support.AnnouncementTagRepository;
+import com.portal.conecta.comunicados.module.comunicado.domain.service.AnnouncementDescriptionNormalizer;
+import com.portal.conecta.comunicados.module.comunicado.domain.service.NormalizedAnnouncementDescription;
 import com.portal.conecta.comunicados.module.comunicado.domain.validator.AnnouncementPermissionValidator;
 import com.portal.conecta.comunicados.module.tag.application.dto.TagLinkDestinationCommand;
 import com.portal.conecta.comunicados.module.tag.application.usecase.AutoLinkTagsByDestinationUseCase;
@@ -36,6 +38,7 @@ public class UpdateAnnouncementUseCase {
     private final AnnouncementTagRepository announcementTagRepository;
     private final RequestContextProvider contextProvider;
     private final AnnouncementPermissionValidator permissionValidator;
+    private final AnnouncementDescriptionNormalizer descriptionNormalizer;
     private final AutoLinkTagsByDestinationUseCase autoLinkTagsUseCase;
     private final ObjectMapper objectMapper = new ObjectMapper();
 
@@ -59,7 +62,16 @@ public class UpdateAnnouncementUseCase {
                 ? command.toSnapshot(announcement, currentDestinations, objectMapper)
                 : null;
 
-        Announcement updated = command.toEntity(announcement, now);
+        String sanitizedHtml = null;
+        String descriptionPlain = null;
+        if (command.data().description() != null) {
+            NormalizedAnnouncementDescription description =
+                    descriptionNormalizer.normalize(command.data().description());
+            sanitizedHtml = description.html();
+            descriptionPlain = description.plain();
+        }
+
+        Announcement updated = command.toEntity(announcement, now, sanitizedHtml, descriptionPlain);
         updated = announcementRepository.save(updated);
 
         // Edição parcial: só substitui os destinos quando o cliente os enviou no body;

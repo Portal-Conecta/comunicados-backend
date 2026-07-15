@@ -32,6 +32,9 @@ public class Announcement {
     @Column(name = "description", nullable = false, columnDefinition = "text")
     private String description;
 
+    @Column(name = "description_plain", nullable = false, columnDefinition = "text")
+    private String descriptionPlain;
+
     @Enumerated(EnumType.STRING)
     @Column(name = "origin", nullable = false)
     private AnnouncementOrigin origin;

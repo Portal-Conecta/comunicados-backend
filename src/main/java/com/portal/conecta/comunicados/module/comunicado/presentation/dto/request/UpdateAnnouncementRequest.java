@@ -18,7 +18,8 @@ public record UpdateAnnouncementRequest(
         @Schema(description = "Título do comunicado.", example = "Reunião de alinhamento", maxLength = 255)
         String title,
 
-        @Schema(description = "Conteúdo do comunicado em texto livre, sem limite de tamanho.")
+        @Schema(description = "Conteúdo do comunicado em HTML sanitizado (allowlist TipTap). "
+                + "O servidor deriva descriptionPlain automaticamente; não enviar plain no request.")
         String description,
 
         AnnouncementOrigin origin,
