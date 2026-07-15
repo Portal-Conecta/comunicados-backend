@@ -7,11 +7,11 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 import com.portal.conecta.comunicados.module.comunicado.application.command.PublishAnnouncementCommand;
+import com.portal.conecta.comunicados.module.comunicado.application.service.AnnouncementNotificationDispatcher;
 import com.portal.conecta.comunicados.module.comunicado.domain.enums.ShiftCode;
 import com.portal.conecta.comunicados.module.comunicado.domain.exception.AnnouncementPermissionDeniedException;
 import com.portal.conecta.comunicados.module.comunicado.domain.model.Announcement;
 import com.portal.conecta.comunicados.module.comunicado.domain.model.AnnouncementDestination;
-import com.portal.conecta.comunicados.module.comunicado.domain.port.AnnouncementNotificationPublisher;
 import com.portal.conecta.comunicados.module.comunicado.domain.port.announcement.AnnouncementDestinationRepository;
 import com.portal.conecta.comunicados.module.comunicado.domain.port.announcement.AnnouncementHistoryRepository;
 import com.portal.conecta.comunicados.module.comunicado.domain.port.announcement.AnnouncementRepository;
@@ -48,7 +48,7 @@ public class PublishAnnouncementUseCase {
     private final AnnouncementDescriptionNormalizer descriptionNormalizer;
     private final AutoLinkTagsByDestinationUseCase autoLinkTagsUseCase;
     private final LinkTagsByCodeUseCase linkTagsByCodeUseCase;
-    private final AnnouncementNotificationPublisher notificationPublisher;
+    private final AnnouncementNotificationDispatcher notificationDispatcher;
 
     @Transactional
     public Announcement execute(PublishAnnouncementCommand command) {
@@ -67,11 +67,7 @@ public class PublishAnnouncementUseCase {
         linkTagsByCodeUseCase.execute(announcement, TagEntityType.SHIFT, command.shiftCodes().stream().map(ShiftCode::name).toList());
         linkTagsByCodeUseCase.execute(announcement, TagEntityType.ROLE, command.roles().stream().map(UserType::name).toList());
 
-        try {
-            notificationPublisher.publish(announcement, destinations, command.roles());
-        } catch (Exception e) {
-            log.error("Falha ao publicar notificação do comunicado {}. A publicação não será revertida.", announcement.getId(), e);
-        }
+        notificationDispatcher.dispatchAfterCommit(announcement, destinations, command.roles());
 
         announcementHistoryRepository.save(command.toCreationHistory(announcement, now));
         announcementHistoryRepository.save(command.toPublicationHistory(announcement, now));

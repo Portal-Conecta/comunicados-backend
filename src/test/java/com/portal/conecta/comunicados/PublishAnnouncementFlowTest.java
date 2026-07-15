@@ -50,7 +50,7 @@ import com.portal.conecta.comunicados.module.comunicado.domain.enums.ShiftCode;
 import com.portal.conecta.comunicados.module.comunicado.domain.enums.AnnouncementStatus;
 import com.portal.conecta.comunicados.module.comunicado.domain.model.Announcement;
 import com.portal.conecta.comunicados.module.comunicado.domain.model.AnnouncementHistory;
-import com.portal.conecta.comunicados.module.comunicado.domain.port.AnnouncementNotificationPublisher;
+import com.portal.conecta.comunicados.module.comunicado.application.service.AnnouncementNotificationDispatcher;
 import com.portal.conecta.comunicados.module.comunicado.domain.port.announcement.AnnouncementDestinationRepository;
 import com.portal.conecta.comunicados.module.comunicado.domain.port.announcement.AnnouncementHistoryRepository;
 import com.portal.conecta.comunicados.module.comunicado.domain.port.announcement.AnnouncementRepository;
@@ -82,7 +82,7 @@ class PublishAnnouncementFlowTest {
     private HubClassPort hubClassPort;
     private AutoLinkTagsByDestinationUseCase autoLinkTagsUseCase;
     private LinkTagsByCodeUseCase linkTagsByCodeUseCase;
-    private AnnouncementNotificationPublisher notificationPublisher;
+    private AnnouncementNotificationDispatcher notificationDispatcher;
     private ListAnnouncementsUseCase listAnnouncementsUseCase;
     private ListPinnedAnnouncementsUseCase listPinnedAnnouncementsUseCase;
     private GetAnnouncementByIdUseCase getAnnouncementByIdUseCase;
@@ -105,7 +105,7 @@ class PublishAnnouncementFlowTest {
         hubClassPort = mock(HubClassPort.class);
         autoLinkTagsUseCase = mock(AutoLinkTagsByDestinationUseCase.class);
         linkTagsByCodeUseCase = mock(LinkTagsByCodeUseCase.class);
-        notificationPublisher = mock(AnnouncementNotificationPublisher.class);
+        notificationDispatcher = mock(AnnouncementNotificationDispatcher.class);
         listAnnouncementsUseCase = mock(ListAnnouncementsUseCase.class);
         listPinnedAnnouncementsUseCase = mock(ListPinnedAnnouncementsUseCase.class);
         getAnnouncementByIdUseCase = mock(GetAnnouncementByIdUseCase.class);
@@ -123,7 +123,7 @@ class PublishAnnouncementFlowTest {
                 new com.portal.conecta.comunicados.module.comunicado.domain.service.AnnouncementDescriptionNormalizer(),
                 autoLinkTagsUseCase,
                 linkTagsByCodeUseCase,
-                notificationPublisher
+                notificationDispatcher
         );
         scheduleAnnouncementUseCase = mock(ScheduleAnnouncementUseCase.class);
         pinAnnouncementUseCase = mock(PinAnnouncementUseCase.class);
@@ -204,6 +204,7 @@ class PublishAnnouncementFlowTest {
                 "<p>Olá <strong>mundo</strong><script>alert(1)</script></p>",
                 AnnouncementOrigin.SENAI,
                 List.of(userDestination(UUID.randomUUID())),
+                null,
                 null,
                 null,
                 null
