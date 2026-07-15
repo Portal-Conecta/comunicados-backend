@@ -1,8 +1,6 @@
 package com.portal.conecta.comunicados;
 
-import static org.hamcrest.Matchers.containsString;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
-import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.content;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.jsonPath;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
 
@@ -25,16 +23,18 @@ class ActuatorIntegrationTest {
     private MockMvc mockMvc;
 
     @Test
-    void shouldExposeHealthInfoAndPrometheusWithoutAuthentication() throws Exception {
+    void shouldExposeHealthAndInfoWithoutAuthentication() throws Exception {
         mockMvc.perform(get("/actuator/health"))
                 .andExpect(status().isOk())
                 .andExpect(jsonPath("$.status").exists());
 
         mockMvc.perform(get("/actuator/info"))
                 .andExpect(status().isOk());
+    }
 
+    @Test
+    void shouldRequireAuthenticationForPrometheus() throws Exception {
         mockMvc.perform(get("/actuator/prometheus"))
-                .andExpect(status().isOk())
-                .andExpect(content().string(containsString("jvm_memory_used_bytes")));
+                .andExpect(status().isUnauthorized());
     }
 }

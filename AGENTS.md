@@ -197,7 +197,7 @@ Recursos fora do escopo do usuário retornam **404**, não 403 (ex.: `TagPermiss
 | `DataIntegrityViolationException` (uk_*) | 409 |
 | `HttpRequestMethodNotSupportedException` | 405 |
 
-Mensagens de negócio em **português**. Use cases legados (`PublishAnnouncementUseCase`, `ScheduleAnnouncementUseCase`) ainda lançam `ResponseStatusException` diretamente.
+Mensagens de negócio em **português**. Use cases de comunicado lançam exceções de domínio (`Announcement*Exception`); mutações sem permissão usam `AnnouncementNotFoundException` (404) para anti-vazamento; create (publish/schedule) e pin ainda usam `AnnouncementPermissionDeniedException` (403).
 
 ---
 
@@ -306,7 +306,7 @@ Chave natural: `(entity_type, hub_entity_id)`. Campo `active` para desativação
 | PATCH | `/api/posts/{id}/pin` | Implementado (fixa comunicado) |
 | PATCH | `/api/posts/{id}/unpin` | Implementado (desafixa comunicado) |
 | PATCH | `/api/posts/{id}` | **Removido** (#137 won't-do) — edição parcial é coberta pelo `PUT /api/posts/{id}` |
-| PATCH | `/api/posts/{id}/cancel-schedule` | **Stub** — cancelamento de agendamento ainda não implementado |
+| PATCH | `/api/posts/{id}/cancel-schedule` | **Não existe** — cancelamento de agendamento ainda não implementado |
 | GET | `/api/posts/pinned` | Implementado (redundante para o mural — preferir `pinned` em `GET /api/posts`) |
 | POST | `/api/posts` | **Removido** — retorna 405; usar `POST /publish` ou `POST /schedule` |
 
