@@ -35,7 +35,7 @@ import com.portal.conecta.comunicados.module.comunicado.domain.enums.Announcemen
 import com.portal.conecta.comunicados.module.comunicado.domain.exception.AnnouncementFileNotFoundException;
 import com.portal.conecta.comunicados.module.comunicado.domain.exception.AnnouncementFileLimitExceededException;
 import com.portal.conecta.comunicados.module.comunicado.domain.exception.AnnouncementFileTooLargeException;
-import com.portal.conecta.comunicados.module.comunicado.domain.exception.AnnouncementPermissionDeniedException;
+import com.portal.conecta.comunicados.module.comunicado.domain.exception.AnnouncementNotFoundException;
 import com.portal.conecta.comunicados.module.comunicado.domain.model.AnnouncementFile;
 import com.portal.conecta.comunicados.module.comunicado.presentation.controller.PostImageController;
 import com.portal.conecta.comunicados.shared.context.RequestContext;
@@ -103,12 +103,12 @@ class PostImageControllerTest {
     @Test
     void shouldReturn403WhenUploadIsForbidden() throws Exception {
         stubContext();
-        when(attachFileUseCase.execute(any())).thenThrow(new AnnouncementPermissionDeniedException());
+        when(attachFileUseCase.execute(any())).thenThrow(new AnnouncementNotFoundException());
 
         MockMultipartFile file = new MockMultipartFile("file", "foto.jpg", "image/jpeg", new byte[]{1});
 
         mockMvc.perform(multipart("/api/posts/{postId}/images", POST_ID).file(file))
-                .andExpect(status().isForbidden());
+                .andExpect(status().isNotFound());
     }
 
     @Test

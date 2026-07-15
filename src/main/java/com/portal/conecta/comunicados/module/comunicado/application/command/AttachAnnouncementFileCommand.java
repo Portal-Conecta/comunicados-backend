@@ -51,6 +51,8 @@ public record AttachAnnouncementFileCommand(
             String s3Key,
             String s3Bucket,
             AnnouncementFileType resolvedType,
+            AnnouncementFileStatus status,
+            String processedS3Key,
             Instant now
     ) {
         return AnnouncementFile.builder()
@@ -58,9 +60,10 @@ public record AttachAnnouncementFileCommand(
                 .originalName(originalName)
                 .s3Key(s3Key)
                 .s3Bucket(s3Bucket)
+                .processedS3Key(processedS3Key)
                 .contentType(contentType)
                 .type(resolvedType)
-                .fileStatus(AnnouncementFileStatus.READY)
+                .fileStatus(status)
                 .sizeBytes(sizeBytes)
                 .isThumbnail(isThumbnail)
                 .uploadedByUserId(uploadedByUserId)

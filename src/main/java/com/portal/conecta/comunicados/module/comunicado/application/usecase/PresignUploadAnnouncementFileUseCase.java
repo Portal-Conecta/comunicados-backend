@@ -14,7 +14,6 @@ import com.portal.conecta.comunicados.module.comunicado.domain.exception.Announc
 import com.portal.conecta.comunicados.module.comunicado.domain.exception.AnnouncementFileLimitExceededException;
 import com.portal.conecta.comunicados.module.comunicado.domain.exception.AnnouncementFileTooLargeException;
 import com.portal.conecta.comunicados.module.comunicado.domain.exception.AnnouncementNotFoundException;
-import com.portal.conecta.comunicados.module.comunicado.domain.exception.AnnouncementPermissionDeniedException;
 import com.portal.conecta.comunicados.module.comunicado.domain.model.Announcement;
 import com.portal.conecta.comunicados.module.comunicado.domain.model.AnnouncementFile;
 import com.portal.conecta.comunicados.module.comunicado.domain.port.announcement.AnnouncementFileRepository;
@@ -40,7 +39,6 @@ public class PresignUploadAnnouncementFileUseCase {
             Map.entry("image/png",        "png"),
             Map.entry("image/gif",        "gif"),
             Map.entry("image/webp",       "webp"),
-            Map.entry("image/svg+xml",    "svg"),
             Map.entry("application/pdf",  "pdf"),
             Map.entry("video/mp4",        "mp4"),
             Map.entry("video/webm",       "webm")
@@ -62,7 +60,7 @@ public class PresignUploadAnnouncementFileUseCase {
                 .orElseThrow(AnnouncementNotFoundException::new);
 
         if (!permissionValidator.canUpdate(context.userType(), context.userId(), announcement)) {
-            throw new AnnouncementPermissionDeniedException();
+            throw new AnnouncementNotFoundException();
         }
 
         if (fileRepository.countByAnnouncementId(command.announcementId()) >= storageProperties.maxFilesPerAnnouncement()) {
@@ -87,7 +85,10 @@ public class PresignUploadAnnouncementFileUseCase {
         String ext = CONTENT_TYPE_TO_EXT.getOrDefault(command.contentType(), "bin");
         String s3Key = S3_KEY_PREFIX + command.uploadedByUserId() + "/raw/" + keyId + "." + ext;
 
-        PresignedUpload presignedUpload = storagePort.presignUpload(s3Key, command.contentType(), maxBytes);
+        // contentLength = sizeBytes declarado: o PUT assinada exige Content-Length exato,
+        // impedindo upload maior que o validado no servidor.
+        PresignedUpload presignedUpload = storagePort.presignUpload(
+                s3Key, command.contentType(), command.sizeBytes());
 
         AnnouncementFile file = AnnouncementFile.builder()
                 .announcement(announcement)
@@ -111,7 +112,7 @@ public class PresignUploadAnnouncementFileUseCase {
     private long resolveMaxBytes(String contentType) {
         return switch (contentType) {
             case "image/jpeg", "image/png", "image/gif", "image/webp" -> storageProperties.maxImageSizeBytes();
-            case "image/svg+xml", "application/pdf"                   -> storageProperties.maxDocumentSizeBytes();
+            case "application/pdf"                                    -> storageProperties.maxDocumentSizeBytes();
             case "video/mp4", "video/webm"                            -> storageProperties.maxVideoSizeBytes();
             default                                                    -> storageProperties.maxFileSizeBytes();
         };

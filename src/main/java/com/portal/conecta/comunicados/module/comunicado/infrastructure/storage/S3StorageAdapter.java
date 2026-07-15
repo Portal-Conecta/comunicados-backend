@@ -3,11 +3,9 @@ package com.portal.conecta.comunicados.module.comunicado.infrastructure.storage;
 import java.time.Duration;
 import java.util.Map;
 import java.util.Optional;
-import java.util.UUID;
 
 import software.amazon.awssdk.services.s3.model.GetObjectRequest;
 import software.amazon.awssdk.services.s3.presigner.model.GetObjectPresignRequest;
-import software.amazon.awssdk.services.s3.presigner.model.PresignedGetObjectRequest;
 
 import org.springframework.boot.autoconfigure.condition.ConditionalOnProperty;
 import org.springframework.stereotype.Component;
@@ -32,7 +30,6 @@ import software.amazon.awssdk.services.s3.presigner.model.PutObjectPresignReques
 public class S3StorageAdapter implements StoragePort {
 
     private static final Duration PRESIGN_DURATION = Duration.ofMinutes(15);
-    private static final String KEY_PREFIX = "comunicados/";
 
     private final S3Client s3Client;
     private final S3Presigner presigner;
@@ -46,8 +43,7 @@ public class S3StorageAdapter implements StoragePort {
     }
 
     @Override
-    public StorageUploadResult upload(String contentType, byte[] content) {
-        String s3Key = KEY_PREFIX + UUID.randomUUID();
+    public StorageUploadResult upload(String s3Key, String contentType, byte[] content) {
         String bucket = properties.imagesBucket();
 
         s3Client.putObject(
@@ -59,7 +55,8 @@ public class S3StorageAdapter implements StoragePort {
                 RequestBody.fromBytes(content)
         );
 
-        return new StorageUploadResult(s3Key, bucket);
+        // Lambda no imagesBucket processa raw → processed no filesBucket.
+        return StorageUploadResult.async(s3Key, bucket);
     }
 
     @Override
@@ -68,13 +65,12 @@ public class S3StorageAdapter implements StoragePort {
     }
 
     /**
-     * Gera presigned PUT válido por 15 min, com Content-Type obrigatório na requisição.
-     * Todo upload vai para o imagesBucket (bucket A): a Lambda triggerada lá processa
-     * imagens raster (compressão para webp) e preserva os demais tipos como estão,
-     * copiando ambos os casos para o filesBucket (bucket B) em {@code .../processed/{fileId}}.
+     * Gera presigned PUT válido por 15 min, com Content-Type e Content-Length obrigatórios.
+     * {@code contentLengthBytes} deve ser o tamanho declarado (já validado contra o teto);
+     * o cliente só consegue fazer PUT com esse Content-Length exato.
      */
     @Override
-    public PresignedUpload presignUpload(String s3Key, String contentType, long maxBytes) {
+    public PresignedUpload presignUpload(String s3Key, String contentType, long contentLengthBytes) {
         String bucket = properties.imagesBucket();
 
         PresignedPutObjectRequest presigned = presigner.presignPutObject(
@@ -84,6 +80,7 @@ public class S3StorageAdapter implements StoragePort {
                                 .bucket(bucket)
                                 .key(s3Key)
                                 .contentType(contentType)
+                                .contentLength(contentLengthBytes)
                                 .build())
                         .build()
         );

@@ -12,7 +12,6 @@ public enum AnnouncementFileType {
             Map.entry("image/png",        IMAGE),
             Map.entry("image/gif",        IMAGE),
             Map.entry("image/webp",       IMAGE),
-            Map.entry("image/svg+xml",    IMAGE),
             Map.entry("application/pdf",  DOCUMENT),
             Map.entry("video/mp4",        VIDEO),
             Map.entry("video/webm",       VIDEO)

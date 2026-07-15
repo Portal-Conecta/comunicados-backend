@@ -9,14 +9,14 @@ import com.portal.conecta.comunicados.module.comunicado.domain.enums.Announcemen
 import com.portal.conecta.comunicados.module.comunicado.domain.enums.AnnouncementFileType;
 import com.portal.conecta.comunicados.module.comunicado.domain.model.AnnouncementFile;
 
+import io.swagger.v3.oas.annotations.media.Schema;
+
 public record AnnouncementFileResponse(
 
     UUID id,
     UUID announcementId,
     String originalName,
-    String s3Key,
-    String s3Bucket,
-    String processedS3Key,
+    @Schema(description = "URL pré-assinada para download/exibição quando o arquivo está READY.")
     String displayUrl,
     String contentType,
     AnnouncementFileType type,
@@ -34,9 +34,6 @@ public record AnnouncementFileResponse(
                 entity.getId(),
                 entity.getAnnouncement() != null ? entity.getAnnouncement().getId() : null,
                 entity.getOriginalName(),
-                entity.getS3Key(),
-                entity.getS3Bucket(),
-                entity.getProcessedS3Key(),
                 view.displayUrl(),
                 entity.getContentType(),
                 entity.getType(),
@@ -53,9 +50,6 @@ public record AnnouncementFileResponse(
                 entity.getId(),
                 entity.getAnnouncement() != null ? entity.getAnnouncement().getId() : null,
                 entity.getOriginalName(),
-                entity.getS3Key(),
-                entity.getS3Bucket(),
-                entity.getProcessedS3Key(),
                 null,
                 entity.getContentType(),
                 entity.getType(),
