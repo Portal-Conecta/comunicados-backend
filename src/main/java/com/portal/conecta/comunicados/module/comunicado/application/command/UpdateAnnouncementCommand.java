@@ -57,9 +57,7 @@ public record UpdateAnnouncementCommand(
             existing.setDescriptionPlain(descriptionPlain != null ? descriptionPlain : "");
         }
         if (data.origin() != null) existing.setOrigin(data.origin());
-        if (data.pinned() != null) existing.setPinned(data.pinned());
-        if (data.pinnedOrder() != null) existing.setPinnedOrder(data.pinnedOrder());
-        if (data.scheduledFor() != null) existing.setScheduledFor(data.scheduledFor());
+        // pinned / pinnedOrder / scheduledFor: ignorados no PUT — use PATCH /pin, /unpin e /schedule.
 
         // SCHEDULED → PUBLISHED via PUT (editar e "publicar agora"): o job automático
         // (`markScheduledAsPublished`) já grava publishedAt=now, mas o update manual

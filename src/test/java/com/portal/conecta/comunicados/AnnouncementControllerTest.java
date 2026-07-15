@@ -192,7 +192,7 @@ class AnnouncementControllerTest {
         mockMvc.perform(get("/api/posts/{id}", id))
                 .andExpect(status().isOk())
                 .andExpect(jsonPath("$.files[0].displayUrl").value("https://s3.example.com/processed"))
-                .andExpect(jsonPath("$.files[0].processedS3Key").value("comunicados/u/processed/f"));
+                .andExpect(jsonPath("$.files[0].fileStatus").value("READY"));
     }
 
     @Test

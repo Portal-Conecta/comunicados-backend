@@ -21,6 +21,8 @@ import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
 
 import com.portal.conecta.comunicados.module.comunicado.application.dto.AnnouncementFileView;
+import com.portal.conecta.comunicados.module.comunicado.application.query.GetAnnouncementByIdQuery;
+import com.portal.conecta.comunicados.module.comunicado.application.usecase.GetAnnouncementByIdUseCase;
 import com.portal.conecta.comunicados.module.comunicado.application.usecase.ListAnnouncementFilesUseCase;
 import com.portal.conecta.comunicados.module.comunicado.domain.enums.AnnouncementFileStatus;
 import com.portal.conecta.comunicados.module.comunicado.domain.enums.AnnouncementFileType;
@@ -28,15 +30,18 @@ import com.portal.conecta.comunicados.module.comunicado.domain.exception.Announc
 import com.portal.conecta.comunicados.module.comunicado.domain.model.Announcement;
 import com.portal.conecta.comunicados.module.comunicado.domain.model.AnnouncementFile;
 import com.portal.conecta.comunicados.module.comunicado.domain.port.announcement.AnnouncementFileRepository;
-import com.portal.conecta.comunicados.module.comunicado.domain.port.announcement.AnnouncementRepository;
 import com.portal.conecta.comunicados.module.comunicado.domain.port.storage.StorageObjectMetadata;
 import com.portal.conecta.comunicados.module.comunicado.domain.port.storage.StoragePort;
 import com.portal.conecta.comunicados.module.comunicado.infrastructure.storage.StorageProperties;
+import com.portal.conecta.comunicados.shared.context.RequestContext;
+import com.portal.conecta.comunicados.shared.context.RequestContextProvider;
+import com.portal.conecta.comunicados.shared.context.UserType;
 
 @ExtendWith(MockitoExtension.class)
 class ListAnnouncementFilesUseCaseTest {
 
-    @Mock private AnnouncementRepository announcementRepository;
+    @Mock private GetAnnouncementByIdUseCase getAnnouncementByIdUseCase;
+    @Mock private RequestContextProvider contextProvider;
     @Mock private AnnouncementFileRepository fileRepository;
     @Mock private StoragePort storagePort;
     @Mock private StorageProperties storageProperties;
@@ -50,16 +55,22 @@ class ListAnnouncementFilesUseCaseTest {
     @BeforeEach
     void setUp() {
         useCase = new ListAnnouncementFilesUseCase(
-                announcementRepository, fileRepository, storagePort, storageProperties
+                getAnnouncementByIdUseCase, contextProvider, fileRepository, storagePort, storageProperties
         );
         announcementId = UUID.randomUUID();
         userId = UUID.randomUUID();
         announcement = Announcement.builder().id(announcementId).build();
+        when(contextProvider.getRequestContext())
+                .thenReturn(new RequestContext(userId, UserType.SENAI, List.of()));
+        org.mockito.Mockito.lenient()
+                .when(getAnnouncementByIdUseCase.execute(any(GetAnnouncementByIdQuery.class)))
+                .thenReturn(announcement);
     }
 
     @Test
     void shouldThrowNotFoundWhenAnnouncementDoesNotExist() {
-        when(announcementRepository.findByIdAndRemovedAtIsNull(announcementId)).thenReturn(Optional.empty());
+        when(getAnnouncementByIdUseCase.execute(any(GetAnnouncementByIdQuery.class)))
+                .thenThrow(new AnnouncementNotFoundException());
 
         assertThatThrownBy(() -> useCase.execute(announcementId))
                 .isInstanceOf(AnnouncementNotFoundException.class);
@@ -70,7 +81,6 @@ class ListAnnouncementFilesUseCaseTest {
         UUID fileId = UUID.randomUUID();
         AnnouncementFile pending = pendingFile(fileId, "comunicados/" + userId + "/raw/" + fileId + ".jpg", "comunicados-raw-sa");
 
-        when(announcementRepository.findByIdAndRemovedAtIsNull(announcementId)).thenReturn(Optional.of(announcement));
         when(fileRepository.findByAnnouncementId(announcementId)).thenReturn(List.of(pending));
         when(storageProperties.filesBucket()).thenReturn("comunicados-processed-sa");
         when(storagePort.headObject(eq("comunicados-processed-sa"), eq("comunicados/" + userId + "/processed/" + fileId)))
@@ -95,7 +105,6 @@ class ListAnnouncementFilesUseCaseTest {
         UUID fileId = UUID.randomUUID();
         AnnouncementFile pending = pendingFile(fileId, "comunicados/" + userId + "/raw/" + fileId + ".jpg", "comunicados-raw-sa");
 
-        when(announcementRepository.findByIdAndRemovedAtIsNull(announcementId)).thenReturn(Optional.of(announcement));
         when(fileRepository.findByAnnouncementId(announcementId)).thenReturn(List.of(pending));
         when(storageProperties.filesBucket()).thenReturn("comunicados-processed-sa");
         when(storagePort.headObject(any(), any())).thenReturn(Optional.empty());
@@ -113,7 +122,6 @@ class ListAnnouncementFilesUseCaseTest {
         UUID fileId = UUID.randomUUID();
         AnnouncementFile ready = readyFileWithProcessedKey(fileId, "comunicados/" + userId + "/processed/" + fileId);
 
-        when(announcementRepository.findByIdAndRemovedAtIsNull(announcementId)).thenReturn(Optional.of(announcement));
         when(fileRepository.findByAnnouncementId(announcementId)).thenReturn(List.of(ready));
         when(storageProperties.filesBucket()).thenReturn("comunicados-processed-sa");
         when(storagePort.presignDownload(eq("comunicados-processed-sa"), eq("comunicados/" + userId + "/processed/" + fileId), any(Duration.class)))
@@ -129,7 +137,6 @@ class ListAnnouncementFilesUseCaseTest {
         UUID fileId = UUID.randomUUID();
         AnnouncementFile ready = readyFileWithoutProcessedKey(fileId, "comunicados/" + userId + "/raw/" + fileId + ".pdf", "comunicados-processed-sa");
 
-        when(announcementRepository.findByIdAndRemovedAtIsNull(announcementId)).thenReturn(Optional.of(announcement));
         when(fileRepository.findByAnnouncementId(announcementId)).thenReturn(List.of(ready));
 
         List<AnnouncementFileView> result = useCase.execute(announcementId);
@@ -143,7 +150,6 @@ class ListAnnouncementFilesUseCaseTest {
         UUID fileId = UUID.randomUUID();
         AnnouncementFile ready = readyFileWithProcessedKey(fileId, "comunicados/" + userId + "/processed/" + fileId);
 
-        when(announcementRepository.findByIdAndRemovedAtIsNull(announcementId)).thenReturn(Optional.of(announcement));
         when(fileRepository.findByAnnouncementId(announcementId)).thenReturn(List.of(ready));
         when(storageProperties.filesBucket()).thenReturn("comunicados-processed-sa");
         when(storagePort.presignDownload(any(), any(), any())).thenReturn("https://s3.example.com/signed");

@@ -5,7 +5,6 @@ import com.portal.conecta.comunicados.module.comunicado.domain.enums.Announcemen
 import com.portal.conecta.comunicados.module.comunicado.domain.enums.AnnouncementOrigin;
 import com.portal.conecta.comunicados.module.comunicado.domain.enums.AnnouncementStatus;
 import com.portal.conecta.comunicados.module.comunicado.domain.exception.AnnouncementNotFoundException;
-import com.portal.conecta.comunicados.module.comunicado.domain.exception.AnnouncementPermissionDeniedException;
 import com.portal.conecta.comunicados.module.comunicado.domain.model.Announcement;
 import com.portal.conecta.comunicados.module.comunicado.domain.model.AnnouncementHistory;
 import com.portal.conecta.comunicados.module.comunicado.domain.port.announcement.AnnouncementHistoryRepository;
@@ -124,7 +123,7 @@ class DeleteAnnouncementUseCaseTest {
         when(announcementRepository.findByIdAndRemovedAtIsNull(announcementId)).thenReturn(Optional.of(announcement));
 
         assertThatThrownBy(() -> useCase.execute(announcementId))
-                .isInstanceOf(AnnouncementPermissionDeniedException.class);
+                .isInstanceOf(AnnouncementNotFoundException.class);
 
         verify(announcementRepository, never()).save(any());
         verify(historyRepository, never()).save(any());
@@ -137,7 +136,7 @@ class DeleteAnnouncementUseCaseTest {
         when(announcementRepository.findByIdAndRemovedAtIsNull(announcementId)).thenReturn(Optional.of(announcement));
 
         assertThatThrownBy(() -> useCase.execute(announcementId))
-                .isInstanceOf(AnnouncementPermissionDeniedException.class);
+                .isInstanceOf(AnnouncementNotFoundException.class);
     }
 
     @Test
@@ -159,7 +158,7 @@ class DeleteAnnouncementUseCaseTest {
         when(announcementRepository.findByIdAndRemovedAtIsNull(announcementId)).thenReturn(Optional.of(announcement));
 
         assertThatThrownBy(() -> useCase.execute(announcementId))
-                .isInstanceOf(AnnouncementPermissionDeniedException.class);
+                .isInstanceOf(AnnouncementNotFoundException.class);
     }
 
     @Test

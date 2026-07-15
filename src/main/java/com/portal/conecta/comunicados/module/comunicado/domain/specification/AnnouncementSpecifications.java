@@ -96,11 +96,11 @@ public class AnnouncementSpecifications {
                 return cb.conjunction();
             }
 
-            String pattern = "%" + search.trim().toLowerCase() + "%";
+            String pattern = "%" + escapeLike(search.trim().toLowerCase()) + "%";
 
             List<Predicate> matches = new ArrayList<>();
-            matches.add(cb.like(cb.lower(root.get("title")), pattern));
-            matches.add(cb.like(cb.lower(root.get("descriptionPlain")), pattern));
+            matches.add(cb.like(cb.lower(root.get("title")), pattern, '\\'));
+            matches.add(cb.like(cb.lower(root.get("descriptionPlain")), pattern, '\\'));
             matches.add(tagNameMatches(root, query, cb, pattern));
 
             if (matchingUserIds != null && !matchingUserIds.isEmpty()) {
@@ -123,9 +123,17 @@ public class AnnouncementSpecifications {
         subquery.select(announcementTag.get("id"));
         subquery.where(cb.and(
                 cb.equal(announcementTag.get("announcement"), root),
-                cb.like(cb.lower(tag.get("name")), pattern)
+                cb.like(cb.lower(tag.get("name")), pattern, '\\')
         ));
         return cb.exists(subquery);
+    }
+
+    /** Escapa {@code %}, {@code _} e {@code \} para LIKE literal. */
+    static String escapeLike(String value) {
+        return value
+                .replace("\\", "\\\\")
+                .replace("%", "\\%")
+                .replace("_", "\\_");
     }
 
     private static Predicate userDestinationMatches(

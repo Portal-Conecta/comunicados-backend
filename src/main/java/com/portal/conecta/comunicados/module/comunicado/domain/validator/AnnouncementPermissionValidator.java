@@ -53,7 +53,7 @@ public class AnnouncementPermissionValidator {
     }
   
     public boolean canViewAll(UserType userType) {
-        return canCreate(userType);
+        return userType != null && PRIVILEGED.contains(userType);
     }
 
     public boolean canCreateForDestinations(RequestContext context, List<CreateAnnouncementDestinationInput> destinations) {

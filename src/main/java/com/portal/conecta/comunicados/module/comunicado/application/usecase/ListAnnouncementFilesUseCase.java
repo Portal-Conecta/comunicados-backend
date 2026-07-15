@@ -8,13 +8,13 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 import com.portal.conecta.comunicados.module.comunicado.application.dto.AnnouncementFileView;
+import com.portal.conecta.comunicados.module.comunicado.application.query.GetAnnouncementByIdQuery;
 import com.portal.conecta.comunicados.module.comunicado.domain.enums.AnnouncementFileStatus;
-import com.portal.conecta.comunicados.module.comunicado.domain.exception.AnnouncementNotFoundException;
 import com.portal.conecta.comunicados.module.comunicado.domain.model.AnnouncementFile;
 import com.portal.conecta.comunicados.module.comunicado.domain.port.announcement.AnnouncementFileRepository;
-import com.portal.conecta.comunicados.module.comunicado.domain.port.announcement.AnnouncementRepository;
 import com.portal.conecta.comunicados.module.comunicado.domain.port.storage.StoragePort;
 import com.portal.conecta.comunicados.module.comunicado.infrastructure.storage.StorageProperties;
+import com.portal.conecta.comunicados.shared.context.RequestContextProvider;
 
 import lombok.RequiredArgsConstructor;
 
@@ -24,15 +24,17 @@ public class ListAnnouncementFilesUseCase {
 
     private static final Duration DOWNLOAD_URL_EXPIRY = Duration.ofHours(1);
 
-    private final AnnouncementRepository announcementRepository;
+    private final GetAnnouncementByIdUseCase getAnnouncementByIdUseCase;
+    private final RequestContextProvider contextProvider;
     private final AnnouncementFileRepository fileRepository;
     private final StoragePort storagePort;
     private final StorageProperties storageProperties;
 
     @Transactional
     public List<AnnouncementFileView> execute(UUID announcementId) {
-        announcementRepository.findByIdAndRemovedAtIsNull(announcementId)
-                .orElseThrow(AnnouncementNotFoundException::new);
+        // Mesma regra de escopo/publicação do detalhe (404 anti-vazamento).
+        getAnnouncementByIdUseCase.execute(
+                new GetAnnouncementByIdQuery(announcementId, contextProvider.getRequestContext().userId()));
 
         List<AnnouncementFile> files = fileRepository.findByAnnouncementId(announcementId);
         files.stream()

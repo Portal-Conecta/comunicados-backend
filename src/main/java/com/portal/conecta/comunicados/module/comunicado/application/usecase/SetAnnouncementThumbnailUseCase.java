@@ -6,7 +6,6 @@ import org.springframework.transaction.annotation.Transactional;
 import com.portal.conecta.comunicados.module.comunicado.application.command.SetAnnouncementThumbnailCommand;
 import com.portal.conecta.comunicados.module.comunicado.domain.exception.AnnouncementFileNotFoundException;
 import com.portal.conecta.comunicados.module.comunicado.domain.exception.AnnouncementNotFoundException;
-import com.portal.conecta.comunicados.module.comunicado.domain.exception.AnnouncementPermissionDeniedException;
 import com.portal.conecta.comunicados.module.comunicado.domain.model.Announcement;
 import com.portal.conecta.comunicados.module.comunicado.domain.model.AnnouncementFile;
 import com.portal.conecta.comunicados.module.comunicado.domain.port.announcement.AnnouncementFileRepository;
@@ -35,7 +34,7 @@ public class SetAnnouncementThumbnailUseCase {
                 .orElseThrow(AnnouncementNotFoundException::new);
 
         if (!permissionValidator.canUpdate(context.userType(), context.userId(), announcement)) {
-            throw new AnnouncementPermissionDeniedException();
+            throw new AnnouncementNotFoundException();
         }
 
         AnnouncementFile file = fileRepository.findById(command.fileId())

@@ -46,9 +46,7 @@ public record AnnouncementSummaryResponse(
             String thumbnailUrl,
             List<Tag> tags
     ) {
-        String plain = entity.getDescriptionPlain() != null
-                ? entity.getDescriptionPlain()
-                : entity.getDescription();
+        String plain = entity.getDescriptionPlain() != null ? entity.getDescriptionPlain() : "";
         return new AnnouncementSummaryResponse(
                 entity.getId(),
                 entity.getTitle(),
