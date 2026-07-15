@@ -263,6 +263,38 @@ class UpdateAnnouncementUseCaseTest {
         assertThat(json.get("destinations").size()).isEqualTo(1);
     }
 
+    @Test
+    void shouldSetPublishedAtWhenScheduledAnnouncementIsPublishedNow() {
+        Instant createdAt = Instant.now().minusSeconds(3600);
+        Instant scheduledFor = Instant.now().plusSeconds(7200);
+        announcement.setCreatedAt(createdAt);
+        announcement.setScheduledFor(scheduledFor);
+        announcement.setStatus(AnnouncementStatus.SCHEDULED);
+        announcement.setCreatedByUserId(actorId);
+
+        request = new UpdateAnnouncementRequest(
+                "Titulo novo",
+                "Descricao nova",
+                null,
+                AnnouncementStatus.PUBLISHED,
+                null,
+                null,
+                null,
+                null
+        );
+
+        mockContext(UserType.TEACHER, actorId);
+        mockFoundAnnouncement();
+
+        Announcement updated = useCase.execute(command());
+
+        assertThat(updated.getStatus()).isEqualTo(AnnouncementStatus.PUBLISHED);
+        assertThat(updated.getPublishedAt()).isNotNull();
+        assertThat(updated.getPublishedAt()).isAfter(createdAt);
+        assertThat(updated.getPublishedByUserId()).isEqualTo(actorId);
+        assertThat(updated.getScheduledFor()).isNull();
+    }
+
     private UpdateAnnouncementCommand command() {
         return UpdateAnnouncementCommand.fromRequest(announcementId, request, actorId);
     }

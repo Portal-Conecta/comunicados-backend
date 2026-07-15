@@ -57,10 +57,23 @@ public record UpdateAnnouncementCommand(
             existing.setDescriptionPlain(descriptionPlain != null ? descriptionPlain : "");
         }
         if (data.origin() != null) existing.setOrigin(data.origin());
-        if (data.status() != null) existing.setStatus(data.status());
         if (data.pinned() != null) existing.setPinned(data.pinned());
         if (data.pinnedOrder() != null) existing.setPinnedOrder(data.pinnedOrder());
         if (data.scheduledFor() != null) existing.setScheduledFor(data.scheduledFor());
+
+        // SCHEDULED → PUBLISHED via PUT (editar e "publicar agora"): o job automático
+        // (`markScheduledAsPublished`) já grava publishedAt=now, mas o update manual
+        // só mudava o status — publishedAt ficava null e a UI caía no scheduledFor/createdAt.
+        AnnouncementStatus previousStatus = existing.getStatus();
+        if (data.status() != null) {
+            existing.setStatus(data.status());
+            if (data.status() == AnnouncementStatus.PUBLISHED
+                    && previousStatus == AnnouncementStatus.SCHEDULED) {
+                existing.setPublishedAt(now);
+                existing.setPublishedByUserId(updatedByUserId);
+                existing.setScheduledFor(null);
+            }
+        }
 
         existing.setUpdatedAt(now);
         return existing;
