@@ -47,7 +47,8 @@ public record ScheduleAnnouncementRequest(
 
     Boolean pinned,
 
-    @Schema(description = "UUIDs internos da tabela tag (tag.id), não hub_entity_id do Core. Opcional.")
+    @Schema(description = "UUIDs internos da tabela tag (tag.id), não hub_entity_id do Core. "
+            + "Opcional. Não use para ROLE/SHIFT — envie roles/shiftCodes.")
     List<UUID> tagIds,
 
     @Schema(
@@ -57,8 +58,11 @@ public record ScheduleAnnouncementRequest(
     List<ShiftCode> shiftCodes,
 
     @Schema(
-            description = "Papéis de usuário que podem ver o comunicado. Opcional; vazio = sem restrição de papel.",
-            example = "[\"TEACHER\"]"
+            description = "Papéis de usuário que podem ver o comunicado (vira tag ROLE). "
+                    + "Opcional; vazio = sem restrição de papel. "
+                    + "Ex.: [\"STUDENT\"] com destination GENERAL = alunos e representantes "
+                    + "(representante também é tratado como aluno na visibilidade/notificação).",
+            example = "[\"STUDENT\"]"
     )
     List<UserType> roles
 

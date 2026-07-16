@@ -1,6 +1,7 @@
 package com.portal.conecta.comunicados.module.comunicado.application.usecase;
 
 import com.portal.conecta.comunicados.module.comunicado.application.query.GetAnnouncementByIdQuery;
+import com.portal.conecta.comunicados.module.comunicado.domain.AnnouncementRoleAudience;
 import com.portal.conecta.comunicados.module.comunicado.domain.enums.AnnouncementDestinationType;
 import com.portal.conecta.comunicados.module.comunicado.domain.enums.AnnouncementStatus;
 import com.portal.conecta.comunicados.module.comunicado.domain.exception.AnnouncementNotFoundException;
@@ -113,11 +114,7 @@ public class GetAnnouncementByIdUseCase {
     private boolean matchesRoleRestriction(UUID announcementId, UserType viewerType) {
         List<String> requiredRoles = announcementTagRepository
                 .findActiveHubEntityIdsByAnnouncementIdAndEntityType(announcementId, TagEntityType.ROLE);
-        if (requiredRoles.isEmpty()) {
-            return true;
-        }
-
-        return viewerType != null && requiredRoles.contains(viewerType.name());
+        return AnnouncementRoleAudience.matchesRestriction(viewerType, requiredRoles);
     }
 
     private boolean matches(

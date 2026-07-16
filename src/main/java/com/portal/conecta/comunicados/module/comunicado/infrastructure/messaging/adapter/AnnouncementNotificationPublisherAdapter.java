@@ -9,6 +9,7 @@ import org.springframework.amqp.rabbit.core.RabbitTemplate;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnProperty;
 import org.springframework.stereotype.Component;
 
+import com.portal.conecta.comunicados.module.comunicado.domain.AnnouncementRoleAudience;
 import com.portal.conecta.comunicados.module.comunicado.domain.enums.AnnouncementDestinationType;
 import com.portal.conecta.comunicados.module.comunicado.domain.model.Announcement;
 import com.portal.conecta.comunicados.module.comunicado.domain.model.AnnouncementDestination;
@@ -115,7 +116,7 @@ public class AnnouncementNotificationPublisherAdapter implements AnnouncementNot
         if (roles == null) {
             return List.of();
         }
-        return roles.stream()
+        return AnnouncementRoleAudience.expandForNotification(roles).stream()
                 .map(role -> new NotificationFilterPayload(ROLE_FILTER_TYPE, role.name()))
                 .toList();
     }

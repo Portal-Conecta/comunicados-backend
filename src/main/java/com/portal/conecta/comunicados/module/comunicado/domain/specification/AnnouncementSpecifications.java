@@ -176,9 +176,9 @@ public class AnnouncementSpecifications {
             List<UUID> courseIds,
             UUID viewerUserId,
             List<String> viewerShiftCodes,
-            String viewerRole
+            List<String> viewerRoleCodes
     ) {
-        List<String> viewerRoles = viewerRole == null ? List.of() : List.of(viewerRole);
+        List<String> viewerRoles = viewerRoleCodes == null ? List.of() : viewerRoleCodes;
         return visibleTo(classIds, courseIds, viewerUserId)
                 .and(visibleForShiftCodes(viewerShiftCodes))
                 .and(visibleForTagRestriction(TagEntityType.ROLE, viewerRoles));

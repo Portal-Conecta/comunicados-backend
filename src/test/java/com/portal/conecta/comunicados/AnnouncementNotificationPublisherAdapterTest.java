@@ -169,6 +169,20 @@ class AnnouncementNotificationPublisherAdapterTest {
         assertThat(payload.filters().get(0).value()).isEqualTo("TEACHER");
     }
 
+    @Test
+    void publish_withStudentRole_shouldAlsoNotifyRepresentative() {
+        adapter.publish(
+                announcement(),
+                List.of(destination(AnnouncementDestinationType.GENERAL, null)),
+                List.of(UserType.STUDENT)
+        );
+
+        AnnouncementNotificationPayload payload = capturePayload();
+        assertThat(payload.filters())
+                .extracting(AnnouncementNotificationPayload.NotificationFilterPayload::value)
+                .containsExactlyInAnyOrder("STUDENT", "REPRESENTATIVE");
+    }
+
     private AnnouncementNotificationPayload capturePayload() {
         ArgumentCaptor<AnnouncementNotificationPayload> captor =
                 ArgumentCaptor.forClass(AnnouncementNotificationPayload.class);

@@ -2,6 +2,7 @@ package com.portal.conecta.comunicados.module.comunicado.application.usecase;
 
 import com.portal.conecta.comunicados.module.comunicado.application.query.ListAnnouncementsQuery;
 import com.portal.conecta.comunicados.module.comunicado.application.query.ListAnnouncementsResult;
+import com.portal.conecta.comunicados.module.comunicado.domain.AnnouncementRoleAudience;
 import com.portal.conecta.comunicados.module.comunicado.domain.enums.AnnouncementFileStatus;
 import com.portal.conecta.comunicados.module.comunicado.domain.exception.AnnouncementPermissionDeniedException;
 import com.portal.conecta.comunicados.module.comunicado.domain.model.Announcement;
@@ -189,7 +190,7 @@ public class ListAnnouncementsUseCase {
                     hubCoursePort.getCurrentUserCourseIds(),
                     context.userId(),
                     hubShiftPort.getShiftCodesForClasses(classes),
-                    context.userType() == null ? null : context.userType().name()
+                    AnnouncementRoleAudience.viewerRoleCodes(context.userType())
             ));
         }
 

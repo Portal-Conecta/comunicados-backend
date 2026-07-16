@@ -1,6 +1,7 @@
 package com.portal.conecta.comunicados;
 
 import static org.assertj.core.api.Assertions.assertThat;
+import static org.assertj.core.api.Assertions.assertThatThrownBy;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.never;
@@ -23,6 +24,7 @@ import com.portal.conecta.comunicados.module.comunicado.domain.model.Announcemen
 import com.portal.conecta.comunicados.module.comunicado.domain.port.support.AnnouncementTagRepository;
 import com.portal.conecta.comunicados.module.tag.application.usecase.LinkTagsByCodeUseCase;
 import com.portal.conecta.comunicados.module.tag.domain.enums.TagEntityType;
+import com.portal.conecta.comunicados.module.tag.domain.exception.InvalidTagCodeException;
 import com.portal.conecta.comunicados.module.tag.domain.model.Tag;
 import com.portal.conecta.comunicados.module.tag.domain.port.TagRepository;
 
@@ -57,7 +59,7 @@ class LinkTagsByCodeUseCaseTest {
     void shouldLinkShiftTag() {
         Tag tag = tag(TagEntityType.SHIFT, "FULL_AM_PM");
 
-        when(tagRepository.findByEntityTypeAndHubEntityIdAndActiveTrue(TagEntityType.SHIFT, "FULL_AM_PM"))
+        when(tagRepository.findByEntityTypeAndHubEntityId(TagEntityType.SHIFT, "FULL_AM_PM"))
                 .thenReturn(Optional.of(tag));
 
         useCase.execute(announcement, TagEntityType.SHIFT, List.of("FULL_AM_PM"));
@@ -72,7 +74,7 @@ class LinkTagsByCodeUseCaseTest {
     void shouldLinkRoleTag() {
         Tag tag = tag(TagEntityType.ROLE, "TEACHER");
 
-        when(tagRepository.findByEntityTypeAndHubEntityIdAndActiveTrue(TagEntityType.ROLE, "TEACHER"))
+        when(tagRepository.findByEntityTypeAndHubEntityId(TagEntityType.ROLE, "TEACHER"))
                 .thenReturn(Optional.of(tag));
 
         useCase.execute(announcement, TagEntityType.ROLE, List.of("TEACHER"));
@@ -81,6 +83,44 @@ class LinkTagsByCodeUseCaseTest {
         verify(announcementTagRepository).saveAll(captor.capture());
         assertThat(captor.getValue()).hasSize(1);
         assertThat(captor.getValue().get(0).getTag()).isEqualTo(tag);
+    }
+
+    @Test
+    void shouldCreateRoleTagWhenMissing() {
+        when(tagRepository.findByEntityTypeAndHubEntityId(TagEntityType.ROLE, "STUDENT"))
+                .thenReturn(Optional.empty());
+        Tag created = tag(TagEntityType.ROLE, "STUDENT");
+        when(tagRepository.save(any(Tag.class))).thenReturn(created);
+
+        useCase.execute(announcement, TagEntityType.ROLE, List.of("STUDENT"));
+
+        ArgumentCaptor<Tag> tagCaptor = ArgumentCaptor.forClass(Tag.class);
+        verify(tagRepository).save(tagCaptor.capture());
+        assertThat(tagCaptor.getValue().getEntityType()).isEqualTo(TagEntityType.ROLE);
+        assertThat(tagCaptor.getValue().getHubEntityId()).isEqualTo("STUDENT");
+        assertThat(tagCaptor.getValue().getName()).isEqualTo("Alunos");
+
+        ArgumentCaptor<List<AnnouncementTag>> linkCaptor = ArgumentCaptor.captor();
+        verify(announcementTagRepository).saveAll(linkCaptor.capture());
+        assertThat(linkCaptor.getValue()).hasSize(1);
+    }
+
+    @Test
+    void shouldReactivateInactiveRoleTag() {
+        Tag inactive = tag(TagEntityType.ROLE, "STUDENT");
+        inactive.setActive(false);
+        when(tagRepository.findByEntityTypeAndHubEntityId(TagEntityType.ROLE, "STUDENT"))
+                .thenReturn(Optional.of(inactive));
+        when(tagRepository.save(inactive)).thenAnswer(invocation -> {
+            inactive.setActive(true);
+            return inactive;
+        });
+
+        useCase.execute(announcement, TagEntityType.ROLE, List.of("STUDENT"));
+
+        verify(tagRepository).save(inactive);
+        assertThat(inactive.isActive()).isTrue();
+        verify(announcementTagRepository).saveAll(any());
     }
 
     @Test
@@ -98,11 +138,13 @@ class LinkTagsByCodeUseCaseTest {
     }
 
     @Test
-    void shouldNotSaveWhenNoActiveTagFound() {
-        when(tagRepository.findByEntityTypeAndHubEntityIdAndActiveTrue(TagEntityType.ROLE, "ADMIN"))
+    void shouldThrowWhenNonLocalTagCodeMissing() {
+        when(tagRepository.findByEntityTypeAndHubEntityId(TagEntityType.COURSE, "x"))
                 .thenReturn(Optional.empty());
 
-        useCase.execute(announcement, TagEntityType.ROLE, List.of("ADMIN"));
+        assertThatThrownBy(() -> useCase.execute(announcement, TagEntityType.COURSE, List.of("x")))
+                .isInstanceOf(InvalidTagCodeException.class)
+                .hasMessageContaining("COURSE");
 
         verify(announcementTagRepository, never()).saveAll(any());
     }

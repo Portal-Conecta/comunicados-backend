@@ -283,6 +283,27 @@ class GetAnnouncementByIdUseCaseTest {
     }
 
     @Test
+    void shouldReturnAnnouncement_WhenRepresentativeViewsStudentRestrictedPost() {
+        UUID id = UUID.randomUUID();
+        UUID userId = UUID.randomUUID();
+        RequestContext context = new RequestContext(userId, UserType.REPRESENTATIVE, List.of());
+
+        Announcement announcement = announcementWithDestination(AnnouncementDestinationType.GENERAL, null);
+
+        when(contextProvider.getRequestContext()).thenReturn(context);
+        when(announcementRepository.findByIdAndRemovedAtIsNull(id)).thenReturn(Optional.of(announcement));
+        when(permissionValidator.canViewAll(UserType.REPRESENTATIVE)).thenReturn(false);
+        when(hubCoursePort.getCurrentUserCourseIds()).thenReturn(List.of());
+        when(announcementTagRepository.findActiveHubEntityIdsByAnnouncementIdAndEntityType(
+                        announcement.getId(), TagEntityType.ROLE))
+                .thenReturn(List.of("STUDENT"));
+
+        Announcement result = useCase.execute(new GetAnnouncementByIdQuery(id, userId));
+
+        assertThat(result).isSameAs(announcement);
+    }
+
+    @Test
     void shouldThrowNotFound_WhenScheduledAndViewerIsNotAuthor() {
         UUID id = UUID.randomUUID();
         UUID userId = UUID.randomUUID();
