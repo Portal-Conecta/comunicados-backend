@@ -39,7 +39,7 @@ public class LinkTagsByCodeUseCase {
 
     private static final Map<String, String> ROLE_DISPLAY_NAMES = Map.of(
             "STUDENT", "Alunos",
-            "REPRESENTATIVE", "Responsáveis",
+            "REPRESENTATIVE", "Representantes",
             "TEACHER", "Professores",
             "SENAI", "SENAI",
             "WEG", "WEG",
