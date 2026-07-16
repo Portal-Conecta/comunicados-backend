@@ -82,8 +82,10 @@ public class PublishAnnouncementUseCase {
     }
 
     private void validatePermission(PublishAnnouncementCommand command, RequestContext context) {
-        if (!permissionValidator.canCreateForDestinations(context, command.destinations())) {
-            throw new AnnouncementPermissionDeniedException("Usuário não tem permissão para publicar comunicados (Validar permissões).");
+        if (!permissionValidator.canCreateAnnouncement(
+                context, command.destinations(), command.roles(), command.shiftCodes())) {
+            throw new AnnouncementPermissionDeniedException(
+                    "Usuário não tem permissão para publicar com os destinos/papéis/turnos informados.");
         }
     }
 

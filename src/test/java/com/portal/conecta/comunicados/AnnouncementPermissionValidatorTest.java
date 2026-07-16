@@ -3,7 +3,9 @@ package com.portal.conecta.comunicados;
 import com.portal.conecta.comunicados.module.comunicado.domain.enums.AnnouncementDestinationType;
 import com.portal.conecta.comunicados.module.comunicado.domain.enums.AnnouncementOrigin;
 import com.portal.conecta.comunicados.module.comunicado.domain.enums.AnnouncementStatus;
+import com.portal.conecta.comunicados.module.comunicado.domain.enums.ShiftCode;
 import com.portal.conecta.comunicados.module.comunicado.domain.model.Announcement;
+import com.portal.conecta.comunicados.module.comunicado.domain.model.hub.HubStudent;
 import com.portal.conecta.comunicados.module.comunicado.domain.port.support.HubClassPort;
 import com.portal.conecta.comunicados.module.comunicado.domain.validator.AnnouncementPermissionValidator;
 import com.portal.conecta.comunicados.module.comunicado.presentation.dto.request.CreateAnnouncementDestinationInput;
@@ -242,7 +244,8 @@ class AnnouncementPermissionValidatorTest {
     void shouldAllowTeacherWhenUserDestinationBelongsToLinkedClass() {
         UUID classId = UUID.randomUUID();
         UUID studentId = UUID.randomUUID();
-        when(hubClassPort.getClassIdForUser(studentId)).thenReturn(classId);
+        when(hubClassPort.findStudentsByClassId(classId))
+                .thenReturn(List.of(new HubStudent(studentId, "Aluno")));
 
         RequestContext context = context(UserType.TEACHER, new ContextClass(classId, ClassRole.TEACHER));
 
@@ -251,20 +254,24 @@ class AnnouncementPermissionValidatorTest {
 
     @Test
     void shouldDenyTeacherWhenUserDestinationBelongsToOtherClass() {
+        UUID classId = UUID.randomUUID();
         UUID studentId = UUID.randomUUID();
+        when(hubClassPort.findStudentsByClassId(classId)).thenReturn(List.of());
         when(hubClassPort.getClassIdForUser(studentId)).thenReturn(UUID.randomUUID());
 
-        RequestContext context = context(UserType.TEACHER, new ContextClass(UUID.randomUUID(), ClassRole.TEACHER));
+        RequestContext context = context(UserType.TEACHER, new ContextClass(classId, ClassRole.TEACHER));
 
         assertThat(validator.canCreateForDestinations(context, List.of(userDestination(studentId)))).isFalse();
     }
 
     @Test
     void shouldDenyTeacherWhenHubHasNoClassForUser() {
+        UUID classId = UUID.randomUUID();
         UUID studentId = UUID.randomUUID();
+        when(hubClassPort.findStudentsByClassId(classId)).thenReturn(List.of());
         when(hubClassPort.getClassIdForUser(studentId)).thenReturn(null);
 
-        RequestContext context = context(UserType.TEACHER, new ContextClass(UUID.randomUUID(), ClassRole.TEACHER));
+        RequestContext context = context(UserType.TEACHER, new ContextClass(classId, ClassRole.TEACHER));
 
         assertThat(validator.canCreateForDestinations(context, List.of(userDestination(studentId)))).isFalse();
     }
@@ -301,19 +308,71 @@ class AnnouncementPermissionValidatorTest {
     }
 
     @Test
-    void shouldAllowRepresentativeWhenClassDestinationIsLinked() {
+    void shouldDenyRepresentativeForClassDestination() {
         UUID classId = UUID.randomUUID();
         RequestContext context = context(UserType.REPRESENTATIVE, new ContextClass(classId, ClassRole.REPRESENTATIVE));
 
-        assertThat(validator.canCreateForDestinations(context, List.of(classDestination(classId)))).isTrue();
+        assertThat(validator.canCreateForDestinations(context, List.of(classDestination(classId)))).isFalse();
+    }
+
+    @Test
+    void shouldAllowRepresentativeWhenUserDestinationBelongsToLinkedClass() {
+        UUID classId = UUID.randomUUID();
+        UUID studentId = UUID.randomUUID();
+        when(hubClassPort.findStudentsByClassId(classId))
+                .thenReturn(List.of(new HubStudent(studentId, "Aluno")));
+
+        RequestContext context = context(UserType.REPRESENTATIVE, new ContextClass(classId, ClassRole.REPRESENTATIVE));
+
+        assertThat(validator.canCreateForDestinations(context, List.of(userDestination(studentId)))).isTrue();
     }
 
     @Test
     void shouldDenyRepresentativeWhenClassRoleDoesNotMatch() {
         UUID classId = UUID.randomUUID();
+        UUID studentId = UUID.randomUUID();
         RequestContext context = context(UserType.REPRESENTATIVE, new ContextClass(classId, ClassRole.TEACHER));
 
-        assertThat(validator.canCreateForDestinations(context, List.of(classDestination(classId)))).isFalse();
+        assertThat(validator.canCreateForDestinations(context, List.of(userDestination(studentId)))).isFalse();
+    }
+
+    @Test
+    void shouldDenyScopedAuthorWhenRolesOrShiftCodesPresent() {
+        UUID classId = UUID.randomUUID();
+        RequestContext teacher = context(UserType.TEACHER, new ContextClass(classId, ClassRole.TEACHER));
+
+        assertThat(validator.canCreateAnnouncement(
+                teacher,
+                List.of(classDestination(classId)),
+                List.of(UserType.STUDENT),
+                List.of()
+        )).isFalse();
+
+        assertThat(validator.canCreateAnnouncement(
+                teacher,
+                List.of(classDestination(classId)),
+                List.of(),
+                List.of(ShiftCode.FULL_AM_PM)
+        )).isFalse();
+
+        assertThat(validator.canCreateAnnouncement(
+                teacher,
+                List.of(classDestination(classId)),
+                List.of(),
+                List.of()
+        )).isTrue();
+    }
+
+    @Test
+    void shouldAllowPrivilegedAuthorWithRolesAndShiftCodes() {
+        RequestContext context = context(UserType.SENAI);
+
+        assertThat(validator.canCreateAnnouncement(
+                context,
+                List.of(generalDestination()),
+                List.of(UserType.STUDENT),
+                List.of(ShiftCode.FULL_AM_PM)
+        )).isTrue();
     }
 
     @Test

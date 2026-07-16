@@ -83,8 +83,10 @@ public class ScheduleAnnouncementUseCase {
     }
 
     private void validatePermission(ScheduleAnnouncementCommand command, RequestContext context) {
-        if (!permissionValidator.canCreateForDestinations(context, command.destinations())) {
-            throw new AnnouncementPermissionDeniedException("Usuário não tem permissão para agendar comunicados.");
+        if (!permissionValidator.canCreateAnnouncement(
+                context, command.destinations(), command.roles(), command.shiftCodes())) {
+            throw new AnnouncementPermissionDeniedException(
+                    "Usuário não tem permissão para agendar com os destinos/papéis/turnos informados.");
         }
     }
 

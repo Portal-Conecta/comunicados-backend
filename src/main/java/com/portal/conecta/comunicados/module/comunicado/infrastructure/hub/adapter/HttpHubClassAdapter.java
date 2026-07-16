@@ -72,18 +72,31 @@ public class HttpHubClassAdapter implements HubClassPort {
 
     @Override
     public List<HubStudent> findStudentsByClassId(UUID classId) {
+        // Audiência de destinatários USER: alunos e representantes da turma.
+        List<HubStudent> students = fetchMembersByRole(classId, "STUDENT");
+        List<HubStudent> representatives = fetchMembersByRole(classId, "REPRESENTATIVE");
+        if (representatives.isEmpty()) {
+            return students;
+        }
+        java.util.LinkedHashMap<UUID, HubStudent> byId = new java.util.LinkedHashMap<>();
+        students.forEach(s -> byId.put(s.id(), s));
+        representatives.forEach(s -> byId.putIfAbsent(s.id(), s));
+        return List.copyOf(byId.values());
+    }
+
+    private List<HubStudent> fetchMembersByRole(UUID classId, String role) {
         try {
-            HubClassMemberResponse[] students = restClient.get()
-                    .uri("/classes/{classId}/members?role=STUDENT", classId)
+            HubClassMemberResponse[] members = restClient.get()
+                    .uri("/classes/{classId}/members?role={role}", classId, role)
                     .retrieve()
                     .body(new ParameterizedTypeReference<HubClassMemberResponse[]>() {});
 
-            if (students == null) {
+            if (members == null) {
                 return List.of();
             }
 
-            return Arrays.stream(students)
-                    .map(student -> new HubStudent(student.id(), student.name()))
+            return Arrays.stream(members)
+                    .map(member -> new HubStudent(member.id(), member.name()))
                     .toList();
         } catch (HttpClientErrorException.NotFound exception) {
             return List.of();
