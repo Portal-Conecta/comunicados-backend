@@ -309,11 +309,22 @@ class AnnouncementPermissionValidatorTest {
     }
 
     @Test
-    void shouldDenyRepresentativeForClassDestination() {
+    void shouldAllowRepresentativeWhenClassDestinationIsLinked() {
         UUID classId = UUID.randomUUID();
         RequestContext context = context(UserType.REPRESENTATIVE, new ContextClass(classId, ClassRole.REPRESENTATIVE));
 
-        assertThat(validator.canCreateForDestinations(context, List.of(classDestination(classId)))).isFalse();
+        assertThat(validator.canCreateForDestinations(context, List.of(classDestination(classId)))).isTrue();
+    }
+
+    @Test
+    void shouldDenyRepresentativeWhenClassDestinationIsNotLinked() {
+        RequestContext context = context(
+                UserType.REPRESENTATIVE,
+                new ContextClass(UUID.randomUUID(), ClassRole.REPRESENTATIVE)
+        );
+
+        assertThat(validator.canCreateForDestinations(context, List.of(classDestination(UUID.randomUUID()))))
+                .isFalse();
     }
 
     @Test
@@ -339,7 +350,7 @@ class AnnouncementPermissionValidatorTest {
     }
 
     @Test
-    void shouldDenyScopedAuthorWhenRolesOrShiftCodesPresent() {
+    void shouldAllowScopedAuthorWithRolesButDenyShiftCodes() {
         UUID classId = UUID.randomUUID();
         RequestContext teacher = context(UserType.TEACHER, new ContextClass(classId, ClassRole.TEACHER));
 
@@ -348,7 +359,7 @@ class AnnouncementPermissionValidatorTest {
                 List.of(classDestination(classId)),
                 List.of(UserType.STUDENT),
                 List.of()
-        )).isFalse();
+        )).isTrue();
 
         assertThat(validator.canCreateAnnouncement(
                 teacher,

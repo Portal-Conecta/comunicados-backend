@@ -61,8 +61,9 @@ public class AnnouncementPermissionValidator {
     }
 
     /**
-     * Valida destinos + audiência secundária (roles/turnos) para publish/schedule.
-     * Gestores: livres. TEACHER/REPRESENTATIVE: escopo de turma/alunos; sem roles/shiftCodes.
+     * Valida destinos (+ roles/turnos) para publish/schedule.
+     * Gestores: livres. TEACHER/REPRESENTATIVE: só CLASS/USER no escopo JWT
+     * (roles restringem audiência dentro desse escopo; turnos continuam bloqueados).
      */
     public boolean canCreateAnnouncement(
             RequestContext context,
@@ -74,9 +75,6 @@ public class AnnouncementPermissionValidator {
             return false;
         }
         if (context.userType() != null && SCOPED.contains(context.userType())) {
-            if (roles != null && !roles.isEmpty()) {
-                return false;
-            }
             if (shiftCodes != null && !shiftCodes.isEmpty()) {
                 return false;
             }
@@ -136,8 +134,8 @@ public class AnnouncementPermissionValidator {
     }
 
     /**
-     * REPRESENTATIVE: apenas USER de alunos/representantes da(s) turma(s) em que é REPRESENTATIVE.
-     * Sem CLASS/GENERAL/COURSE (alinha ao front: só alunos da própria turma).
+     * REPRESENTATIVE: CLASS da(s) turma(s) em que é REPRESENTATIVE, ou USER (aluno/representante)
+     * dessas turmas. Sem GENERAL/COURSE.
      */
     private boolean allRepresentativeDestinationsInScope(
             List<CreateAnnouncementDestinationInput> destinations,
@@ -163,8 +161,9 @@ public class AnnouncementPermissionValidator {
             return false;
         }
         return switch (destination.type()) {
+            case CLASS -> allowedClassIds.contains(destination.referenceId());
             case USER -> isAudienceUserInClasses(destination.referenceId(), allowedClassIds);
-            case CLASS, GENERAL, COURSE -> false;
+            case GENERAL, COURSE -> false;
         };
     }
 
@@ -179,22 +178,21 @@ public class AnnouncementPermissionValidator {
     }
 
     /**
-     * Aluno (STUDENT) ou representante: usa {@code GET /me/classes/students} (escopo do JWT)
-     * e, quando o Hub mapear a turma, exige que ela esteja em {@code allowedClassIds}.
+     * Aluno/representante no escopo: {@code GET /me/classes/students} é a fonte principal
+     * (já filtrada pelo JWT no Hub). {@code getClassIdForUser} só como fallback.
      */
     private boolean isAudienceUserInClasses(UUID userId, Collection<UUID> allowedClassIds) {
         if (userId == null || allowedClassIds == null || allowedClassIds.isEmpty()) {
             return false;
         }
 
-        UUID classId = hubClassPort.getClassIdForUser(userId);
-        if (classId != null) {
-            return allowedClassIds.contains(classId);
+        List<HubStudent> audience = hubClassPort.findMyClassStudents();
+        if (audience != null && audience.stream().anyMatch(s -> Objects.equals(userId, s.id()))) {
+            return true;
         }
 
-        List<HubStudent> audience = hubClassPort.findMyClassStudents();
-        return audience != null
-                && audience.stream().anyMatch(s -> Objects.equals(userId, s.id()));
+        UUID classId = hubClassPort.getClassIdForUser(userId);
+        return classId != null && allowedClassIds.contains(classId);
     }
 
     public boolean canUpdate(UserType userType, UUID userId, Announcement announcement) {
