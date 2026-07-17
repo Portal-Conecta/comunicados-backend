@@ -33,8 +33,8 @@ class ActuatorIntegrationTest {
     }
 
     @Test
-    void shouldRequireAuthenticationForPrometheus() throws Exception {
+    void shouldExposePrometheusWithoutAuthentication() throws Exception {
         mockMvc.perform(get("/actuator/prometheus"))
-                .andExpect(status().isUnauthorized());
+                .andExpect(status().isOk());
     }
 }
