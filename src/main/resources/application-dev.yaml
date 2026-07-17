@@ -30,3 +30,17 @@ app:
     secret: ${JWT_SECRET:ZGV2LXNlY3JldC1rZXktMzItYnl0ZXMtbWluaW11bS1mb3ItaHMyNTY}
     access-token-expiration: ${JWT_ACCESS_EXPIRATION:900000}
     refresh-token-expiration: ${JWT_REFRESH_EXPIRATION:604800000}
+  # Espelha cursos/turmas do Core (DevDataInitializer) como tags locais —
+  # o seed do Core não publica eventos RabbitMQ.
+  dev-seed:
+    hub-tags:
+      enabled: ${DEV_SEED_HUB_TAGS_ENABLED:true}
+      email: ${DEV_SEED_HUB_EMAIL:admin@portal.test}
+      password: ${DEV_SEED_HUB_PASSWORD:123456}
+      max-attempts: ${DEV_SEED_HUB_MAX_ATTEMPTS:12}
+      retry-delay-ms: ${DEV_SEED_HUB_RETRY_DELAY_MS:3000}
+
+hub:
+  api:
+    # Em docker compose local com Core real, preferir false (ver HUB_MOCK_ENABLED no .env).
+    mock-enabled: ${HUB_MOCK_ENABLED:false}
