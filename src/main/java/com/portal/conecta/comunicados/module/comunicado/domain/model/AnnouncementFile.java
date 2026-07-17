@@ -11,7 +11,9 @@ import jakarta.persistence.*;
 import lombok.AllArgsConstructor;
 import lombok.Builder;
 import lombok.Data;
+import lombok.EqualsAndHashCode;
 import lombok.NoArgsConstructor;
+import lombok.ToString;
 
 @Entity
 @Table(name = "announcement_file")
@@ -27,6 +29,8 @@ public class AnnouncementFile {
 
     @ManyToOne
     @JoinColumn(name = "announcement_id", nullable = false)
+    @ToString.Exclude
+    @EqualsAndHashCode.Exclude
     private Announcement announcement;
 
     @Column(name = "original_name", nullable = false)

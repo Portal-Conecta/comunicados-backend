@@ -9,7 +9,9 @@ import com.portal.conecta.comunicados.module.comunicado.domain.enums.Announcemen
 import lombok.AllArgsConstructor;
 import lombok.Builder;
 import lombok.Data;
+import lombok.EqualsAndHashCode;
 import lombok.NoArgsConstructor;
+import lombok.ToString;
 
 @Entity
 @Table(name = "announcement_destination")
@@ -25,6 +27,8 @@ public class AnnouncementDestination {
 
     @ManyToOne
     @JoinColumn(name = "announcement_id", nullable = false)
+    @ToString.Exclude
+    @EqualsAndHashCode.Exclude
     private Announcement announcement;
     
     @Enumerated(EnumType.STRING)

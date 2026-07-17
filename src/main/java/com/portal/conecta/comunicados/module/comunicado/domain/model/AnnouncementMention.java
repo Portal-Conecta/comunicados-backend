@@ -7,7 +7,9 @@ import jakarta.persistence.*;
 import lombok.AllArgsConstructor;
 import lombok.Builder;
 import lombok.Data;
+import lombok.EqualsAndHashCode;
 import lombok.NoArgsConstructor;
+import lombok.ToString;
 
 @Entity
 @Table(name = "announcement_mention")
@@ -24,6 +26,8 @@ public class AnnouncementMention {
 
     @ManyToOne
     @JoinColumn(name = "announcement_id", nullable = false)
+    @ToString.Exclude
+    @EqualsAndHashCode.Exclude
     private Announcement announcement;
 
     @Column(name = "user_id", nullable = false)

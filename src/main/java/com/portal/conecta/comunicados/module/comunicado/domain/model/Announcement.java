@@ -12,7 +12,9 @@ import jakarta.persistence.*;
 import lombok.AllArgsConstructor;
 import lombok.Builder;
 import lombok.Data;
+import lombok.EqualsAndHashCode;
 import lombok.NoArgsConstructor;
+import lombok.ToString;
 
 @Entity
 @Table(name = "announcement")
@@ -75,17 +77,27 @@ public class Announcement {
     private Instant updatedAt;
 
     @OneToMany(mappedBy = "announcement")
+    @ToString.Exclude
+    @EqualsAndHashCode.Exclude
     private List<AnnouncementDestination> destinations;
 
     @OneToMany(mappedBy = "announcement")
+    @ToString.Exclude
+    @EqualsAndHashCode.Exclude
     private List<AnnouncementFile> files;
 
     @OneToMany(mappedBy = "announcement")
+    @ToString.Exclude
+    @EqualsAndHashCode.Exclude
     private List<AnnouncementHistory> histories;
 
     @OneToMany(mappedBy = "announcement")
+    @ToString.Exclude
+    @EqualsAndHashCode.Exclude
     private List<AnnouncementTag> tags;
 
     @OneToMany(mappedBy = "announcement")
+    @ToString.Exclude
+    @EqualsAndHashCode.Exclude
     private List<AnnouncementMention> mentions;
 }
