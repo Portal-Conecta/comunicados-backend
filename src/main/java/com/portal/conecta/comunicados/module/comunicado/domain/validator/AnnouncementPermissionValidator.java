@@ -179,23 +179,22 @@ public class AnnouncementPermissionValidator {
     }
 
     /**
-     * Aluno (STUDENT) ou representante da turma: lista de audiência no Hub, com fallback
-     * {@code getClassIdForUser} se o Hub mapear o usuário a uma das turmas permitidas.
+     * Aluno (STUDENT) ou representante: usa {@code GET /me/classes/students} (escopo do JWT)
+     * e, quando o Hub mapear a turma, exige que ela esteja em {@code allowedClassIds}.
      */
     private boolean isAudienceUserInClasses(UUID userId, Collection<UUID> allowedClassIds) {
         if (userId == null || allowedClassIds == null || allowedClassIds.isEmpty()) {
             return false;
         }
 
-        for (UUID classId : allowedClassIds) {
-            List<HubStudent> audience = hubClassPort.findStudentsByClassId(classId);
-            if (audience != null && audience.stream().anyMatch(s -> Objects.equals(userId, s.id()))) {
-                return true;
-            }
+        UUID classId = hubClassPort.getClassIdForUser(userId);
+        if (classId != null) {
+            return allowedClassIds.contains(classId);
         }
 
-        UUID classId = hubClassPort.getClassIdForUser(userId);
-        return classId != null && allowedClassIds.contains(classId);
+        List<HubStudent> audience = hubClassPort.findMyClassStudents();
+        return audience != null
+                && audience.stream().anyMatch(s -> Objects.equals(userId, s.id()));
     }
 
     public boolean canUpdate(UserType userType, UUID userId, Announcement announcement) {

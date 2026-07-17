@@ -13,7 +13,11 @@ public interface HubClassPort {
 
     Optional<HubClassInfo> findClassById(UUID classId);
 
-    List<HubStudent> findStudentsByClassId(UUID classId);
+    /**
+     * Alunos e representantes das turmas do usuário autenticado (JWT),
+     * via {@code GET /me/classes/students} — sem fan-out por turma.
+     */
+    List<HubStudent> findMyClassStudents();
 
     UUID getClassIdForUser(UUID userId);
 }

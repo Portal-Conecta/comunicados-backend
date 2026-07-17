@@ -16,8 +16,8 @@ import org.springframework.web.client.RestClientException;
 import com.portal.conecta.comunicados.module.comunicado.domain.model.hub.HubClassInfo;
 import com.portal.conecta.comunicados.module.comunicado.domain.model.hub.HubStudent;
 import com.portal.conecta.comunicados.module.comunicado.domain.port.support.HubClassPort;
-import com.portal.conecta.comunicados.module.comunicado.infrastructure.hub.dto.HubClassResponse;
 import com.portal.conecta.comunicados.module.comunicado.infrastructure.hub.dto.HubClassMemberResponse;
+import com.portal.conecta.comunicados.module.comunicado.infrastructure.hub.dto.HubClassResponse;
 import com.portal.conecta.comunicados.module.comunicado.infrastructure.hub.exception.HubIntegrationException;
 import com.portal.conecta.comunicados.module.comunicado.infrastructure.hub.properties.HubApiProperties;
 
@@ -71,31 +71,19 @@ public class HttpHubClassAdapter implements HubClassPort {
     }
 
     @Override
-    public List<HubStudent> findStudentsByClassId(UUID classId) {
-        // Audiência de destinatários USER: alunos e representantes da turma.
-        List<HubStudent> students = fetchMembersByRole(classId, "STUDENT");
-        List<HubStudent> representatives = fetchMembersByRole(classId, "REPRESENTATIVE");
-        if (representatives.isEmpty()) {
-            return students;
-        }
-        java.util.LinkedHashMap<UUID, HubStudent> byId = new java.util.LinkedHashMap<>();
-        students.forEach(s -> byId.put(s.id(), s));
-        representatives.forEach(s -> byId.putIfAbsent(s.id(), s));
-        return List.copyOf(byId.values());
-    }
-
-    private List<HubStudent> fetchMembersByRole(UUID classId, String role) {
+    public List<HubStudent> findMyClassStudents() {
         try {
             HubClassMemberResponse[] members = restClient.get()
-                    .uri("/classes/{classId}/members?role={role}", classId, role)
+                    .uri("/me/classes/students")
                     .retrieve()
-                    .body(new ParameterizedTypeReference<HubClassMemberResponse[]>() {});
+                    .body(HubClassMemberResponse[].class);
 
-            if (members == null) {
+            if (members == null || members.length == 0) {
                 return List.of();
             }
 
             return Arrays.stream(members)
+                    .filter(member -> member != null && member.id() != null)
                     .map(member -> new HubStudent(member.id(), member.name()))
                     .toList();
         } catch (HttpClientErrorException.NotFound exception) {

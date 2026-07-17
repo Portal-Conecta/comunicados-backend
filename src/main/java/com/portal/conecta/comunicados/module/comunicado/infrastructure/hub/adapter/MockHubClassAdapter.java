@@ -49,15 +49,13 @@ public class MockHubClassAdapter implements HubClassPort {
     }
 
     @Override
-    public List<HubStudent> findStudentsByClassId(UUID classId) {
-        List<HubMockProperties.MockStudent> students = properties.studentsByClass().get(classId.toString());
-
-        if (students == null) {
-            return List.of();
-        }
-
-        return students.stream()
+    public List<HubStudent> findMyClassStudents() {
+        return properties.studentsByClass().values().stream()
+                .flatMap(List::stream)
                 .map(student -> new HubStudent(UUID.fromString(student.id()), student.name()))
+                .collect(Collectors.toMap(HubStudent::id, s -> s, (a, b) -> a))
+                .values()
+                .stream()
                 .sorted(Comparator.comparing(HubStudent::name, String.CASE_INSENSITIVE_ORDER))
                 .toList();
     }

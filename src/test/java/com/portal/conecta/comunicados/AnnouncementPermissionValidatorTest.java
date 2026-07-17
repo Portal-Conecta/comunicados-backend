@@ -244,7 +244,8 @@ class AnnouncementPermissionValidatorTest {
     void shouldAllowTeacherWhenUserDestinationBelongsToLinkedClass() {
         UUID classId = UUID.randomUUID();
         UUID studentId = UUID.randomUUID();
-        when(hubClassPort.findStudentsByClassId(classId))
+        when(hubClassPort.getClassIdForUser(studentId)).thenReturn(null);
+        when(hubClassPort.findMyClassStudents())
                 .thenReturn(List.of(new HubStudent(studentId, "Aluno")));
 
         RequestContext context = context(UserType.TEACHER, new ContextClass(classId, ClassRole.TEACHER));
@@ -256,7 +257,7 @@ class AnnouncementPermissionValidatorTest {
     void shouldDenyTeacherWhenUserDestinationBelongsToOtherClass() {
         UUID classId = UUID.randomUUID();
         UUID studentId = UUID.randomUUID();
-        when(hubClassPort.findStudentsByClassId(classId)).thenReturn(List.of());
+        when(hubClassPort.findMyClassStudents()).thenReturn(List.of());
         when(hubClassPort.getClassIdForUser(studentId)).thenReturn(UUID.randomUUID());
 
         RequestContext context = context(UserType.TEACHER, new ContextClass(classId, ClassRole.TEACHER));
@@ -268,7 +269,7 @@ class AnnouncementPermissionValidatorTest {
     void shouldDenyTeacherWhenHubHasNoClassForUser() {
         UUID classId = UUID.randomUUID();
         UUID studentId = UUID.randomUUID();
-        when(hubClassPort.findStudentsByClassId(classId)).thenReturn(List.of());
+        when(hubClassPort.findMyClassStudents()).thenReturn(List.of());
         when(hubClassPort.getClassIdForUser(studentId)).thenReturn(null);
 
         RequestContext context = context(UserType.TEACHER, new ContextClass(classId, ClassRole.TEACHER));
@@ -319,7 +320,8 @@ class AnnouncementPermissionValidatorTest {
     void shouldAllowRepresentativeWhenUserDestinationBelongsToLinkedClass() {
         UUID classId = UUID.randomUUID();
         UUID studentId = UUID.randomUUID();
-        when(hubClassPort.findStudentsByClassId(classId))
+        when(hubClassPort.getClassIdForUser(studentId)).thenReturn(null);
+        when(hubClassPort.findMyClassStudents())
                 .thenReturn(List.of(new HubStudent(studentId, "Aluno")));
 
         RequestContext context = context(UserType.REPRESENTATIVE, new ContextClass(classId, ClassRole.REPRESENTATIVE));
