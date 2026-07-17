@@ -4,6 +4,7 @@ import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.anyString;
+import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.Mockito.never;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
@@ -16,6 +17,7 @@ import java.util.UUID;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
+import org.mockito.ArgumentCaptor;
 import org.mockito.Mock;
 import org.mockito.Spy;
 import org.mockito.junit.jupiter.MockitoExtension;
@@ -24,6 +26,7 @@ import org.springframework.transaction.support.TransactionSynchronizationManager
 
 import com.portal.conecta.comunicados.module.comunicado.application.command.AttachAnnouncementFileCommand;
 import com.portal.conecta.comunicados.module.comunicado.application.usecase.AttachAnnouncementFileUseCase;
+import com.portal.conecta.comunicados.module.comunicado.domain.enums.AnnouncementFileStatus;
 import com.portal.conecta.comunicados.module.comunicado.domain.enums.AnnouncementFileType;
 import com.portal.conecta.comunicados.module.comunicado.domain.enums.AnnouncementOrigin;
 import com.portal.conecta.comunicados.module.comunicado.domain.enums.AnnouncementStatus;
@@ -31,7 +34,6 @@ import com.portal.conecta.comunicados.module.comunicado.domain.exception.Announc
 import com.portal.conecta.comunicados.module.comunicado.domain.exception.AnnouncementFileLimitExceededException;
 import com.portal.conecta.comunicados.module.comunicado.domain.exception.AnnouncementFileTooLargeException;
 import com.portal.conecta.comunicados.module.comunicado.domain.exception.AnnouncementNotFoundException;
-import com.portal.conecta.comunicados.module.comunicado.domain.exception.AnnouncementPermissionDeniedException;
 import com.portal.conecta.comunicados.module.comunicado.domain.model.Announcement;
 import com.portal.conecta.comunicados.module.comunicado.domain.model.AnnouncementFile;
 import com.portal.conecta.comunicados.module.comunicado.domain.port.announcement.AnnouncementFileRepository;
@@ -40,6 +42,7 @@ import com.portal.conecta.comunicados.module.comunicado.domain.port.storage.Stor
 import com.portal.conecta.comunicados.module.comunicado.domain.port.storage.StorageUploadResult;
 import com.portal.conecta.comunicados.module.comunicado.domain.port.support.HubClassPort;
 import com.portal.conecta.comunicados.module.comunicado.domain.validator.AnnouncementPermissionValidator;
+import com.portal.conecta.comunicados.module.comunicado.infrastructure.storage.StorageProperties;
 import com.portal.conecta.comunicados.shared.context.RequestContext;
 import com.portal.conecta.comunicados.shared.context.RequestContextProvider;
 import com.portal.conecta.comunicados.shared.context.UserType;
@@ -65,8 +68,17 @@ class AttachAnnouncementFileUseCaseTest {
 
     @BeforeEach
     void setUp() {
+        StorageProperties storageProperties = new StorageProperties(
+                true, 5, 10, 10, 20, 200, "comunicados-raw", "comunicados-processed", "us-east-1");
         useCase = new AttachAnnouncementFileUseCase(
-                announcementRepository, fileRepository, contextProvider, permissionValidator, storagePort, 5, 10
+                announcementRepository,
+                fileRepository,
+                contextProvider,
+                permissionValidator,
+                storagePort,
+                storageProperties,
+                5,
+                10
         );
 
         announcementId = UUID.randomUUID();
@@ -90,19 +102,38 @@ class AttachAnnouncementFileUseCaseTest {
     }
 
     @Test
-    void shouldUploadAndSaveFileSuccessfully() {
+    void shouldUploadAndSaveFileAsPendingWhenStorageIsAsync() {
         mockContext(UserType.SENAI, userId);
         when(announcementRepository.findByIdAndRemovedAtIsNull(announcementId)).thenReturn(Optional.of(announcement));
         when(fileRepository.countByAnnouncementId(announcementId)).thenReturn(0L);
-        when(storagePort.upload(anyString(), any())).thenReturn(new StorageUploadResult("key-123", "bucket"));
+        when(storagePort.upload(anyString(), anyString(), any()))
+                .thenAnswer(inv -> StorageUploadResult.async(inv.getArgument(0), "bucket"));
         when(fileRepository.save(any())).thenAnswer(inv -> inv.getArgument(0));
 
         AnnouncementFile saved = useCase.execute(command);
 
         assertThat(saved.getOriginalName()).isEqualTo("foto.jpg");
         assertThat(saved.getType()).isEqualTo(AnnouncementFileType.IMAGE);
-        verify(storagePort).upload("image/jpeg", command.content());
+        assertThat(saved.getFileStatus()).isEqualTo(AnnouncementFileStatus.PENDING);
+        assertThat(saved.getProcessedS3Key()).isNull();
+        assertThat(saved.getS3Key()).contains("/raw/");
+        verify(storagePort).upload(anyString(), eq("image/jpeg"), eq(command.content()));
         verify(fileRepository).save(any(AnnouncementFile.class));
+    }
+
+    @Test
+    void shouldMarkReadyImmediatelyWhenStorageIsSync() {
+        mockContext(UserType.SENAI, userId);
+        when(announcementRepository.findByIdAndRemovedAtIsNull(announcementId)).thenReturn(Optional.of(announcement));
+        when(fileRepository.countByAnnouncementId(announcementId)).thenReturn(0L);
+        when(storagePort.upload(anyString(), anyString(), any()))
+                .thenAnswer(inv -> StorageUploadResult.sync(inv.getArgument(0), "local"));
+        when(fileRepository.save(any())).thenAnswer(inv -> inv.getArgument(0));
+
+        AnnouncementFile saved = useCase.execute(command);
+
+        assertThat(saved.getFileStatus()).isEqualTo(AnnouncementFileStatus.READY);
+        assertThat(saved.getProcessedS3Key()).isEqualTo(saved.getS3Key());
     }
 
     @Test
@@ -114,7 +145,8 @@ class AttachAnnouncementFileUseCaseTest {
         mockContext(UserType.SENAI, userId);
         when(announcementRepository.findByIdAndRemovedAtIsNull(announcementId)).thenReturn(Optional.of(announcement));
         when(fileRepository.countByAnnouncementId(announcementId)).thenReturn(0L);
-        when(storagePort.upload(anyString(), any())).thenReturn(new StorageUploadResult("key-123", "bucket"));
+        when(storagePort.upload(anyString(), anyString(), any()))
+                .thenReturn(StorageUploadResult.async("key-123", "bucket"));
         when(fileRepository.save(any())).thenAnswer(inv -> inv.getArgument(0));
 
         useCase.execute(thumbnailCommand);
@@ -127,7 +159,8 @@ class AttachAnnouncementFileUseCaseTest {
         mockContext(UserType.SENAI, userId);
         when(announcementRepository.findByIdAndRemovedAtIsNull(announcementId)).thenReturn(Optional.of(announcement));
         when(fileRepository.countByAnnouncementId(announcementId)).thenReturn(0L);
-        when(storagePort.upload(anyString(), any())).thenReturn(new StorageUploadResult("key-123", "bucket"));
+        when(storagePort.upload(anyString(), anyString(), any()))
+                .thenReturn(StorageUploadResult.async("key-123", "bucket"));
         when(fileRepository.save(any())).thenAnswer(inv -> inv.getArgument(0));
 
         useCase.execute(command);
@@ -143,28 +176,28 @@ class AttachAnnouncementFileUseCaseTest {
         assertThatThrownBy(() -> useCase.execute(command))
                 .isInstanceOf(AnnouncementNotFoundException.class);
 
-        verify(storagePort, never()).upload(anyString(), any());
+        verify(storagePort, never()).upload(anyString(), anyString(), any());
     }
 
     @Test
-    void shouldThrowPermissionDeniedWhenStudentUploads() {
+    void shouldThrowNotFoundWhenStudentUploads() {
         mockContext(UserType.STUDENT, userId);
         when(announcementRepository.findByIdAndRemovedAtIsNull(announcementId)).thenReturn(Optional.of(announcement));
 
         assertThatThrownBy(() -> useCase.execute(command))
-                .isInstanceOf(AnnouncementPermissionDeniedException.class);
+                .isInstanceOf(AnnouncementNotFoundException.class);
 
-        verify(storagePort, never()).upload(anyString(), any());
+        verify(storagePort, never()).upload(anyString(), anyString(), any());
     }
 
     @Test
-    void shouldThrowPermissionDeniedWhenTeacherIsNotOwner() {
+    void shouldThrowNotFoundWhenTeacherIsNotOwner() {
         UUID otherUserId = UUID.randomUUID();
         mockContext(UserType.TEACHER, otherUserId);
         when(announcementRepository.findByIdAndRemovedAtIsNull(announcementId)).thenReturn(Optional.of(announcement));
 
         assertThatThrownBy(() -> useCase.execute(command))
-                .isInstanceOf(AnnouncementPermissionDeniedException.class);
+                .isInstanceOf(AnnouncementNotFoundException.class);
     }
 
     @Test
@@ -203,7 +236,7 @@ class AttachAnnouncementFileUseCaseTest {
         assertThatThrownBy(() -> useCase.execute(command))
                 .isInstanceOf(AnnouncementFileLimitExceededException.class);
 
-        verify(storagePort, never()).upload(anyString(), any());
+        verify(storagePort, never()).upload(anyString(), anyString(), any());
     }
 
     @Test
@@ -220,7 +253,7 @@ class AttachAnnouncementFileUseCaseTest {
         assertThatThrownBy(() -> useCase.execute(oversizedCommand))
                 .isInstanceOf(AnnouncementFileLimitExceededException.class);
 
-        verify(storagePort, never()).upload(anyString(), any());
+        verify(storagePort, never()).upload(anyString(), anyString(), any());
     }
 
     @Test
@@ -228,7 +261,8 @@ class AttachAnnouncementFileUseCaseTest {
         mockContext(UserType.SENAI, userId);
         when(announcementRepository.findByIdAndRemovedAtIsNull(announcementId)).thenReturn(Optional.of(announcement));
         when(fileRepository.countByAnnouncementId(announcementId)).thenReturn(0L);
-        when(storagePort.upload(anyString(), any())).thenReturn(new StorageUploadResult("key-123", "bucket"));
+        when(storagePort.upload(anyString(), anyString(), any()))
+                .thenAnswer(inv -> StorageUploadResult.async(inv.getArgument(0), "bucket"));
         when(fileRepository.save(any())).thenThrow(new RuntimeException("falha ao persistir"));
 
         TransactionSynchronizationManager.initSynchronization();
@@ -236,14 +270,15 @@ class AttachAnnouncementFileUseCaseTest {
             assertThatThrownBy(() -> useCase.execute(command))
                     .isInstanceOf(RuntimeException.class);
 
+            ArgumentCaptor<String> keyCaptor = ArgumentCaptor.forClass(String.class);
             for (TransactionSynchronization sync : TransactionSynchronizationManager.getSynchronizations()) {
                 sync.afterCompletion(TransactionSynchronization.STATUS_ROLLED_BACK);
             }
+            verify(storagePort).delete(keyCaptor.capture(), eq("bucket"));
+            assertThat(keyCaptor.getValue()).contains("/raw/");
         } finally {
             TransactionSynchronizationManager.clearSynchronization();
         }
-
-        verify(storagePort).delete("key-123", "bucket");
     }
 
     private void mockContext(UserType userType, UUID id) {

@@ -7,6 +7,7 @@ import java.util.UUID;
 import org.springframework.data.domain.Page;
 
 import com.portal.conecta.comunicados.module.comunicado.domain.model.Announcement;
+import com.portal.conecta.comunicados.module.tag.domain.model.Tag;
 
 import io.swagger.v3.oas.annotations.media.Schema;
 
@@ -29,17 +30,20 @@ public record ListAnnouncementsResponse(
             List<Announcement> pinned,
             Page<Announcement> page
     ) {
-        return fromPinnedAndPage(pinned, page, Map.of());
+        return fromPinnedAndPage(pinned, page, Map.of(), Map.of());
     }
 
     public static ListAnnouncementsResponse fromPinnedAndPage(
             List<Announcement> pinned,
             Page<Announcement> page,
-            Map<UUID, String> thumbnailUrlsByAnnouncementId
+            Map<UUID, String> thumbnailUrlsByAnnouncementId,
+            Map<UUID, List<Tag>> tagsByAnnouncementId
     ) {
         return new ListAnnouncementsResponse(
-                AnnouncementSummaryResponse.fromEntities(pinned, thumbnailUrlsByAnnouncementId),
-                AnnouncementSummaryResponse.fromEntities(page.getContent(), thumbnailUrlsByAnnouncementId),
+                AnnouncementSummaryResponse.fromEntities(
+                        pinned, thumbnailUrlsByAnnouncementId, tagsByAnnouncementId),
+                AnnouncementSummaryResponse.fromEntities(
+                        page.getContent(), thumbnailUrlsByAnnouncementId, tagsByAnnouncementId),
                 page.getNumber(),
                 page.getSize(),
                 page.getTotalElements(),

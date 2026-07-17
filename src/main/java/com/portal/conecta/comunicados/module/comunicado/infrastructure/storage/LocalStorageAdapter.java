@@ -3,7 +3,6 @@ package com.portal.conecta.comunicados.module.comunicado.infrastructure.storage;
 import java.time.Duration;
 import java.util.Map;
 import java.util.Optional;
-import java.util.UUID;
 
 import org.springframework.boot.autoconfigure.condition.ConditionalOnProperty;
 import org.springframework.stereotype.Component;
@@ -23,11 +22,11 @@ public class LocalStorageAdapter implements StoragePort {
     private static final String LOCAL_BUCKET = "local-storage";
 
     @Override
-    public StorageUploadResult upload(String contentType, byte[] content) {
-        String s3Key = "comunicados/" + UUID.randomUUID();
+    public StorageUploadResult upload(String s3Key, String contentType, byte[] content) {
         log.info("LocalStorageAdapter: upload simulado — key={}, contentType={}, size={}B",
                 s3Key, contentType, content.length);
-        return new StorageUploadResult(s3Key, LOCAL_BUCKET);
+        // Mock: disponível imediatamente (sem Lambda).
+        return StorageUploadResult.sync(s3Key, LOCAL_BUCKET);
     }
 
     @Override
@@ -36,9 +35,9 @@ public class LocalStorageAdapter implements StoragePort {
     }
 
     @Override
-    public PresignedUpload presignUpload(String s3Key, String contentType, long maxBytes) {
-        log.info("LocalStorageAdapter: presignUpload simulado — key={}, contentType={}, maxBytes={}",
-                s3Key, contentType, maxBytes);
+    public PresignedUpload presignUpload(String s3Key, String contentType, long contentLengthBytes) {
+        log.info("LocalStorageAdapter: presignUpload simulado — key={}, contentType={}, contentLength={}",
+                s3Key, contentType, contentLengthBytes);
         return new PresignedUpload("http://localhost/mock-presign/" + s3Key, Map.of(), s3Key, LOCAL_BUCKET);
     }
 

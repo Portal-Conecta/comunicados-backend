@@ -1,13 +1,17 @@
 package com.portal.conecta.comunicados.module.comunicado.domain.validator;
 
+import java.util.Collection;
 import java.util.EnumSet;
 import java.util.List;
+import java.util.Objects;
 import java.util.UUID;
 
 import org.springframework.stereotype.Component;
 
 import com.portal.conecta.comunicados.module.comunicado.domain.enums.AnnouncementStatus;
+import com.portal.conecta.comunicados.module.comunicado.domain.enums.ShiftCode;
 import com.portal.conecta.comunicados.module.comunicado.domain.model.Announcement;
+import com.portal.conecta.comunicados.module.comunicado.domain.model.hub.HubStudent;
 import com.portal.conecta.comunicados.module.comunicado.domain.port.support.HubClassPort;
 import com.portal.conecta.comunicados.module.comunicado.presentation.dto.request.CreateAnnouncementDestinationInput;
 import com.portal.conecta.comunicados.shared.context.ClassRole;
@@ -51,18 +55,42 @@ public class AnnouncementPermissionValidator {
         }
         return PIN_USER_TYPE.contains(userType);
     }
-  
+
     public boolean canViewAll(UserType userType) {
-        return canCreate(userType);
+        return userType != null && PRIVILEGED.contains(userType);
+    }
+
+    /**
+     * Valida destinos (+ roles/turnos) para publish/schedule.
+     * Gestores: livres. TEACHER/REPRESENTATIVE: só CLASS/USER no escopo JWT
+     * (roles restringem audiência dentro desse escopo; turnos continuam bloqueados).
+     */
+    public boolean canCreateAnnouncement(
+            RequestContext context,
+            List<CreateAnnouncementDestinationInput> destinations,
+            List<UserType> roles,
+            List<ShiftCode> shiftCodes
+    ) {
+        if (!canCreateForDestinations(context, destinations)) {
+            return false;
+        }
+        if (context.userType() != null && SCOPED.contains(context.userType())) {
+            if (shiftCodes != null && !shiftCodes.isEmpty()) {
+                return false;
+            }
+        }
+        return true;
     }
 
     public boolean canCreateForDestinations(RequestContext context, List<CreateAnnouncementDestinationInput> destinations) {
-        if (context == null || context.userType() == null) return false;
+        if (context == null || context.userType() == null) {
+            return false;
+        }
 
         return switch (context.userType()) {
             case ADMIN, SENAI, WEG -> true;
-            case TEACHER -> allDestinationsWithinClasses(destinations, context, ClassRole.TEACHER);
-            case REPRESENTATIVE -> allDestinationsWithinClasses(destinations, context, ClassRole.REPRESENTATIVE);
+            case TEACHER -> allTeacherDestinationsInScope(destinations, context);
+            case REPRESENTATIVE -> allRepresentativeDestinationsInScope(destinations, context);
             default -> false;
         };
     }
@@ -71,34 +99,98 @@ public class AnnouncementPermissionValidator {
         return canModify(userType, userId, announcement);
     }
 
-    private boolean allDestinationsWithinClasses(
+    /**
+     * TEACHER: CLASS das turmas em que é TEACHER, ou USER (aluno/representante) dessas turmas.
+     * Rejeita GENERAL/COURSE.
+     */
+    private boolean allTeacherDestinationsInScope(
             List<CreateAnnouncementDestinationInput> destinations,
-            RequestContext context,
-            ClassRole requiredRole
+            RequestContext context
     ) {
-        if (destinations == null || destinations.isEmpty()) return false;
+        if (destinations == null || destinations.isEmpty()) {
+            return false;
+        }
 
-        List<UUID> allowedClassIds = context.classes() == null ? List.of() : context.classes().stream()
-                .filter(c -> c.role() == requiredRole)
-                .map(ContextClass::classId)
-                .toList();
+        List<UUID> allowedClassIds = classIdsWithRole(context, ClassRole.TEACHER);
+        if (allowedClassIds.isEmpty()) {
+            return false;
+        }
 
-        if (allowedClassIds.isEmpty()) return false;
-
-        return destinations.stream().allMatch(d -> isDestinationWithinClasses(d, allowedClassIds));
+        return destinations.stream().allMatch(d -> isTeacherDestinationAllowed(d, allowedClassIds));
     }
 
-    private boolean isDestinationWithinClasses(CreateAnnouncementDestinationInput destination, List<UUID> allowedClassIds) {
-        if (destination == null || destination.type() == null || destination.referenceId() == null) return false;
-
+    private boolean isTeacherDestinationAllowed(
+            CreateAnnouncementDestinationInput destination,
+            List<UUID> allowedClassIds
+    ) {
+        if (destination == null || destination.type() == null || destination.referenceId() == null) {
+            return false;
+        }
         return switch (destination.type()) {
             case CLASS -> allowedClassIds.contains(destination.referenceId());
-            case USER -> isUserWithinClasses(destination.referenceId(), allowedClassIds);
+            case USER -> isAudienceUserInClasses(destination.referenceId(), allowedClassIds);
             case GENERAL, COURSE -> false;
         };
     }
 
-    private boolean isUserWithinClasses(UUID userId, List<UUID> allowedClassIds) {
+    /**
+     * REPRESENTATIVE: CLASS da(s) turma(s) em que é REPRESENTATIVE, ou USER (aluno/representante)
+     * dessas turmas. Sem GENERAL/COURSE.
+     */
+    private boolean allRepresentativeDestinationsInScope(
+            List<CreateAnnouncementDestinationInput> destinations,
+            RequestContext context
+    ) {
+        if (destinations == null || destinations.isEmpty()) {
+            return false;
+        }
+
+        List<UUID> allowedClassIds = classIdsWithRole(context, ClassRole.REPRESENTATIVE);
+        if (allowedClassIds.isEmpty()) {
+            return false;
+        }
+
+        return destinations.stream().allMatch(d -> isRepresentativeDestinationAllowed(d, allowedClassIds));
+    }
+
+    private boolean isRepresentativeDestinationAllowed(
+            CreateAnnouncementDestinationInput destination,
+            List<UUID> allowedClassIds
+    ) {
+        if (destination == null || destination.type() == null || destination.referenceId() == null) {
+            return false;
+        }
+        return switch (destination.type()) {
+            case CLASS -> allowedClassIds.contains(destination.referenceId());
+            case USER -> isAudienceUserInClasses(destination.referenceId(), allowedClassIds);
+            case GENERAL, COURSE -> false;
+        };
+    }
+
+    private List<UUID> classIdsWithRole(RequestContext context, ClassRole requiredRole) {
+        if (context.classes() == null) {
+            return List.of();
+        }
+        return context.classes().stream()
+                .filter(c -> c.role() == requiredRole)
+                .map(ContextClass::classId)
+                .toList();
+    }
+
+    /**
+     * Aluno/representante no escopo: {@code GET /me/classes/students} é a fonte principal
+     * (já filtrada pelo JWT no Hub). {@code getClassIdForUser} só como fallback.
+     */
+    private boolean isAudienceUserInClasses(UUID userId, Collection<UUID> allowedClassIds) {
+        if (userId == null || allowedClassIds == null || allowedClassIds.isEmpty()) {
+            return false;
+        }
+
+        List<HubStudent> audience = hubClassPort.findMyClassStudents();
+        if (audience != null && audience.stream().anyMatch(s -> Objects.equals(userId, s.id()))) {
+            return true;
+        }
+
         UUID classId = hubClassPort.getClassIdForUser(userId);
         return classId != null && allowedClassIds.contains(classId);
     }
@@ -143,8 +235,12 @@ public class AnnouncementPermissionValidator {
     }
 
     public boolean canReschedule(Announcement announcement, RequestContext context) {
-        if (context == null || context.userType() == null) return false;
-        if (PRIVILEGED.contains(context.userType())) return true;
+        if (context == null || context.userType() == null) {
+            return false;
+        }
+        if (PRIVILEGED.contains(context.userType())) {
+            return true;
+        }
         return announcement.getCreatedByUserId().equals(context.userId());
     }
 }

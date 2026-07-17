@@ -12,6 +12,7 @@ public record TagResponse(
     UUID id,
     String name,
     TagEntityType entityType,
+    String hubEntityId,
     Boolean active,
     Instant createdAt
 
@@ -22,6 +23,7 @@ public record TagResponse(
                 entity.getId(),
                 entity.getName(),
                 entity.getEntityType(),
+                entity.getHubEntityId(),
                 entity.isActive(),
                 entity.getCreatedAt()
         );

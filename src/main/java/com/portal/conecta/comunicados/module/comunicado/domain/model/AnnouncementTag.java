@@ -14,7 +14,9 @@ import jakarta.persistence.Table;
 import lombok.AllArgsConstructor;
 import lombok.Builder;
 import lombok.Data;
+import lombok.EqualsAndHashCode;
 import lombok.NoArgsConstructor;
+import lombok.ToString;
 
 @Entity
 @Table(name = "announcement_tag")
@@ -30,10 +32,14 @@ public class AnnouncementTag {
 
     @ManyToOne
     @JoinColumn(name = "announcement_id", nullable = false)
+    @ToString.Exclude
+    @EqualsAndHashCode.Exclude
     private Announcement announcement;
 
     @ManyToOne
     @JoinColumn(name = "tag_id", nullable = false)
+    @ToString.Exclude
+    @EqualsAndHashCode.Exclude
     private Tag tag;
 
 }

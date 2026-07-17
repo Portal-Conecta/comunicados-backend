@@ -18,18 +18,24 @@ public record UpdateAnnouncementRequest(
         @Schema(description = "Título do comunicado.", example = "Reunião de alinhamento", maxLength = 255)
         String title,
 
-        @Schema(description = "Conteúdo do comunicado em texto livre, sem limite de tamanho.")
+        @Schema(description = "Conteúdo do comunicado em HTML sanitizado (allowlist TipTap). "
+                + "O servidor deriva descriptionPlain automaticamente; não enviar plain no request.")
         String description,
 
         AnnouncementOrigin origin,
 
+        @Schema(description = "Somente SCHEDULED → PUBLISHED (publicar agora) é aceito. "
+                + "REMOVED e demais transições devem usar os endpoints dedicados.")
         AnnouncementStatus status,
 
+        @Schema(description = "Ignorado no PUT — use PATCH /api/posts/{id}/pin e /unpin.")
         Boolean pinned,
 
         @Min(0)
+        @Schema(description = "Ignorado no PUT — use PATCH /api/posts/{id}/pin.")
         Short pinnedOrder,
 
+        @Schema(description = "Ignorado no PUT — use PATCH /api/posts/{id}/schedule.")
         Instant scheduledFor,
 
         @Valid

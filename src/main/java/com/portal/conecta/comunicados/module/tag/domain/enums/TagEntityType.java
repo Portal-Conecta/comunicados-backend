@@ -5,5 +5,6 @@ public enum TagEntityType {
     CLASS,
     USER,
     GENERAL,
-    SHIFT
+    SHIFT,
+    ROLE
 }

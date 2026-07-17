@@ -31,7 +31,8 @@ public record ScheduleAnnouncementCommand(
     UserType authorUserType,
     List<CreateAnnouncementDestinationInput> destinations,
     List<UUID> tagIds,
-    List<ShiftCode> shiftCodes
+    List<ShiftCode> shiftCodes,
+    List<UserType> roles
 
 ) {
 
@@ -46,14 +47,20 @@ public record ScheduleAnnouncementCommand(
                 context.userType(),
                 request.destinations(),
                 request.tagIds(),
-                request.resolvedShiftCodes()
+                request.resolvedShiftCodes(),
+                request.resolvedRoles()
         );
     }
 
     public Announcement toEntity(Instant now) {
+        return toEntity(now, description, description);
+    }
+
+    public Announcement toEntity(Instant now, String sanitizedHtml, String descriptionPlain) {
         return Announcement.builder()
                 .title(title)
-                .description(description)
+                .description(sanitizedHtml)
+                .descriptionPlain(descriptionPlain)
                 .origin(origin)
                 .status(AnnouncementStatus.SCHEDULED)
                 .pinned(pinned)

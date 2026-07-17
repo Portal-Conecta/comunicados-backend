@@ -3,6 +3,7 @@ package com.portal.conecta.comunicados;
 import com.portal.conecta.comunicados.module.comunicado.application.query.GetAnnouncementByIdQuery;
 import com.portal.conecta.comunicados.module.comunicado.application.usecase.GetAnnouncementByIdUseCase;
 import com.portal.conecta.comunicados.module.comunicado.domain.enums.AnnouncementDestinationType;
+import com.portal.conecta.comunicados.module.comunicado.domain.enums.AnnouncementStatus;
 import com.portal.conecta.comunicados.module.comunicado.domain.exception.AnnouncementNotFoundException;
 import com.portal.conecta.comunicados.module.comunicado.domain.model.Announcement;
 import com.portal.conecta.comunicados.module.comunicado.domain.model.AnnouncementDestination;
@@ -11,6 +12,7 @@ import com.portal.conecta.comunicados.module.comunicado.domain.port.hub.HubCours
 import com.portal.conecta.comunicados.module.comunicado.domain.port.hub.HubShiftPort;
 import com.portal.conecta.comunicados.module.comunicado.domain.port.support.AnnouncementTagRepository;
 import com.portal.conecta.comunicados.module.comunicado.domain.validator.AnnouncementPermissionValidator;
+import com.portal.conecta.comunicados.module.tag.domain.enums.TagEntityType;
 import com.portal.conecta.comunicados.shared.context.ContextClass;
 import com.portal.conecta.comunicados.shared.context.RequestContext;
 import com.portal.conecta.comunicados.shared.context.RequestContextProvider;
@@ -58,7 +60,8 @@ class GetAnnouncementByIdUseCaseTest {
 
     @BeforeEach
     void setUp() {
-        lenient().when(announcementTagRepository.findActiveShiftHubEntityIdsByAnnouncementId(any()))
+        lenient().when(announcementTagRepository
+                        .findActiveHubEntityIdsByAnnouncementIdAndEntityType(any(), any()))
                 .thenReturn(List.of());
     }
 
@@ -66,6 +69,8 @@ class GetAnnouncementByIdUseCaseTest {
         Announcement announcement = Announcement.builder()
                 .id(UUID.randomUUID())
                 .title("Comunicado")
+                .status(AnnouncementStatus.PUBLISHED)
+                .publishedAt(java.time.Instant.parse("2026-01-01T00:00:00Z"))
                 .files(List.of())
                 .tags(List.of())
                 .mentions(List.of())
@@ -203,7 +208,8 @@ class GetAnnouncementByIdUseCaseTest {
         when(announcementRepository.findByIdAndRemovedAtIsNull(id)).thenReturn(Optional.of(announcement));
         when(permissionValidator.canViewAll(UserType.STUDENT)).thenReturn(false);
         when(hubCoursePort.getCurrentUserCourseIds()).thenReturn(List.of());
-        when(announcementTagRepository.findActiveShiftHubEntityIdsByAnnouncementId(announcement.getId()))
+        when(announcementTagRepository.findActiveHubEntityIdsByAnnouncementIdAndEntityType(
+                        announcement.getId(), TagEntityType.SHIFT))
                 .thenReturn(List.of("FULL_AM_PM"));
         when(hubShiftPort.getShiftCodesForClasses(List.of(myClassId))).thenReturn(List.of("FULL_PM_NT"));
 
@@ -225,9 +231,111 @@ class GetAnnouncementByIdUseCaseTest {
         when(announcementRepository.findByIdAndRemovedAtIsNull(id)).thenReturn(Optional.of(announcement));
         when(permissionValidator.canViewAll(UserType.STUDENT)).thenReturn(false);
         when(hubCoursePort.getCurrentUserCourseIds()).thenReturn(List.of());
-        when(announcementTagRepository.findActiveShiftHubEntityIdsByAnnouncementId(announcement.getId()))
+        when(announcementTagRepository.findActiveHubEntityIdsByAnnouncementIdAndEntityType(
+                        announcement.getId(), TagEntityType.SHIFT))
                 .thenReturn(List.of("FULL_AM_PM"));
         when(hubShiftPort.getShiftCodesForClasses(List.of(myClassId))).thenReturn(List.of("FULL_AM_PM"));
+
+        Announcement result = useCase.execute(new GetAnnouncementByIdQuery(id, userId));
+
+        assertThat(result).isSameAs(announcement);
+    }
+
+    @Test
+    void shouldThrowNotFound_WhenRoleRestrictionDoesNotMatch() {
+        UUID id = UUID.randomUUID();
+        UUID userId = UUID.randomUUID();
+        RequestContext context = new RequestContext(userId, UserType.STUDENT, List.of());
+
+        Announcement announcement = announcementWithDestination(AnnouncementDestinationType.GENERAL, null);
+
+        when(contextProvider.getRequestContext()).thenReturn(context);
+        when(announcementRepository.findByIdAndRemovedAtIsNull(id)).thenReturn(Optional.of(announcement));
+        when(permissionValidator.canViewAll(UserType.STUDENT)).thenReturn(false);
+        when(hubCoursePort.getCurrentUserCourseIds()).thenReturn(List.of());
+        when(announcementTagRepository.findActiveHubEntityIdsByAnnouncementIdAndEntityType(
+                        announcement.getId(), TagEntityType.ROLE))
+                .thenReturn(List.of("TEACHER"));
+
+        assertThatThrownBy(() -> useCase.execute(new GetAnnouncementByIdQuery(id, userId)))
+                .isInstanceOf(AnnouncementNotFoundException.class);
+    }
+
+    @Test
+    void shouldReturnAnnouncement_WhenRoleRestrictionMatches() {
+        UUID id = UUID.randomUUID();
+        UUID userId = UUID.randomUUID();
+        RequestContext context = new RequestContext(userId, UserType.TEACHER, List.of());
+
+        Announcement announcement = announcementWithDestination(AnnouncementDestinationType.GENERAL, null);
+
+        when(contextProvider.getRequestContext()).thenReturn(context);
+        when(announcementRepository.findByIdAndRemovedAtIsNull(id)).thenReturn(Optional.of(announcement));
+        when(permissionValidator.canViewAll(UserType.TEACHER)).thenReturn(false);
+        when(hubCoursePort.getCurrentUserCourseIds()).thenReturn(List.of());
+        when(announcementTagRepository.findActiveHubEntityIdsByAnnouncementIdAndEntityType(
+                        announcement.getId(), TagEntityType.ROLE))
+                .thenReturn(List.of("TEACHER"));
+
+        Announcement result = useCase.execute(new GetAnnouncementByIdQuery(id, userId));
+
+        assertThat(result).isSameAs(announcement);
+    }
+
+    @Test
+    void shouldReturnAnnouncement_WhenRepresentativeViewsStudentRestrictedPost() {
+        UUID id = UUID.randomUUID();
+        UUID userId = UUID.randomUUID();
+        RequestContext context = new RequestContext(userId, UserType.REPRESENTATIVE, List.of());
+
+        Announcement announcement = announcementWithDestination(AnnouncementDestinationType.GENERAL, null);
+
+        when(contextProvider.getRequestContext()).thenReturn(context);
+        when(announcementRepository.findByIdAndRemovedAtIsNull(id)).thenReturn(Optional.of(announcement));
+        when(permissionValidator.canViewAll(UserType.REPRESENTATIVE)).thenReturn(false);
+        when(hubCoursePort.getCurrentUserCourseIds()).thenReturn(List.of());
+        when(announcementTagRepository.findActiveHubEntityIdsByAnnouncementIdAndEntityType(
+                        announcement.getId(), TagEntityType.ROLE))
+                .thenReturn(List.of("STUDENT"));
+
+        Announcement result = useCase.execute(new GetAnnouncementByIdQuery(id, userId));
+
+        assertThat(result).isSameAs(announcement);
+    }
+
+    @Test
+    void shouldThrowNotFound_WhenScheduledAndViewerIsNotAuthor() {
+        UUID id = UUID.randomUUID();
+        UUID userId = UUID.randomUUID();
+        RequestContext context = new RequestContext(userId, UserType.STUDENT, List.of());
+
+        Announcement announcement = announcementWithDestination(AnnouncementDestinationType.GENERAL, null);
+        announcement.setStatus(AnnouncementStatus.SCHEDULED);
+        announcement.setPublishedAt(null);
+        announcement.setCreatedByUserId(UUID.randomUUID());
+
+        when(contextProvider.getRequestContext()).thenReturn(context);
+        when(announcementRepository.findByIdAndRemovedAtIsNull(id)).thenReturn(Optional.of(announcement));
+        when(permissionValidator.canViewAll(UserType.STUDENT)).thenReturn(false);
+
+        assertThatThrownBy(() -> useCase.execute(new GetAnnouncementByIdQuery(id, userId)))
+                .isInstanceOf(AnnouncementNotFoundException.class);
+    }
+
+    @Test
+    void shouldReturnScheduled_WhenViewerIsAuthor() {
+        UUID id = UUID.randomUUID();
+        UUID userId = UUID.randomUUID();
+        RequestContext context = new RequestContext(userId, UserType.TEACHER, List.of());
+
+        Announcement announcement = announcementWithDestination(AnnouncementDestinationType.GENERAL, null);
+        announcement.setStatus(AnnouncementStatus.SCHEDULED);
+        announcement.setPublishedAt(null);
+        announcement.setCreatedByUserId(userId);
+
+        when(contextProvider.getRequestContext()).thenReturn(context);
+        when(announcementRepository.findByIdAndRemovedAtIsNull(id)).thenReturn(Optional.of(announcement));
+        when(permissionValidator.canViewAll(UserType.TEACHER)).thenReturn(false);
 
         Announcement result = useCase.execute(new GetAnnouncementByIdQuery(id, userId));
 

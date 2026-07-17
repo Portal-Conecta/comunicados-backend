@@ -1,5 +1,6 @@
 package com.portal.conecta.comunicados.module.comunicado.application.usecase;
 
+import com.portal.conecta.comunicados.module.comunicado.domain.AnnouncementRoleAudience;
 import com.portal.conecta.comunicados.module.comunicado.domain.model.Announcement;
 import com.portal.conecta.comunicados.module.comunicado.domain.port.announcement.AnnouncementRepository;
 import com.portal.conecta.comunicados.module.comunicado.domain.port.hub.HubCoursePort;
@@ -44,7 +45,8 @@ public class ListPinnedAnnouncementsUseCase {
                     classes,
                     hubCoursePort.getCurrentUserCourseIds(),
                     context.userId(),
-                    hubShiftPort.getShiftCodesForClasses(classes)
+                    hubShiftPort.getShiftCodesForClasses(classes),
+                    AnnouncementRoleAudience.viewerRoleCodes(context.userType())
             ));
         }
 

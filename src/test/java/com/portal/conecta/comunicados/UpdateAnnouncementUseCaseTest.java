@@ -4,6 +4,7 @@ import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.anyList;
+import static org.mockito.Mockito.lenient;
 import static org.mockito.Mockito.never;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
@@ -18,7 +19,6 @@ import com.portal.conecta.comunicados.module.comunicado.domain.enums.Announcemen
 import com.portal.conecta.comunicados.module.comunicado.domain.enums.AnnouncementStatus;
 import com.portal.conecta.comunicados.module.comunicado.domain.exception.AnnouncementConflictException;
 import com.portal.conecta.comunicados.module.comunicado.domain.exception.AnnouncementNotFoundException;
-import com.portal.conecta.comunicados.module.comunicado.domain.exception.AnnouncementPermissionDeniedException;
 import com.portal.conecta.comunicados.module.comunicado.domain.model.Announcement;
 import com.portal.conecta.comunicados.module.comunicado.domain.model.AnnouncementDestination;
 import com.portal.conecta.comunicados.module.comunicado.domain.model.AnnouncementHistory;
@@ -31,6 +31,8 @@ import com.portal.conecta.comunicados.module.comunicado.domain.validator.Announc
 import com.portal.conecta.comunicados.module.tag.application.usecase.AutoLinkTagsByDestinationUseCase;
 import com.portal.conecta.comunicados.module.comunicado.presentation.dto.request.CreateAnnouncementDestinationRequest;
 import com.portal.conecta.comunicados.module.comunicado.presentation.dto.request.UpdateAnnouncementRequest;
+import com.portal.conecta.comunicados.shared.context.ClassRole;
+import com.portal.conecta.comunicados.shared.context.ContextClass;
 import com.portal.conecta.comunicados.shared.context.RequestContext;
 import com.portal.conecta.comunicados.shared.context.RequestContextProvider;
 import com.portal.conecta.comunicados.shared.context.UserType;
@@ -86,6 +88,7 @@ class UpdateAnnouncementUseCaseTest {
                 announcementTagRepository,
                 contextProvider,
                 new AnnouncementPermissionValidator(org.mockito.Mockito.mock(HubClassPort.class)),
+                new com.portal.conecta.comunicados.module.comunicado.domain.service.AnnouncementDescriptionNormalizer(),
                 autoLinkTagsUseCase
         );
 
@@ -98,6 +101,7 @@ class UpdateAnnouncementUseCaseTest {
                 .id(announcementId)
                 .title("Titulo antigo")
                 .description("Descricao antiga")
+                .descriptionPlain("Descricao antiga")
                 .origin(AnnouncementOrigin.SENAI)
                 .status(AnnouncementStatus.SCHEDULED)
                 .pinned(false)
@@ -126,7 +130,7 @@ class UpdateAnnouncementUseCaseTest {
     @Test
     void shouldUpdateOwnAnnouncementWhenTeacherIsAuthor() {
         announcement.setCreatedByUserId(actorId);
-        mockContext(UserType.TEACHER, actorId);
+        mockContext(UserType.TEACHER, actorId, new ContextClass(classId, ClassRole.TEACHER));
         mockFoundAnnouncement();
 
         Announcement updated = useCase.execute(command());
@@ -135,8 +139,8 @@ class UpdateAnnouncementUseCaseTest {
         assertThat(updated.getDescription()).isEqualTo("Descricao nova");
         assertThat(updated.getOrigin()).isEqualTo(AnnouncementOrigin.WEG);
         assertThat(updated.getStatus()).isEqualTo(AnnouncementStatus.SCHEDULED);
-        assertThat(updated.isPinned()).isTrue();
-        assertThat(updated.getPinnedOrder()).isEqualTo((short) 1);
+        assertThat(updated.isPinned()).isFalse();
+        assertThat(updated.getPinnedOrder()).isNull();
         assertThat(updated.getUpdatedAt()).isNotNull();
 
         verify(destinationRepository).deleteByAnnouncementId(announcementId);
@@ -169,46 +173,46 @@ class UpdateAnnouncementUseCaseTest {
     }
 
     @Test
-    void shouldThrowForbiddenWhenWegEditsAnotherSenaiAnnouncement() {
+    void shouldThrowNotFoundWhenWegEditsAnotherSenaiAnnouncement() {
         announcement.setCreatedByUserType(UserType.SENAI);
         mockContext(UserType.WEG, actorId);
         mockFoundAnnouncementWithoutPersistence();
 
         assertThatThrownBy(() -> useCase.execute(command()))
-                .isInstanceOf(AnnouncementPermissionDeniedException.class);
+                .isInstanceOf(AnnouncementNotFoundException.class);
 
         verifyNoMutation();
     }
 
     @Test
-    void shouldThrowForbiddenWhenStudentTriesToUpdate() {
+    void shouldThrowNotFoundWhenStudentTriesToUpdate() {
         mockContext(UserType.STUDENT, actorId);
         mockFoundAnnouncementWithoutPersistence();
 
         assertThatThrownBy(() -> useCase.execute(command()))
-                .isInstanceOf(AnnouncementPermissionDeniedException.class);
+                .isInstanceOf(AnnouncementNotFoundException.class);
 
         verifyNoMutation();
     }
 
     @Test
-    void shouldThrowForbiddenWhenTeacherIsNotAuthor() {
+    void shouldThrowNotFoundWhenTeacherIsNotAuthor() {
         mockContext(UserType.TEACHER, actorId);
         mockFoundAnnouncementWithoutPersistence();
 
         assertThatThrownBy(() -> useCase.execute(command()))
-                .isInstanceOf(AnnouncementPermissionDeniedException.class);
+                .isInstanceOf(AnnouncementNotFoundException.class);
 
         verifyNoMutation();
     }
 
     @Test
-    void shouldThrowForbiddenWhenRepresentativeIsNotAuthor() {
+    void shouldThrowNotFoundWhenRepresentativeIsNotAuthor() {
         mockContext(UserType.REPRESENTATIVE, actorId);
         mockFoundAnnouncementWithoutPersistence();
 
         assertThatThrownBy(() -> useCase.execute(command()))
-                .isInstanceOf(AnnouncementPermissionDeniedException.class);
+                .isInstanceOf(AnnouncementNotFoundException.class);
 
         verifyNoMutation();
     }
@@ -242,6 +246,21 @@ class UpdateAnnouncementUseCaseTest {
     void shouldSavePreviousStateSnapshotWhenPublishedAnnouncementIsEdited() throws Exception {
         announcement.setStatus(AnnouncementStatus.PUBLISHED);
 
+        request = new UpdateAnnouncementRequest(
+                "Titulo novo",
+                "Descricao nova",
+                AnnouncementOrigin.WEG,
+                AnnouncementStatus.PUBLISHED,
+                null,
+                null,
+                null,
+                List.of(new CreateAnnouncementDestinationRequest(
+                        null,
+                        AnnouncementDestinationType.CLASS,
+                        classId
+                ))
+        );
+
         mockContext(UserType.ADMIN, actorId);
         mockFoundAnnouncement();
 
@@ -261,6 +280,38 @@ class UpdateAnnouncementUseCaseTest {
         assertThat(json.get("destinations").size()).isEqualTo(1);
     }
 
+    @Test
+    void shouldSetPublishedAtWhenScheduledAnnouncementIsPublishedNow() {
+        Instant createdAt = Instant.now().minusSeconds(3600);
+        Instant scheduledFor = Instant.now().plusSeconds(7200);
+        announcement.setCreatedAt(createdAt);
+        announcement.setScheduledFor(scheduledFor);
+        announcement.setStatus(AnnouncementStatus.SCHEDULED);
+        announcement.setCreatedByUserId(actorId);
+
+        request = new UpdateAnnouncementRequest(
+                "Titulo novo",
+                "Descricao nova",
+                null,
+                AnnouncementStatus.PUBLISHED,
+                null,
+                null,
+                null,
+                null
+        );
+
+        mockContext(UserType.TEACHER, actorId);
+        mockFoundAnnouncement();
+
+        Announcement updated = useCase.execute(command());
+
+        assertThat(updated.getStatus()).isEqualTo(AnnouncementStatus.PUBLISHED);
+        assertThat(updated.getPublishedAt()).isNotNull();
+        assertThat(updated.getPublishedAt()).isAfter(createdAt);
+        assertThat(updated.getPublishedByUserId()).isEqualTo(actorId);
+        assertThat(updated.getScheduledFor()).isNull();
+    }
+
     private UpdateAnnouncementCommand command() {
         return UpdateAnnouncementCommand.fromRequest(announcementId, request, actorId);
     }
@@ -278,7 +329,11 @@ class UpdateAnnouncementUseCaseTest {
         when(announcementRepository.save(any(Announcement.class)))
                 .thenAnswer(invocation -> invocation.getArgument(0));
 
-        when(destinationRepository.saveAll(anyList()))
+        org.mockito.Mockito.lenient()
+                .when(announcementTagRepository.findByAnnouncementId(announcementId)).thenReturn(List.of());
+
+        org.mockito.Mockito.lenient()
+                .when(destinationRepository.saveAll(anyList()))
                 .thenAnswer(invocation -> invocation.getArgument(0));
 
         when(historyRepository.save(any(AnnouncementHistory.class)))
@@ -289,9 +344,9 @@ class UpdateAnnouncementUseCaseTest {
         when(announcementRepository.findById(announcementId)).thenReturn(Optional.of(announcement));
     }
 
-    private void mockContext(UserType userType, UUID userId) {
+    private void mockContext(UserType userType, UUID userId, ContextClass... classes) {
         when(contextProvider.getRequestContext())
-                .thenReturn(new RequestContext(userId, userType, List.of()));
+                .thenReturn(new RequestContext(userId, userType, List.of(classes)));
     }
 
     private void verifyNoMutation() {

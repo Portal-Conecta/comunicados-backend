@@ -53,9 +53,13 @@ public class AutoLinkTagsByDestinationUseCase {
                 .flatMap(Optional::stream)
                 .collect(Collectors.toList());
 
+        // ROLE/SHIFT têm campos dedicados (roles / shiftCodes). Incluí-los via tagIds
+        // amplia o público indevidamente e bypassa o contrato de restrição.
         List<Tag> explicitTags = (explicitTagIds == null || explicitTagIds.isEmpty())
                 ? List.of()
-                : tagRepository.findAllById(explicitTagIds);
+                : tagRepository.findAllById(explicitTagIds).stream()
+                        .filter(this::isAllowedExplicitTag)
+                        .toList();
 
         Set<UUID> seen = new HashSet<>();
         List<AnnouncementTag> newLinks = Stream.concat(destinationTags.stream(), explicitTags.stream())
@@ -98,5 +102,17 @@ public class AutoLinkTagsByDestinationUseCase {
             log.debug("Auto-link: nenhuma tag ativa encontrada para type={}", type);
         }
         return tag;
+    }
+
+    private boolean isAllowedExplicitTag(Tag tag) {
+        if (tag.getEntityType() == TagEntityType.ROLE || tag.getEntityType() == TagEntityType.SHIFT) {
+            log.warn(
+                    "Ignorando tag {} (entityType={}) em tagIds; use o campo roles/shiftCodes do publish/schedule.",
+                    tag.getId(),
+                    tag.getEntityType()
+            );
+            return false;
+        }
+        return true;
     }
 }

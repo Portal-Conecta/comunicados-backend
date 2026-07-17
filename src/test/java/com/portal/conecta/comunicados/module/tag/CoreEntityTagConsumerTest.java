@@ -3,6 +3,7 @@ package com.portal.conecta.comunicados.module.tag;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
 import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.Mockito.doAnswer;
 import static org.mockito.Mockito.never;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
@@ -15,6 +16,7 @@ import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.ArgumentCaptor;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
+import org.slf4j.MDC;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.datatype.jsr310.JavaTimeModule;
@@ -236,6 +238,28 @@ class CoreEntityTagConsumerTest {
         verify(upsertTagFromCoreUseCase, never()).execute(any());
         verify(deactivateTagUseCase, never()).execute(any());
         verify(processedEventRepository, never()).save(any());
+    }
+
+    @Test
+    void shouldPopulateCorrelationIdMdcDuringMessageProcessingAndClearAfterwards() {
+        CoreEntityEventEnvelope envelope = envelope(
+                "evt-mdc",
+                "course.created",
+                "course",
+                "course-123",
+                "MIDS",
+                "MIDS"
+        );
+
+        when(processedEventRepository.existsById("evt-mdc")).thenReturn(false);
+        doAnswer(invocation -> {
+            assertThat(MDC.get("correlationId")).isEqualTo("corr-evt-mdc");
+            return null;
+        }).when(upsertTagFromCoreUseCase).execute(any(UpsertTagFromCoreCommand.class));
+
+        consumer.handle(envelope);
+
+        assertThat(MDC.get("correlationId")).isNull();
     }
 
     @Test

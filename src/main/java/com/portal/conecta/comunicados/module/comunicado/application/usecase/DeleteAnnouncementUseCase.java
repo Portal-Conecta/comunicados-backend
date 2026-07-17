@@ -7,7 +7,6 @@ import org.springframework.stereotype.Service;
 
 import com.portal.conecta.comunicados.module.comunicado.application.command.RemoveAnnouncementCommand;
 import com.portal.conecta.comunicados.module.comunicado.domain.exception.AnnouncementNotFoundException;
-import com.portal.conecta.comunicados.module.comunicado.domain.exception.AnnouncementPermissionDeniedException;
 import com.portal.conecta.comunicados.module.comunicado.domain.model.Announcement;
 import com.portal.conecta.comunicados.module.comunicado.domain.port.announcement.AnnouncementHistoryRepository;
 import com.portal.conecta.comunicados.module.comunicado.domain.port.announcement.AnnouncementRepository;
@@ -34,7 +33,8 @@ public class DeleteAnnouncementUseCase {
                 .orElseThrow(AnnouncementNotFoundException::new);
 
         if (!permissionValidator.canDelete(context.userType(), context.userId(), announcement)) {
-            throw new AnnouncementPermissionDeniedException("Usuário não tem permissão para remover este comunicado.");
+            // Anti-vazamento: sem permissão responde como inexistente.
+            throw new AnnouncementNotFoundException();
         }
 
         Instant now = Instant.now();

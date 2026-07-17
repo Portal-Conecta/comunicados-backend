@@ -27,6 +27,7 @@ import com.portal.conecta.comunicados.module.comunicado.infrastructure.messaging
 import com.portal.conecta.comunicados.module.comunicado.infrastructure.messaging.dto.AnnouncementNotificationPayload;
 import com.portal.conecta.comunicados.shared.context.UserType;
 
+
 @ExtendWith(MockitoExtension.class)
 class AnnouncementNotificationPublisherAdapterTest {
 
@@ -48,7 +49,7 @@ class AnnouncementNotificationPublisherAdapterTest {
         Announcement announcement = announcement();
         AnnouncementDestination destination = destination(AnnouncementDestinationType.CLASS, classId);
 
-        adapter.publish(announcement, List.of(destination));
+        adapter.publish(announcement, List.of(destination), List.of());
 
         AnnouncementNotificationPayload payload = capturePayload();
         assertThat(payload.scope()).hasSize(1);
@@ -62,7 +63,7 @@ class AnnouncementNotificationPublisherAdapterTest {
         Announcement announcement = announcement();
         AnnouncementDestination destination = destination(AnnouncementDestinationType.COURSE, courseId);
 
-        adapter.publish(announcement, List.of(destination));
+        adapter.publish(announcement, List.of(destination), List.of());
 
         AnnouncementNotificationPayload payload = capturePayload();
         assertThat(payload.scope()).hasSize(1);
@@ -76,7 +77,7 @@ class AnnouncementNotificationPublisherAdapterTest {
         Announcement announcement = announcement();
         AnnouncementDestination destination = destination(AnnouncementDestinationType.USER, userId);
 
-        adapter.publish(announcement, List.of(destination));
+        adapter.publish(announcement, List.of(destination), List.of());
 
         AnnouncementNotificationPayload payload = capturePayload();
         assertThat(payload.scope()).hasSize(1);
@@ -89,7 +90,7 @@ class AnnouncementNotificationPublisherAdapterTest {
         Announcement announcement = announcement();
         AnnouncementDestination destination = destination(AnnouncementDestinationType.GENERAL, null);
 
-        adapter.publish(announcement, List.of(destination));
+        adapter.publish(announcement, List.of(destination), List.of());
 
         AnnouncementNotificationPayload payload = capturePayload();
         assertThat(payload.scope()).hasSize(1);
@@ -99,7 +100,7 @@ class AnnouncementNotificationPublisherAdapterTest {
 
     @Test
     void publish_shouldSendToCorrectExchangeAndRoutingKey() {
-        adapter.publish(announcement(), List.of(destination(AnnouncementDestinationType.GENERAL, null)));
+        adapter.publish(announcement(), List.of(destination(AnnouncementDestinationType.GENERAL, null)), List.of());
 
         verify(rabbitTemplate).convertAndSend(
                 eq("notifications.exchange"),
@@ -112,7 +113,7 @@ class AnnouncementNotificationPublisherAdapterTest {
     void publish_shouldPopulateMetadataWithAnnouncementId() {
         Announcement announcement = announcement();
 
-        adapter.publish(announcement, List.of(destination(AnnouncementDestinationType.GENERAL, null)));
+        adapter.publish(announcement, List.of(destination(AnnouncementDestinationType.GENERAL, null)), List.of());
 
         AnnouncementNotificationPayload payload = capturePayload();
         assertThat(payload.metadata()).containsEntry("announcementId", announcement.getId().toString());
@@ -120,11 +121,12 @@ class AnnouncementNotificationPublisherAdapterTest {
 
     @Test
     void publish_shouldSetCorrectSourceAndEventType() {
-        adapter.publish(announcement(), List.of(destination(AnnouncementDestinationType.GENERAL, null)));
+        adapter.publish(announcement(), List.of(destination(AnnouncementDestinationType.GENERAL, null)), List.of());
 
         AnnouncementNotificationPayload payload = capturePayload();
         assertThat(payload.source()).isEqualTo("comunicados-service");
         assertThat(payload.eventType()).isEqualTo("announcement.published");
+        assertThat(payload.body()).isEqualTo("Descrição do comunicado");
     }
 
     @Test
@@ -137,12 +139,48 @@ class AnnouncementNotificationPublisherAdapterTest {
                 destination(AnnouncementDestinationType.CLASS, classId),
                 destination(AnnouncementDestinationType.COURSE, courseId),
                 destination(AnnouncementDestinationType.GENERAL, null)
-        ));
+        ), List.of());
 
         AnnouncementNotificationPayload payload = capturePayload();
         assertThat(payload.scope()).hasSize(3);
         assertThat(payload.scope()).extracting("type")
                 .containsExactly("CLASS", "COURSE", "GLOBAL");
+    }
+
+    @Test
+    void publish_withNoRoles_shouldSendEmptyFilters() {
+        adapter.publish(announcement(), List.of(destination(AnnouncementDestinationType.GENERAL, null)), List.of());
+
+        AnnouncementNotificationPayload payload = capturePayload();
+        assertThat(payload.filters()).isEmpty();
+    }
+
+    @Test
+    void publish_withRoles_shouldMapToRoleFilters() {
+        adapter.publish(
+                announcement(),
+                List.of(destination(AnnouncementDestinationType.GENERAL, null)),
+                List.of(UserType.TEACHER)
+        );
+
+        AnnouncementNotificationPayload payload = capturePayload();
+        assertThat(payload.filters()).hasSize(1);
+        assertThat(payload.filters().get(0).type()).isEqualTo("ROLE");
+        assertThat(payload.filters().get(0).value()).isEqualTo("TEACHER");
+    }
+
+    @Test
+    void publish_withStudentRole_shouldAlsoNotifyRepresentative() {
+        adapter.publish(
+                announcement(),
+                List.of(destination(AnnouncementDestinationType.GENERAL, null)),
+                List.of(UserType.STUDENT)
+        );
+
+        AnnouncementNotificationPayload payload = capturePayload();
+        assertThat(payload.filters())
+                .extracting(AnnouncementNotificationPayload.NotificationFilterPayload::value)
+                .containsExactlyInAnyOrder("STUDENT", "REPRESENTATIVE");
     }
 
     private AnnouncementNotificationPayload capturePayload() {
@@ -157,7 +195,8 @@ class AnnouncementNotificationPublisherAdapterTest {
         return Announcement.builder()
                 .id(UUID.randomUUID())
                 .title("Comunicado Teste")
-                .description("Descrição do comunicado")
+                .description("<p>Descrição do comunicado</p>")
+                .descriptionPlain("Descrição do comunicado")
                 .origin(AnnouncementOrigin.SENAI)
                 .status(AnnouncementStatus.PUBLISHED)
                 .pinned(false)

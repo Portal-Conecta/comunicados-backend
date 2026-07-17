@@ -16,8 +16,8 @@ import org.springframework.web.client.RestClientException;
 import com.portal.conecta.comunicados.module.comunicado.domain.model.hub.HubClassInfo;
 import com.portal.conecta.comunicados.module.comunicado.domain.model.hub.HubStudent;
 import com.portal.conecta.comunicados.module.comunicado.domain.port.support.HubClassPort;
+import com.portal.conecta.comunicados.module.comunicado.infrastructure.hub.dto.HubClassMemberResponse;
 import com.portal.conecta.comunicados.module.comunicado.infrastructure.hub.dto.HubClassResponse;
-import com.portal.conecta.comunicados.module.comunicado.infrastructure.hub.dto.HubStudentResponse;
 import com.portal.conecta.comunicados.module.comunicado.infrastructure.hub.exception.HubIntegrationException;
 import com.portal.conecta.comunicados.module.comunicado.infrastructure.hub.properties.HubApiProperties;
 
@@ -71,19 +71,20 @@ public class HttpHubClassAdapter implements HubClassPort {
     }
 
     @Override
-    public List<HubStudent> findStudentsByClassId(UUID classId) {
+    public List<HubStudent> findMyClassStudents() {
         try {
-            HubStudentResponse[] students = restClient.get()
-                    .uri("/classes/{classId}/students", classId)
+            HubClassMemberResponse[] members = restClient.get()
+                    .uri("/me/classes/students")
                     .retrieve()
-                    .body(new ParameterizedTypeReference<HubStudentResponse[]>() {});
+                    .body(HubClassMemberResponse[].class);
 
-            if (students == null) {
+            if (members == null || members.length == 0) {
                 return List.of();
             }
 
-            return Arrays.stream(students)
-                    .map(student -> new HubStudent(student.id(), student.name()))
+            return Arrays.stream(members)
+                    .filter(member -> member != null && member.id() != null)
+                    .map(member -> new HubStudent(member.id(), member.name()))
                     .toList();
         } catch (HttpClientErrorException.NotFound exception) {
             return List.of();

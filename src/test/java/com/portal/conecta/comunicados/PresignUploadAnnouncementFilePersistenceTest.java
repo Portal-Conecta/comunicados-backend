@@ -96,6 +96,7 @@ class PresignUploadAnnouncementFilePersistenceTest {
         return announcementRepository.save(Announcement.builder()
                 .title("Aviso")
                 .description("Descrição")
+                .descriptionPlain("Descrição")
                 .origin(AnnouncementOrigin.SENAI)
                 .status(AnnouncementStatus.PUBLISHED)
                 .pinned(false)

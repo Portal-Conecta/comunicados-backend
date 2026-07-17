@@ -237,6 +237,24 @@ class AutoLinkTagsByDestinationUseCaseTest {
         assertThat(captor.getValue()).hasSize(1);
     }
 
+    @Test
+    void shouldIgnoreRoleAndShiftExplicitTagIds() {
+        Tag roleTag = activeTag(TagEntityType.ROLE, null);
+        roleTag.setHubEntityId("STUDENT");
+        Tag courseTag = activeTag(TagEntityType.COURSE, UUID.randomUUID());
+
+        when(tagRepository.findAllById(List.of(roleTag.getId(), courseTag.getId())))
+                .thenReturn(List.of(roleTag, courseTag));
+
+        useCase.execute(announcement, List.of(), List.of(roleTag.getId(), courseTag.getId()));
+
+        ArgumentCaptor<List<AnnouncementTag>> captor = ArgumentCaptor.captor();
+        verify(announcementTagRepository).saveAll(captor.capture());
+
+        assertThat(captor.getValue()).hasSize(1);
+        assertThat(captor.getValue().get(0).getTag()).isEqualTo(courseTag);
+    }
+
     private Tag activeTag(TagEntityType type, UUID hubEntityId) {
         return Tag.builder()
                 .id(UUID.randomUUID())

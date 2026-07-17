@@ -9,6 +9,7 @@ import com.portal.conecta.comunicados.module.comunicado.domain.enums.Announcemen
 import com.portal.conecta.comunicados.module.comunicado.domain.exception.AnnouncementMustBeInTheFutureException;
 import com.portal.conecta.comunicados.module.comunicado.domain.exception.AnnouncementNotFoundException;
 import com.portal.conecta.comunicados.module.comunicado.domain.exception.AnnouncementPermissionDeniedException;
+import com.portal.conecta.comunicados.module.tag.domain.exception.InvalidTagCodeException;
 import com.portal.conecta.comunicados.module.tag.domain.exception.TagNotFoundException;
 import com.portal.conecta.comunicados.module.tag.domain.exception.TagPermissionDeniedException;
 import jakarta.servlet.http.HttpServletRequest;
@@ -43,6 +44,14 @@ public class GlobalExceptionHandler {
             HttpServletRequest request
     ) {
         return buildResponse(HttpStatus.NOT_FOUND, exception, request);
+    }
+
+    @ExceptionHandler(InvalidTagCodeException.class)
+    public ResponseEntity<ApiError> handleInvalidTagCode(
+            InvalidTagCodeException exception,
+            HttpServletRequest request
+    ) {
+        return buildResponse(HttpStatus.BAD_REQUEST, exception, request);
     }
 
     @ExceptionHandler(TagPermissionDeniedException.class)

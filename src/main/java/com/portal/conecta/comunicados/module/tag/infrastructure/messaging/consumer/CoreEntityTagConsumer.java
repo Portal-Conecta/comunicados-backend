@@ -3,6 +3,7 @@ package com.portal.conecta.comunicados.module.tag.infrastructure.messaging.consu
 import java.time.Instant;
 import java.util.Set;
 
+import org.slf4j.MDC;
 import org.springframework.amqp.rabbit.annotation.RabbitListener;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnProperty;
 import org.springframework.stereotype.Component;
@@ -46,6 +47,15 @@ public class CoreEntityTagConsumer {
     public void handle(CoreEntityEventEnvelope envelope) {
         validateEnvelope(envelope);
 
+        MDC.put("correlationId", envelope.correlationId());
+        try {
+            process(envelope);
+        } finally {
+            MDC.remove("correlationId");
+        }
+    }
+
+    private void process(CoreEntityEventEnvelope envelope) {
         String eventType = envelope.eventType().trim();
 
         log.info(

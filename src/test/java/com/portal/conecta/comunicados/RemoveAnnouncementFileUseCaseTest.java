@@ -24,7 +24,7 @@ import com.portal.conecta.comunicados.module.comunicado.application.usecase.Remo
 import com.portal.conecta.comunicados.module.comunicado.domain.enums.AnnouncementOrigin;
 import com.portal.conecta.comunicados.module.comunicado.domain.enums.AnnouncementStatus;
 import com.portal.conecta.comunicados.module.comunicado.domain.exception.AnnouncementFileNotFoundException;
-import com.portal.conecta.comunicados.module.comunicado.domain.exception.AnnouncementPermissionDeniedException;
+import com.portal.conecta.comunicados.module.comunicado.domain.exception.AnnouncementNotFoundException;
 import com.portal.conecta.comunicados.module.comunicado.domain.model.Announcement;
 import com.portal.conecta.comunicados.module.comunicado.domain.model.AnnouncementFile;
 import com.portal.conecta.comunicados.module.comunicado.domain.port.announcement.AnnouncementFileRepository;
@@ -111,7 +111,7 @@ class RemoveAnnouncementFileUseCaseTest {
         when(fileRepository.findById(fileId)).thenReturn(Optional.of(file));
 
         assertThatThrownBy(() -> useCase.execute(RemoveAnnouncementFileCommand.of(fileId, otherId)))
-                .isInstanceOf(AnnouncementPermissionDeniedException.class);
+                .isInstanceOf(AnnouncementNotFoundException.class);
 
         verify(storagePort, never()).delete(any(), any());
         verify(fileRepository, never()).delete(any());

@@ -136,6 +136,7 @@ class TagAutoLinkFlowTest {
         return Announcement.builder()
                 .title("Comunicado de Integração")
                 .description("Descrição do comunicado")
+                .descriptionPlain("Descrição do comunicado")
                 .origin(AnnouncementOrigin.SENAI)
                 .status(AnnouncementStatus.PUBLISHED)
                 .pinned(false)

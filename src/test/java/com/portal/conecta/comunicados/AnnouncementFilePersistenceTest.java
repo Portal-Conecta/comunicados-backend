@@ -35,6 +35,7 @@ class AnnouncementFilePersistenceTest {
         Announcement announcement = Announcement.builder()
                 .title("Aviso")
                 .description("Descrição")
+                .descriptionPlain("Descrição")
                 .origin(AnnouncementOrigin.BOTH)
                 .status(AnnouncementStatus.PUBLISHED)
                 .pinned(false)
