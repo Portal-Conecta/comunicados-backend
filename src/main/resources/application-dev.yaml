@@ -33,12 +33,8 @@ app:
   # Espelha cursos/turmas do Core (DevDataInitializer) como tags locais —
   # o seed do Core não publica eventos RabbitMQ.
   dev-seed:
-    hub-tags:
-      enabled: ${DEV_SEED_HUB_TAGS_ENABLED:true}
-      email: ${DEV_SEED_HUB_EMAIL:admin@portal.test}
-      password: ${DEV_SEED_HUB_PASSWORD:123456}
-      max-attempts: ${DEV_SEED_HUB_MAX_ATTEMPTS:12}
-      retry-delay-ms: ${DEV_SEED_HUB_RETRY_DELAY_MS:3000}
+    tags:
+      enabled: ${DEV_SEED_TAGS_ENABLED:true}
 
 hub:
   api:

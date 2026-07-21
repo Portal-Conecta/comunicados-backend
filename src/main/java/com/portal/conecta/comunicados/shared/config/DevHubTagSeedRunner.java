@@ -1,219 +1,105 @@
 package com.portal.conecta.comunicados.shared.config;
 
+import java.time.Instant;
 import java.util.List;
 import java.util.UUID;
 
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
 import org.springframework.boot.ApplicationArguments;
 import org.springframework.boot.ApplicationRunner;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnProperty;
 import org.springframework.context.annotation.Profile;
-import org.springframework.http.MediaType;
 import org.springframework.stereotype.Component;
-import org.springframework.web.client.RestClient;
+import org.springframework.transaction.support.TransactionTemplate;
 
-import com.portal.conecta.comunicados.module.comunicado.infrastructure.hub.properties.HubApiProperties;
-import com.portal.conecta.comunicados.module.tag.application.command.UpsertTagFromCoreCommand;
-import com.portal.conecta.comunicados.module.tag.application.usecase.UpsertTagFromCoreUseCase;
 import com.portal.conecta.comunicados.module.tag.domain.enums.TagEntityType;
+import com.portal.conecta.comunicados.module.tag.domain.model.Tag;
+import com.portal.conecta.comunicados.module.tag.domain.port.TagRepository;
 
-/**
- * Espelha cursos/turmas do Hub como tags locais no profile {@code dev}.
- *
- * <p>O Core popula a massa via {@code DevDataInitializer} sem publicar eventos RabbitMQ;
- * sem esse seed o comunicados fica sem tags COURSE/CLASS e o auto-link de destinos falha.
- * Os UUIDs são dinâmicos — por isso o seed consulta o Hub em runtime (não usa SQL fixo).
- */
+/** Cria no ambiente de desenvolvimento as tags de cursos e turmas da massa do Core. */
 @Component
 @Profile("dev")
-@ConditionalOnProperty(prefix = "app.dev-seed.hub-tags", name = "enabled", havingValue = "true", matchIfMissing = true)
+@ConditionalOnProperty(prefix = "app.dev-seed.tags", name = "enabled", havingValue = "true", matchIfMissing = true)
 public class DevHubTagSeedRunner implements ApplicationRunner {
 
-    private static final Logger log = LoggerFactory.getLogger(DevHubTagSeedRunner.class);
+    private static final List<TagSeed> TAGS = List.of(
+            course("00000000-0000-0000-0000-000000000001", "Aprendizagem Industrial em Desenvolvimento de Sistemas"),
+            course("00000000-0000-0000-0000-000000000002", "Aprendizagem Técnica em Eletrotécnica"),
+            course("00000000-0000-0000-0000-000000000003", "Aprendizagem Industrial em Operador de Usinagem"),
+            course("00000000-0000-0000-0000-000000000004", "Aprendizagem Técnica em Eletrônica"),
+            course("00000000-0000-0000-0000-000000000005", "Aprendizagem Técnica em Cibersistemas para Automação"),
+            course("00000000-0000-0000-0000-000000000006", "Aprendizagem Técnica em Manutenção de Máquinas Industriais"),
+            course("00000000-0000-0000-0000-000000000007", "Aprendizagem Industrial de Operador em Montagem de Produtos Eletroeletrônicos"),
+            course("00000000-0000-0000-0000-000000000008", "Aprendizagem Industrial de Operador em Tintas e Vernizes"),
+            course("00000000-0000-0000-0000-000000000009", "Aprendizagem Técnica em Mecânica"),
+            course("00000000-0000-0000-0000-000000000010", "Aprendizagem Técnica em Química"),
+            course("00000000-0000-0000-0000-000000000011", "Aprendizagem Industrial de Operador em Eletromecânica"),
+            course("00000000-0000-0000-0000-000000000012", "Aprendizagem Industrial em Assistente de Análise de Dados"),
+            classroom("00000000-0000-0000-0000-000000000101", "MI78"),
+            classroom("00000000-0000-0000-0000-000000000102", "MI77"),
+            classroom("00000000-0000-0000-0000-000000000103", "MT78"),
+            classroom("00000000-0000-0000-0000-000000000104", "MT77"),
+            classroom("00000000-0000-0000-0000-000000000105", "WU79"),
+            classroom("00000000-0000-0000-0000-000000000106", "WU78"),
+            classroom("00000000-0000-0000-0000-000000000107", "ME78"),
+            classroom("00000000-0000-0000-0000-000000000108", "ME77"),
+            classroom("00000000-0000-0000-0000-000000000109", "MA78"),
+            classroom("00000000-0000-0000-0000-000000000110", "MA77"),
+            classroom("00000000-0000-0000-0000-000000000111", "MM78"),
+            classroom("00000000-0000-0000-0000-000000000112", "MM77"),
+            classroom("00000000-0000-0000-0000-000000000113", "WME78"),
+            classroom("00000000-0000-0000-0000-000000000114", "WME77"),
+            classroom("00000000-0000-0000-0000-000000000115", "WQ77"),
+            classroom("00000000-0000-0000-0000-000000000116", "MF78"),
+            classroom("00000000-0000-0000-0000-000000000117", "MF77"),
+            classroom("00000000-0000-0000-0000-000000000118", "MQ78"),
+            classroom("00000000-0000-0000-0000-000000000119", "WM77"),
+            classroom("00000000-0000-0000-0000-000000000120", "WA77")
+    );
 
-    private final HubApiProperties hubApiProperties;
-    private final DevHubTagSeedProperties seedProperties;
-    private final UpsertTagFromCoreUseCase upsertTagFromCoreUseCase;
+    private final TagRepository tagRepository;
+    private final TransactionTemplate transactionTemplate;
 
-    public DevHubTagSeedRunner(
-            HubApiProperties hubApiProperties,
-            DevHubTagSeedProperties seedProperties,
-            UpsertTagFromCoreUseCase upsertTagFromCoreUseCase
-    ) {
-        this.hubApiProperties = hubApiProperties;
-        this.seedProperties = seedProperties;
-        this.upsertTagFromCoreUseCase = upsertTagFromCoreUseCase;
+    public DevHubTagSeedRunner(TagRepository tagRepository, TransactionTemplate transactionTemplate) {
+        this.tagRepository = tagRepository;
+        this.transactionTemplate = transactionTemplate;
     }
 
     @Override
     public void run(ApplicationArguments args) {
-        if (hubApiProperties.mockEnabled()) {
-            log.info(
-                    "[DEV SEED] hub.api.mock-enabled=true — seed COURSE/CLASS ignorado. "
-                            + "Use HUB_MOCK_ENABLED=false apontando para o Core real."
-            );
-            return;
-        }
-
-        log.info("[DEV SEED] Sincronizando tags COURSE/CLASS a partir do Hub...");
-
-        for (int attempt = 1; attempt <= seedProperties.maxAttempts(); attempt++) {
-            try {
-                String token = login(hubClient());
-                int courses = seedCourses(token);
-                int classes = seedClasses(token);
-                log.info(
-                        "[DEV SEED] Tags sincronizadas do Hub: {} cursos, {} turmas.",
-                        courses,
-                        classes
-                );
-                return;
-            } catch (RuntimeException exception) {
-                log.warn(
-                        "[DEV SEED] Tentativa {}/{} falhou ({}). Nova tentativa em {}ms.",
-                        attempt,
-                        seedProperties.maxAttempts(),
-                        exception.getMessage(),
-                        seedProperties.retryDelayMs()
-                );
-                if (attempt == seedProperties.maxAttempts()) {
-                    log.error(
-                            "[DEV SEED] Não foi possível sincronizar tags COURSE/CLASS do Hub após {} tentativas. Publish com destino CLASS/COURSE pode falhar até o Core estar acessível.",
-                            seedProperties.maxAttempts(),
-                            exception
-                    );
-                    return;
-                }
-                sleep(seedProperties.retryDelayMs());
-            }
-        }
+        transactionTemplate.executeWithoutResult(status -> seedTags());
     }
 
-    private RestClient hubClient() {
-        return RestClient.builder()
-                .baseUrl(hubApiProperties.url())
-                .build();
+    void seedTags() {
+        TAGS.forEach(this::findOrCreateTag);
     }
 
-    private String login(RestClient client) {
-        LoginResponse response = client.post()
-                .uri("/auth/login")
-                .contentType(MediaType.APPLICATION_JSON)
-                .body(new LoginRequest(seedProperties.email(), seedProperties.password()))
-                .retrieve()
-                .body(LoginResponse.class);
-
-        if (response == null || response.accessToken() == null || response.accessToken().isBlank()) {
-            throw new IllegalStateException("Login no Hub não retornou accessToken.");
-        }
-        return response.accessToken();
+    private void findOrCreateTag(TagSeed seed) {
+        Instant now = Instant.now();
+        tagRepository.findByEntityTypeAndHubEntityId(seed.entityType(), seed.id().toString())
+                .ifPresentOrElse(existing -> {
+                    existing.setName(seed.name());
+                    existing.setActive(true);
+                    existing.setUpdatedAt(now);
+                    tagRepository.save(existing);
+                }, () -> tagRepository.save(Tag.builder()
+                        .name(seed.name())
+                        .entityType(seed.entityType())
+                        .hubEntityId(seed.id().toString())
+                        .active(true)
+                        .createdAt(now)
+                        .updatedAt(now)
+                        .build()));
+        tagRepository.updateIdByEntityTypeAndHubEntityId(seed.id(), seed.entityType().name(), seed.id().toString());
     }
 
-    private int seedCourses(String token) {
-        HubCoursesResponse response = hubClient().get()
-                .uri("/courses")
-                .header("Authorization", "Bearer " + token)
-                .retrieve()
-                .body(HubCoursesResponse.class);
-
-        if (response == null || response.courses() == null) {
-            return 0;
-        }
-
-        int count = 0;
-        for (HubCourseItem course : response.courses()) {
-            if (course == null || course.id() == null) {
-                continue;
-            }
-            String name = course.name() != null && !course.name().isBlank()
-                    ? course.name()
-                    : (course.code() != null ? course.code() : course.id().toString());
-            upsertTagFromCoreUseCase.execute(
-                    UpsertTagFromCoreCommand.forHubEntity(TagEntityType.COURSE, course.id().toString(), name)
-            );
-            count++;
-        }
-        return count;
+    private static TagSeed course(String id, String name) {
+        return new TagSeed(UUID.fromString(id), TagEntityType.COURSE, name);
     }
 
-    private int seedClasses(String token) {
-        int count = 0;
-        int page = 0;
-        int totalPages = 1;
-
-        while (page < totalPages) {
-            final int currentPage = page;
-            HubClassesPage response = hubClient().get()
-                    .uri(uriBuilder -> uriBuilder
-                            .path("/classes")
-                            .queryParam("page", currentPage)
-                            .queryParam("size", 100)
-                            .queryParam("includeInactive", true)
-                            .build())
-                    .header("Authorization", "Bearer " + token)
-                    .retrieve()
-                    .body(HubClassesPage.class);
-
-            if (response == null || response.items() == null || response.items().isEmpty()) {
-                break;
-            }
-
-            totalPages = (int) Math.max(1, response.totalPages());
-            for (HubClassItem cls : response.items()) {
-                if (cls == null || cls.id() == null) {
-                    continue;
-                }
-                String name = cls.name() != null && !cls.name().isBlank()
-                        ? cls.name()
-                        : cls.id().toString();
-                upsertTagFromCoreUseCase.execute(
-                        UpsertTagFromCoreCommand.forHubEntity(TagEntityType.CLASS, cls.id().toString(), name)
-                );
-                count++;
-            }
-            page++;
-        }
-        return count;
+    private static TagSeed classroom(String id, String name) {
+        return new TagSeed(UUID.fromString(id), TagEntityType.CLASS, name);
     }
 
-    private static void sleep(long delayMs) {
-        try {
-            Thread.sleep(delayMs);
-        } catch (InterruptedException interrupted) {
-            Thread.currentThread().interrupt();
-            throw new IllegalStateException("Seed interrompido.", interrupted);
-        }
-    }
-
-    private record LoginRequest(String email, String password) {
-    }
-
-    private record LoginResponse(String accessToken, String refreshToken, Long expiresIn) {
-    }
-
-    private record HubCoursesResponse(List<HubCourseItem> courses) {
-    }
-
-    private record HubCourseItem(UUID id, String name, String code) {
-    }
-
-    private record HubClassesPage(
-            List<HubClassItem> items,
-            int page,
-            int size,
-            long totalElements,
-            long totalPages
-    ) {
-    }
-
-    private record HubClassItem(
-            UUID id,
-            String name,
-            Integer number,
-            String shift,
-            UUID courseId,
-            boolean active
-    ) {
+    private record TagSeed(UUID id, TagEntityType entityType, String name) {
     }
 }
