@@ -179,9 +179,13 @@ public class AnnouncementSpecifications {
             List<String> viewerRoleCodes
     ) {
         List<String> viewerRoles = viewerRoleCodes == null ? List.of() : viewerRoleCodes;
-        return visibleTo(classIds, courseIds, viewerUserId)
+        Specification<Announcement> audienceMatch = visibleTo(classIds, courseIds, viewerUserId)
                 .and(visibleForShiftCodes(viewerShiftCodes))
                 .and(visibleForTagRestriction(TagEntityType.ROLE, viewerRoles));
+
+        // Autor sempre vê o próprio post no mural, mesmo fora da audiência (destino/turno/role) —
+        // mesma regra já aplicada em GetAnnouncementByIdUseCase.canAccess() para o detalhe.
+        return audienceMatch.or(createdBy(viewerUserId));
     }
 
     public static Specification<Announcement> visibleTo(List<UUID> classIds, List<UUID> courseIds, UUID viewerUserId) {
